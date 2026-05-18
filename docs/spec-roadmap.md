@@ -100,6 +100,10 @@ For Crosslink, matching that quality means adding:
   `NilCertificateUnlockSafety`, all included in `Safety`. CI now also runs
   bounded Apalache safety checks for baseline round recovery, nil-precommit
   resampling, fork finality, and the composed resampling/finality model.
+- Baseline proposal validity is now split into structural validity,
+  PoW-chain validity, finality-candidate validity, and stream freshness.
+  `CrosslinkProposalValidityModel` checks that a fresh but structurally invalid
+  proposal receives a nil prevote.
 - Milestone 4 has an executable negative witness:
   `mixedPrecommitQuorumDoesNotUnlockTest`.
 - Milestone 6 has a first accountability document in

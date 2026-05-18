@@ -39,6 +39,9 @@ module CrosslinkResampling {
   const Proposer: Round_t -> Proc_t
   const Stream: Round_t -> Snapshot_t
   const Snapshots: Set[Snapshot_t]
+  const StructurallyValid: Snapshot_t -> bool
+  const PowChainValid: Snapshot_t -> bool
+  const FinalityCandidateValid: Snapshot_t -> bool
   const ResampleOnNilPrecommit: bool
 
   pure val Rounds = 0.to(MaxRound)
@@ -85,8 +88,17 @@ module CrosslinkResampling {
   pure def IsValidSnapshot(v: Snapshot_t): bool =
     Snapshots.contains(v)
 
+  pure def StaticProposalValidity(v: Snapshot_t): bool =
+    IsValidSnapshot(v) and
+    StructurallyValid.get(v) and
+    PowChainValid.get(v) and
+    FinalityCandidateValid.get(v)
+
   pure def IsFreshForRound(r: Round_t, v: Snapshot_t): bool =
     Stream.get(r) == v
+
+  pure def ValidProposalForRound(r: Round_t, v: Snapshot_t): bool =
+    StaticProposalValidity(v) and IsFreshForRound(r, v)
 
   pure def StreamChangedAfter(r: Round_t): bool =
     (r + 1).in(Rounds) and Stream.get(r + 1) != Stream.get(r)
@@ -195,8 +207,7 @@ module CrosslinkResampling {
   action UponProposalPrevote(p: Proc_t, v: Snapshot_t): bool = {
     val r = round.get(p)
     val vote = if (
-      IsValidSnapshot(v) and
-      IsFreshForRound(r, v) and
+      ValidProposalForRound(r, v) and
       (lockedRound.get(p) == NilRound or lockedValue.get(p) == v)
     ) {
       v
@@ -227,8 +238,7 @@ module CrosslinkResampling {
     all {
       step.get(p).in(Set("prevote", "precommit")),
       HasProposal(r, v),
-      IsValidSnapshot(v),
-      IsFreshForRound(r, v),
+      ValidProposalForRound(r, v),
       PrevoteQuorum(r, v),
       not(HasPrecommitFrom(p, r)),
       BroadcastPrecommit(p, r, v),
@@ -377,8 +387,7 @@ module CrosslinkResampling {
   action Decide(p: Proc_t, r: Round_t, v: Snapshot_t): bool = all {
     decision.get(p) == NilSnapshot,
     HasProposal(r, v),
-    IsValidSnapshot(v),
-    IsFreshForRound(r, v),
+    ValidProposalForRound(r, v),
     PrecommitQuorum(r, v),
     decision' = decision.set(p, v),
     step' = step.set(p, "decided"),
@@ -802,6 +811,9 @@ module BaselineCrosslink {
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
     Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
     ResampleOnNilPrecommit = false,
     ExpectedRound1Proposal = "s0",
   ).*
@@ -846,6 +858,9 @@ module NilPrecommitResamplingCrosslink {
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
     Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
     ResampleOnNilPrecommit = true,
     ExpectedRound1Proposal = "s1",
   ).*
@@ -1051,6 +1066,9 @@ module CrosslinkNilResamplingLivenessModel {
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
     Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
     ResampleOnNilPrecommit = true,
     ExpectedRound1Proposal = "s1",
   ).*
@@ -1098,6 +1116,9 @@ module NilPrecommitResamplingStableWindowLiveness {
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p1"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2", 3 -> "s2"),
     Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
     ResampleOnNilPrecommit = true,
     ExpectedRound1Proposal = "s1",
   ).*
@@ -1137,6 +1158,39 @@ module NilPrecommitResamplingStableWindowLiveness {
   }
 }
 
+module CrosslinkProposalValidityModel {
+  import CrosslinkResamplingTest(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    MaxRound = 1,
+    Proposer = Map(0 -> "p1", 1 -> "p2"),
+    Stream = Map(0 -> "s0", 1 -> "s1"),
+    Snapshots = Set("s0", "s1"),
+    StructurallyValid = Map("s0" -> false, "s1" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true),
+    ResampleOnNilPrecommit = true,
+    ExpectedRound1Proposal = "s1",
+  ).*
+
+  run freshButStructurallyInvalidProposalPrevotesNilTest = {
+    Init
+      .then(InsertProposal("p1"))
+      .then(UponProposalPrevote("p1", "s0"))
+      .then(all {
+        assert(IsFreshForRound(0, "s0")),
+        assert(not(StaticProposalValidity("s0"))),
+        assert(not(ValidProposalForRound(0, "s0"))),
+        assert(msgsPrevote.get(0).exists(m =>
+          m.src == "p1" and m.id == NilSnapshot
+        )),
+        unchangedAll,
+      })
+  }
+}
+
 module CrosslinkResamplingModels {
   import CrosslinkResamplingTest(
     Corr = Set("p1", "p2", "p3"),
@@ -1147,6 +1201,9 @@ module CrosslinkResamplingModels {
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
     Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
     ResampleOnNilPrecommit = false,
     ExpectedRound1Proposal = "s0",
   ) as sticky
@@ -1160,6 +1217,9 @@ module CrosslinkResamplingModels {
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
     Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
     ResampleOnNilPrecommit = true,
     ExpectedRound1Proposal = "s1",
   ) as resampling

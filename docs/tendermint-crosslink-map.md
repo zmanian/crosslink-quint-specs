@@ -34,7 +34,8 @@ finality semantics.
 | Crosslink concept | Model location | Notes |
 | --- | --- | --- |
 | PoW stream snapshot | `Snapshot_t`, `Stream(round)` | Models the sampled `head - sigma` candidate abstractly. |
-| Stream freshness | `IsFreshForRound` and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
+| Static proposal validity | `StaticProposalValidity` | Splits validity into structural validity, PoW-chain validity, and finality-candidate validity. |
+| Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink` | A `2f + 1 PRECOMMIT nil` cert clears only same-round cached/lock/valid state. |
 | Fork finality | `CrosslinkForkFinality.qnt` | Models finalized-prefix linearity over a finite PoW fork tree. |
@@ -88,6 +89,8 @@ snapshot on the same branch while rejecting an incompatible fork after finality.
   transition system.
 - Add explicit proposal, prevote, precommit, and decided/fat-pointer message
   validity checks.
+- Connect the abstract `StructurallyValid`, `PowChainValid`, and
+  `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
 - Model validator weights rather than only cardinality in the executable test
   instances.
 - Add bookkeeping-only evidence state, separate from protocol state, mirroring
