@@ -27,7 +27,7 @@ finality semantics.
 | Precommit quorum | `PrecommitQuorum` | Used for decision and nil-certificate recovery. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
 | Agreement | `DecisionUniqueness` | Current value-domain agreement over one height. |
-| Accountability | `ConflictingCommitsAccountable` plus evidence predicates | Current witnesses cover invalid unlocks and nil/value equivocation. |
+| Accountability | `evidencePrecommit`, `ObservedPrecommitQuorum`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks and nil/value equivocation over observer evidence. |
 
 ## Crosslink-Specific Concepts
 
@@ -93,7 +93,7 @@ snapshot on the same branch while rejecting an incompatible fork after finality.
   `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
 - Model validator weights rather than only cardinality in the executable test
   instances.
-- Add bookkeeping-only evidence state, separate from protocol state, mirroring
-  the upstream accountability style.
+- Extend bookkeeping-only evidence beyond precommits to proposals, prevotes,
+  decided/fat-pointer signatures, and evidence gossip.
 - Expand bounded verification beyond `Safety` at depth 3.
 - Add temporal liveness checks parameterized by stream stability after GST.

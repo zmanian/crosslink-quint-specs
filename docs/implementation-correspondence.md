@@ -29,8 +29,10 @@ implementation that each rule has a clear code counterpart.
 
 | Quint predicate | Implementation evidence |
 | --- | --- |
-| `PrecommitQuorum(r, v)` | Fat pointer or precommit certificate for value `v`. |
-| `NilPrecommitCert(r)` | `2f + 1` signed nil precommits for round `r`. |
+| `PrecommitQuorum(r, v)` | Live Tenderlink precommit quorum used by the protocol state machine. |
+| `NilPrecommitCert(r)` | Live `2f + 1` nil-precommit quorum used to clear same-round state. |
+| `ObservedPrecommitQuorum(r, v)` | Observer/bookkeeping evidence for a fat pointer or precommit certificate for value `v`. |
+| `ObservedNilPrecommitCert(r)` | Observer/bookkeeping evidence for `2f + 1` signed nil precommits for round `r`. |
 | `CorrectNilValueEquivocationEvidence` | Same validator signs both nil and value precommit in the same round. |
 | `CorrectValueSwitchWithoutUnlock` | Validator signs a later conflicting value without a nil certificate for the earlier lock round. |
 
@@ -39,8 +41,8 @@ implementation that each rule has a clear code counterpart.
 - Model validator weights and signer sets instead of cardinality-only test
   instances.
 - Model message authentication and fat-pointer signer validation explicitly.
-- Split protocol state from observer/evidence bookkeeping, matching the
-  upstream Tendermint spec style.
+- Extend observer/evidence bookkeeping to proposals, prevotes, decided
+  fat-pointers, evidence gossip, and signer authentication.
 - Add multi-height state, since the current round model is still focused on a
   single Crosslink decision height.
 - Add implementation-linked test vectors once the Tenderlink message format and

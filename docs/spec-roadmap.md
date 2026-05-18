@@ -108,6 +108,11 @@ For Crosslink, matching that quality means adding:
   `mixedPrecommitQuorumDoesNotUnlockTest`.
 - Milestone 6 has a first accountability document in
   `docs/accountability.md`.
+- Accountability now has a first explicit observer-bookkeeping slice:
+  `evidencePrecommit` is separate from protocol `msgsPrecommit`, the
+  `Observed*` quorum helpers drive conflicting-commit accountability, and
+  `CrosslinkEvidenceBookkeepingModel` checks that evidence can be recorded
+  without mutating protocol precommit state.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 

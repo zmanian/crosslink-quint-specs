@@ -16,8 +16,12 @@ A value commit certificate for `(round r, value v)` is:
 In the model this is:
 
 ```text
-PrecommitQuorum(r, v)
+ObservedPrecommitQuorum(r, v)
 ```
+
+`PrecommitQuorum(r, v)` remains the protocol-side quorum used by decision
+rules. Accountability checks use observed evidence, so they can reason about
+certificates after the live protocol state has moved on.
 
 ### Nil Round-Abandon Certificate
 
@@ -30,10 +34,12 @@ A nil round-abandon certificate for round `r` is:
 In the model this is:
 
 ```text
-NilPrecommitCert(r)
+ObservedNilPrecommitCert(r)
 ```
 
 This is the only unlock evidence introduced by the resampling variant.
+`NilPrecommitCert(r)` remains the protocol-side condition that actually clears
+same-round state in the resampling transition.
 
 ### Mixed Precommit Set
 
@@ -83,6 +89,8 @@ least one of:
 The model names these predicates:
 
 ```text
+ObservedPrecommitQuorum
+ObservedNilPrecommitCert
 CorrectSameRoundEquivocationEvidence
 CorrectNilValueEquivocationEvidence
 CorrectValueSwitchWithoutUnlock
@@ -99,10 +107,17 @@ nilPrecommitCertificateJustifiesSameRoundSwitchTest
 laterNilCertificateDoesNotUnlockOlderValueLockTest
 ```
 
+The bookkeeping-specific witnesses are:
+
+```text
+observedEvidenceDoesNotMutateProtocolMessagesTest
+evidenceOnlyConflictStillHasAccountabilityWitnessTest
+```
+
 ## Current Limitations
 
-This repository does not yet fully model evidence collection as separate
-bookkeeping state. The current accountability predicates inspect the message
-sets directly. That is enough for the focused nil-precommit question, but the
-upstream-quality version should track evidence explicitly so that the model can
-distinguish protocol state from slashable evidence known to an observer.
+The round model now has separate `evidencePrecommit` bookkeeping and
+accountability predicates use the `Observed*` quorum helpers. This is still only
+the first slice of the upstream Tendermint accountability shape: it records
+precommit evidence, but it does not yet model authenticated proposal/prevote
+evidence, fat-pointer signatures, evidence gossip, or a full observer process.

@@ -89,6 +89,7 @@ module CrosslinkComposed {
     msgsPropose' = msgsPropose,
     msgsPrevote' = msgsPrevote,
     msgsPrecommit' = msgsPrecommit,
+    evidencePrecommit' = evidencePrecommit,
     firedAction' = firedAction,
   }
 

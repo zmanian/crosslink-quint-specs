@@ -8,7 +8,8 @@ module CrosslinkResampling {
      round resample Crosslink's moving PoW stream?
 
    This is not yet a full Tendermint accountability model. It intentionally
-   isolates the Crosslink-specific moving-value part:
+   isolates the Crosslink-specific moving-value part while keeping observer
+   evidence separate from protocol message state:
 
    - BFT values are PoW snapshots sampled from Stream(round), modelling the
      implementation's current "head - sigma" proposal.
@@ -83,6 +84,7 @@ module CrosslinkResampling {
   var msgsPropose: Round_t -> Set[Propose_t]
   var msgsPrevote: Round_t -> Set[Vote_t]
   var msgsPrecommit: Round_t -> Set[Vote_t]
+  var evidencePrecommit: Round_t -> Set[Vote_t]
   var firedAction: str
 
   pure def IsValidSnapshot(v: Snapshot_t): bool =
@@ -115,6 +117,12 @@ module CrosslinkResampling {
   def NilPrecommitCert(r: Round_t): bool =
     PrecommitQuorum(r, NilSnapshot)
 
+  def ObservedPrecommitQuorum(r: Round_t, v: Snapshot_t): bool =
+    size(Voters(evidencePrecommit.get(r).filter(m => m.id == v))) >= THRESHOLD2
+
+  def ObservedNilPrecommitCert(r: Round_t): bool =
+    ObservedPrecommitQuorum(r, NilSnapshot)
+
   def HasPrecommitFrom(p: Proc_t, r: Round_t): bool =
     msgsPrecommit.get(r).exists(m => m.src == p)
 
@@ -123,6 +131,12 @@ module CrosslinkResampling {
 
   def HasNilPrecommitFrom(p: Proc_t, r: Round_t): bool =
     msgsPrecommit.get(r).exists(m => m.src == p and m.id == NilSnapshot)
+
+  def ObservedValuePrecommitFrom(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
+    evidencePrecommit.get(r).exists(m => m.src == p and m.id == v)
+
+  def ObservedNilPrecommitFrom(p: Proc_t, r: Round_t): bool =
+    evidencePrecommit.get(r).exists(m => m.src == p and m.id == NilSnapshot)
 
   def CorrectValueLocks(r: Round_t, v: Snapshot_t): Set[Proc_t] =
     Corr.filter(p => lockedRound.get(p) == r and lockedValue.get(p) == v)
@@ -156,6 +170,7 @@ module CrosslinkResampling {
     msgsPropose' = Rounds.mapBy(_ => Set()),
     msgsPrevote' = Rounds.mapBy(_ => Set()),
     msgsPrecommit' = Rounds.mapBy(_ => Set()),
+    evidencePrecommit' = Rounds.mapBy(_ => Set()),
     firedAction' = "Init",
   }
 
@@ -175,11 +190,30 @@ module CrosslinkResampling {
     })))
 
   action BroadcastPrecommit(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
-    msgsPrecommit' = msgsPrecommit.setBy(r, old => old.union(Set({
-      src: p,
-      round: r,
-      id: v,
-    })))
+    all {
+      msgsPrecommit' = msgsPrecommit.setBy(r, old => old.union(Set({
+        src: p,
+        round: r,
+        id: v,
+      }))),
+      evidencePrecommit' = evidencePrecommit.setBy(r, old => old.union(Set({
+        src: p,
+        round: r,
+        id: v,
+      }))),
+    }
+
+  action ObservePrecommitEvidence(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
+    all {
+      p.in(Corr.union(Faulty)),
+      r.in(Rounds),
+      v == NilSnapshot or IsValidSnapshot(v),
+      evidencePrecommit' = evidencePrecommit.setBy(r, old => old.union(Set({
+        src: p,
+        round: r,
+        id: v,
+      }))),
+    }
 
   action InsertProposal(p: Proc_t): bool = {
     val r = round.get(p)
@@ -201,6 +235,7 @@ module CrosslinkResampling {
       cachedProposalRound' = cachedProposalRound,
       msgsPrevote' = msgsPrevote,
       msgsPrecommit' = msgsPrecommit,
+      evidencePrecommit' = evidencePrecommit,
     }
   }
 
@@ -230,6 +265,7 @@ module CrosslinkResampling {
       cachedProposalRound' = cachedProposalRound,
       msgsPropose' = msgsPropose,
       msgsPrecommit' = msgsPrecommit,
+      evidencePrecommit' = evidencePrecommit,
     }
   }
 
@@ -329,6 +365,7 @@ module CrosslinkResampling {
       msgsPropose' = msgsPropose,
       msgsPrevote' = msgsPrevote,
       msgsPrecommit' = msgsPrecommit,
+      evidencePrecommit' = evidencePrecommit,
     }
   }
 
@@ -381,6 +418,7 @@ module CrosslinkResampling {
       msgsPropose' = msgsPropose,
       msgsPrevote' = msgsPrevote,
       msgsPrecommit' = msgsPrecommit,
+      evidencePrecommit' = evidencePrecommit,
     }
   }
 
@@ -402,6 +440,7 @@ module CrosslinkResampling {
     msgsPropose' = msgsPropose,
     msgsPrevote' = msgsPrevote,
     msgsPrecommit' = msgsPrecommit,
+    evidencePrecommit' = evidencePrecommit,
   }
 
   action SeedAbandonedRoundStateAt(p: Proc_t, r: Round_t): bool = {
@@ -550,6 +589,17 @@ module CrosslinkResampling {
           round: activeRound,
           id: NilSnapshot,
         }))),
+      evidencePrecommit' = evidencePrecommit
+        .setBy(lockRound, old => old.union(Set({
+          src: p,
+          round: lockRound,
+          id: locked,
+        })))
+        .setBy(activeRound, old => old.union(Set({
+          src: p,
+          round: activeRound,
+          id: NilSnapshot,
+        }))),
       firedAction' = "SeedOlderLockWithNilPrecommit",
       decision' = decision,
       msgsPropose' = msgsPropose,
@@ -562,7 +612,7 @@ module CrosslinkResampling {
       p.in(Corr),
       r.in(Rounds),
       IsValidSnapshot(v),
-      BroadcastPrecommit(p, r, v),
+      ObservePrecommitEvidence(p, r, v),
       firedAction' = "SeedCorrectPrecommitEvidence",
       round' = round,
       step' = step,
@@ -575,6 +625,7 @@ module CrosslinkResampling {
       cachedProposalRound' = cachedProposalRound,
       msgsPropose' = msgsPropose,
       msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
     }
 
   action SeedFaultyPrecommitEvidence(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
@@ -582,7 +633,7 @@ module CrosslinkResampling {
       p.in(Faulty),
       r.in(Rounds),
       IsValidSnapshot(v),
-      BroadcastPrecommit(p, r, v),
+      ObservePrecommitEvidence(p, r, v),
       firedAction' = "SeedFaultyPrecommitEvidence",
       round' = round,
       step' = step,
@@ -595,6 +646,7 @@ module CrosslinkResampling {
       cachedProposalRound' = cachedProposalRound,
       msgsPropose' = msgsPropose,
       msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
     }
 
   action Next =
@@ -654,7 +706,7 @@ module CrosslinkResampling {
       lockedValue.get(p) == NilSnapshot or (
         lockedRound.get(p).in(Rounds) and
         IsValidSnapshot(lockedValue.get(p)) and
-        HasValuePrecommitFrom(p, lockedRound.get(p), lockedValue.get(p))
+        ObservedValuePrecommitFrom(p, lockedRound.get(p), lockedValue.get(p))
       )
     )
 
@@ -687,8 +739,8 @@ module CrosslinkResampling {
     IsValidSnapshot(v1) and
     IsValidSnapshot(v2) and
     v1 != v2 and
-    PrecommitQuorum(r1, v1) and
-    PrecommitQuorum(r2, v2)
+    ObservedPrecommitQuorum(r1, v1) and
+    ObservedPrecommitQuorum(r2, v2)
 
   def CorrectSameRoundEquivocationEvidence(
     r: Round_t,
@@ -697,16 +749,16 @@ module CrosslinkResampling {
   ): bool =
     v1 != v2 and
     Corr.exists(p =>
-      HasValuePrecommitFrom(p, r, v1) and
-      HasValuePrecommitFrom(p, r, v2)
+      ObservedValuePrecommitFrom(p, r, v1) and
+      ObservedValuePrecommitFrom(p, r, v2)
     )
 
   def CorrectNilValueEquivocationEvidence(r: Round_t, v: Snapshot_t): bool =
     IsValidSnapshot(v) and
-    NilPrecommitCert(r) and
-    PrecommitQuorum(r, v) and
+    ObservedNilPrecommitCert(r) and
+    ObservedPrecommitQuorum(r, v) and
     Corr.exists(p =>
-      HasNilPrecommitFrom(p, r) and HasValuePrecommitFrom(p, r, v)
+      ObservedNilPrecommitFrom(p, r) and ObservedValuePrecommitFrom(p, r, v)
     )
 
   def CorrectValueSwitchWithoutUnlock(
@@ -721,9 +773,9 @@ module CrosslinkResampling {
     IsValidSnapshot(fromValue) and
     IsValidSnapshot(toValue) and
     fromValue != toValue and
-    HasValuePrecommitFrom(p, fromRound, fromValue) and
-    HasValuePrecommitFrom(p, toRound, toValue) and
-    not(NilPrecommitCert(fromRound))
+    ObservedValuePrecommitFrom(p, fromRound, fromValue) and
+    ObservedValuePrecommitFrom(p, toRound, toValue) and
+    not(ObservedNilPrecommitCert(fromRound))
 
   def ConflictHasAccountabilityEvidence(
     r1: Round_t,
@@ -782,6 +834,7 @@ module CrosslinkResamplingTest {
     msgsPropose' = msgsPropose,
     msgsPrevote' = msgsPrevote,
     msgsPrecommit' = msgsPrecommit,
+    evidencePrecommit' = evidencePrecommit,
     firedAction' = firedAction,
   }
 
@@ -969,8 +1022,10 @@ module NilPrecommitResamplingCrosslink {
       .then(SeedCorrectPrecommitEvidence("p3", 1, "s1"))
       .then(SeedFaultyPrecommitEvidence("p4", 1, "s1"))
       .then(all {
-        assert(PrecommitQuorum(0, "s0")),
-        assert(PrecommitQuorum(1, "s1")),
+        assert(ObservedPrecommitQuorum(0, "s0")),
+        assert(ObservedPrecommitQuorum(1, "s1")),
+        assert(not(PrecommitQuorum(0, "s0"))),
+        assert(not(PrecommitQuorum(1, "s1"))),
         assert(ConflictHasAccountabilityEvidence(0, "s0", 1, "s1")),
         assert(ConflictingCommitsAccountable),
         unchangedAll,
@@ -990,8 +1045,8 @@ module NilPrecommitResamplingCrosslink {
       .then(SeedFaultyPrecommitEvidence("p4", 1, "s1"))
       .then(all {
         assert(NilPrecommitCert(0)),
-        assert(PrecommitQuorum(0, "s0")),
-        assert(PrecommitQuorum(1, "s1")),
+        assert(ObservedPrecommitQuorum(0, "s0")),
+        assert(ObservedPrecommitQuorum(1, "s1")),
         assert(CorrectNilValueEquivocationEvidence(0, "s0")),
         assert(ConflictHasAccountabilityEvidence(0, "s0", 1, "s1")),
         assert(ConflictingCommitsAccountable),
@@ -1012,6 +1067,7 @@ module NilPrecommitResamplingCrosslink {
       .then(all {
         assert(NilPrecommitCert(0)),
         assert(not(PrecommitQuorum(0, "s0"))),
+        assert(ObservedPrecommitQuorum(1, "s1")),
         assert(not(CorrectValueSwitchWithoutUnlock("p3", 0, "s0", 1, "s1"))),
         assert(ConflictingCommitsAccountable),
         unchangedAll,
@@ -1027,9 +1083,9 @@ module NilPrecommitResamplingCrosslink {
       .then(SeedCorrectPrecommitEvidence("p3", 2, "s2"))
       .then(SeedFaultyPrecommitEvidence("p4", 2, "s2"))
       .then(all {
-        assert(PrecommitQuorum(0, "s0")),
-        assert(NilPrecommitCert(1)),
-        assert(PrecommitQuorum(2, "s2")),
+        assert(ObservedPrecommitQuorum(0, "s0")),
+        assert(ObservedNilPrecommitCert(1)),
+        assert(ObservedPrecommitQuorum(2, "s2")),
         assert(CorrectValueSwitchWithoutUnlock("p2", 0, "s0", 2, "s2")),
         assert(ConflictHasAccountabilityEvidence(0, "s0", 2, "s2")),
         assert(ConflictingCommitsAccountable),
@@ -1051,6 +1107,56 @@ module NilPrecommitResamplingCrosslink {
         assert(validValue.get("p1") == "s0"),
         assert(validRound.get("p1") == 0),
         assert(Safety),
+        unchangedAll,
+      })
+  }
+}
+
+module CrosslinkEvidenceBookkeepingModel {
+  import CrosslinkResamplingTest(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    MaxRound = 2,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
+    Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
+    Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    ResampleOnNilPrecommit = true,
+    ExpectedRound1Proposal = "s1",
+  ).*
+
+  run observedEvidenceDoesNotMutateProtocolMessagesTest = {
+    Init
+      .then(SeedCorrectPrecommitEvidence("p1", 0, "s0"))
+      .then(all {
+        assert(ObservedValuePrecommitFrom("p1", 0, "s0")),
+        assert(not(HasValuePrecommitFrom("p1", 0, "s0"))),
+        assert(not(ObservedPrecommitQuorum(0, "s0"))),
+        assert(not(PrecommitQuorum(0, "s0"))),
+        unchangedAll,
+      })
+  }
+
+  run evidenceOnlyConflictStillHasAccountabilityWitnessTest = {
+    Init
+      .then(SeedCorrectPrecommitEvidence("p1", 0, "s0"))
+      .then(SeedCorrectPrecommitEvidence("p2", 0, "s0"))
+      .then(SeedFaultyPrecommitEvidence("p4", 0, "s0"))
+      .then(SeedCorrectPrecommitEvidence("p2", 1, "s1"))
+      .then(SeedCorrectPrecommitEvidence("p3", 1, "s1"))
+      .then(SeedFaultyPrecommitEvidence("p4", 1, "s1"))
+      .then(all {
+        assert(ObservedPrecommitQuorum(0, "s0")),
+        assert(ObservedPrecommitQuorum(1, "s1")),
+        assert(not(PrecommitQuorum(0, "s0"))),
+        assert(not(PrecommitQuorum(1, "s1"))),
+        assert(CorrectValueSwitchWithoutUnlock("p2", 0, "s0", 1, "s1")),
+        assert(ConflictHasAccountabilityEvidence(0, "s0", 1, "s1")),
+        assert(ConflictingCommitsAccountable),
         unchangedAll,
       })
   }
