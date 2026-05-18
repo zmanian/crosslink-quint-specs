@@ -3,6 +3,10 @@
 The nil-precommit resampling rule is meant to improve liveness under Crosslink
 stream churn without weakening Tendermint-style accountability.
 
+The notation below still says `2f + 1` because that is the familiar
+Tendermint shorthand. In the Quint model, quorum predicates are computed over
+summed validator voting power via `VotingPowerOf(...) >= QuorumVotingPower`.
+
 ## Evidence Types
 
 ### Value Commit Certificate

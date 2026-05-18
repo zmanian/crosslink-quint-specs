@@ -16,6 +16,7 @@ implementation that each rule has a clear code counterpart.
 | `StartNextRoundAfterPrecommitQuorum` | Tenderlink precommit-quorum processing and round start | In the resampling branch, nil quorum clears same-round state before moving on. |
 | `ApplyLateNilPrecommitCertificate` | Tenderlink late nil-certificate recovery path | Late certs clear abandoned-round state without rewinding the validator. |
 | `MixedPrecommitQuorumWithoutNilCert` | Negative guard test in Tenderlink | Mixed precommits can end waiting, but cannot unlock. |
+| `VotingPowerOf` / `QuorumVotingPower` | Validator-set voting power and quorum threshold | The current executable examples include both equal-weight and non-uniform-power instances. |
 
 ## Crosslink Finality
 
@@ -38,8 +39,8 @@ implementation that each rule has a clear code counterpart.
 
 ## Gaps To Close
 
-- Model validator weights and signer sets instead of cardinality-only test
-  instances.
+- Connect weighted signer sets to the concrete Tenderlink validator-set and
+  signature formats.
 - Model message authentication and fat-pointer signer validation explicitly.
 - Extend observer/evidence bookkeeping to proposals, prevotes, decided
   fat-pointers, evidence gossip, and signer authentication.

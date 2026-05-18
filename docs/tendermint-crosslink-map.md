@@ -23,8 +23,9 @@ finality semantics.
 | Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt` | Current model is still a focused one-height fragment. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
 | Proposal with `validRound` | `Propose_t.validRound`, `InsertProposal` | Present, but valid-round rules are not yet as complete as upstream Tendermint. |
-| Prevote quorum | `PrevoteQuorum` | Used for value precommit transition. |
-| Precommit quorum | `PrecommitQuorum` | Used for decision and nil-certificate recovery. |
+| Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
+| Prevote quorum | `PrevoteQuorum` | Used for value precommit transition and computed over summed voting power. |
+| Precommit quorum | `PrecommitQuorum` | Used for decision and nil-certificate recovery and computed over summed voting power. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
 | Agreement | `DecisionUniqueness` | Current value-domain agreement over one height. |
 | Accountability | `evidencePrecommit`, `ObservedPrecommitQuorum`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks and nil/value equivocation over observer evidence. |
@@ -91,8 +92,8 @@ snapshot on the same branch while rejecting an incompatible fork after finality.
   validity checks.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
   `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
-- Model validator weights rather than only cardinality in the executable test
-  instances.
+- Expand validator-set modeling beyond the current finite weighted examples to
+  dynamic set changes and production signer-set formats.
 - Extend bookkeeping-only evidence beyond precommits to proposals, prevotes,
   decided/fat-pointer signatures, and evidence gossip.
 - Expand bounded verification beyond `Safety` at depth 3.

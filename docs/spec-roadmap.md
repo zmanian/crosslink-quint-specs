@@ -113,6 +113,10 @@ For Crosslink, matching that quality means adding:
   `Observed*` quorum helpers drive conflicting-commit accountability, and
   `CrosslinkEvidenceBookkeepingModel` checks that evidence can be recorded
   without mutating protocol precommit state.
+- Quorum checks now use `VotingPowerOf` over explicit validator voting power
+  instead of raw signer counts. The default examples remain equal-weight, and
+  `CrosslinkWeightedQuorumModel` checks that two high-power validators can form
+  a quorum when their summed power reaches the threshold.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 

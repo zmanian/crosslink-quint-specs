@@ -36,6 +36,10 @@ module CrosslinkResampling {
   const Faulty: Set[Proc_t]
   const N: int
   const T: int
+  const VotingPower: Proc_t -> int
+  const TotalVotingPower: int
+  const FaultyVotingPowerBound: int
+  const QuorumVotingPower: int
   const MaxRound: Round_t
   const Proposer: Round_t -> Proc_t
   const Stream: Round_t -> Snapshot_t
@@ -48,13 +52,22 @@ module CrosslinkResampling {
   pure val Rounds = 0.to(MaxRound)
   pure val NilRound = -1
   pure val NilSnapshot = "None"
-  pure val THRESHOLD2 = 2 * T + 1
+  pure val THRESHOLD2 = QuorumVotingPower
+
+  pure def VotingPowerOf(voters: Set[Proc_t]): int =
+    voters.fold(0, (acc, p) => acc + VotingPower.get(p))
 
   assume corr_and_faulty_disjoint = Corr.intersect(Faulty) == Set()
   assume corr_and_faulty_make_n = N == size(Corr.union(Faulty))
   assume faulty_at_threshold = size(Faulty) <= T
-  assume quorum_intersection_has_correct =
-    2 * THRESHOLD2 - N > T
+  assume validator_power_is_positive =
+    Corr.union(Faulty).forall(p => VotingPower.get(p) > 0)
+  assume total_voting_power_matches_validator_set =
+    TotalVotingPower == VotingPowerOf(Corr.union(Faulty))
+  assume faulty_power_at_threshold =
+    VotingPowerOf(Faulty) <= FaultyVotingPowerBound
+  assume quorum_intersection_has_correct_power =
+    2 * QuorumVotingPower - TotalVotingPower > FaultyVotingPowerBound
   assume nil_is_not_snapshot = not(Snapshots.contains(NilSnapshot))
   assume streams_are_snapshots =
     Rounds.forall(r => Snapshots.contains(Stream.get(r)))
@@ -109,16 +122,16 @@ module CrosslinkResampling {
     votes.map(m => m.src)
 
   def PrevoteQuorum(r: Round_t, v: Snapshot_t): bool =
-    size(Voters(msgsPrevote.get(r).filter(m => m.id == v))) >= THRESHOLD2
+    VotingPowerOf(Voters(msgsPrevote.get(r).filter(m => m.id == v))) >= THRESHOLD2
 
   def PrecommitQuorum(r: Round_t, v: Snapshot_t): bool =
-    size(Voters(msgsPrecommit.get(r).filter(m => m.id == v))) >= THRESHOLD2
+    VotingPowerOf(Voters(msgsPrecommit.get(r).filter(m => m.id == v))) >= THRESHOLD2
 
   def NilPrecommitCert(r: Round_t): bool =
     PrecommitQuorum(r, NilSnapshot)
 
   def ObservedPrecommitQuorum(r: Round_t, v: Snapshot_t): bool =
-    size(Voters(evidencePrecommit.get(r).filter(m => m.id == v))) >= THRESHOLD2
+    VotingPowerOf(Voters(evidencePrecommit.get(r).filter(m => m.id == v))) >= THRESHOLD2
 
   def ObservedNilPrecommitCert(r: Round_t): bool =
     ObservedPrecommitQuorum(r, NilSnapshot)
@@ -321,7 +334,7 @@ module CrosslinkResampling {
     val clearSameRoundCache = ResampleOnNilPrecommit and NilPrecommitCert(oldRound)
     all {
       nextRound.in(Rounds),
-      size(Voters(msgsPrecommit.get(oldRound))) >= THRESHOLD2,
+      VotingPowerOf(Voters(msgsPrecommit.get(oldRound))) >= THRESHOLD2,
       round' = round.set(p, nextRound),
       step' = step.set(p, "propose"),
       validValue' =
@@ -717,11 +730,13 @@ module CrosslinkResampling {
   val NilCertLeavesAtMostFCurrentRoundLocks =
     Rounds.forall(r =>
       NilPrecommitCert(r) implies
-        Snapshots.forall(v => size(CorrectValueLocks(r, v)) <= T)
+        Snapshots.forall(v =>
+          VotingPowerOf(CorrectValueLocks(r, v)) <= FaultyVotingPowerBound
+        )
     )
 
   def MixedPrecommitQuorumWithoutNilCert(r: Round_t): bool =
-    size(Voters(msgsPrecommit.get(r))) >= THRESHOLD2 and
+    VotingPowerOf(Voters(msgsPrecommit.get(r))) >= THRESHOLD2 and
     not(NilPrecommitCert(r)) and
     msgsPrecommit.get(r).exists(m => m.id == NilSnapshot) and
     msgsPrecommit.get(r).exists(m => IsValidSnapshot(m.id))
@@ -860,6 +875,10 @@ module BaselineCrosslink {
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 2,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
@@ -907,6 +926,10 @@ module NilPrecommitResamplingCrosslink {
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 2,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
@@ -1118,6 +1141,10 @@ module CrosslinkEvidenceBookkeepingModel {
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 2,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
@@ -1162,12 +1189,56 @@ module CrosslinkEvidenceBookkeepingModel {
   }
 }
 
+module CrosslinkWeightedQuorumModel {
+  import CrosslinkResamplingTest(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    VotingPower = Map("p1" -> 2, "p2" -> 2, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 6,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 4,
+    MaxRound = 1,
+    Proposer = Map(0 -> "p1", 1 -> "p2"),
+    Stream = Map(0 -> "s0", 1 -> "s0"),
+    Snapshots = Set("s0", "s1"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true),
+    ResampleOnNilPrecommit = true,
+    ExpectedRound1Proposal = "s0",
+  ).*
+
+  run twoHighPowerValidatorsCanCommitTest = {
+    Init
+      .then(InsertProposal("p1"))
+      .then(UponProposalPrevote("p1", "s0"))
+      .then(UponProposalPrevote("p2", "s0"))
+      .then(UponValuePrevoteQuorum("p1", "s0"))
+      .then(UponValuePrevoteQuorum("p2", "s0"))
+      .then(Decide("p1", 0, "s0"))
+      .then(all {
+        assert(PrevoteQuorum(0, "s0")),
+        assert(PrecommitQuorum(0, "s0")),
+        assert(size(Voters(msgsPrecommit.get(0).filter(m => m.id == "s0"))) == 2),
+        assert(decision.get("p1") == "s0"),
+        assert(Safety),
+        unchangedAll,
+      })
+  }
+}
+
 module CrosslinkNilResamplingLivenessModel {
   import CrosslinkResamplingTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 2,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
@@ -1218,6 +1289,10 @@ module NilPrecommitResamplingStableWindowLiveness {
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 3,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p1"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2", 3 -> "s2"),
@@ -1270,6 +1345,10 @@ module CrosslinkProposalValidityModel {
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 1,
     Proposer = Map(0 -> "p1", 1 -> "p2"),
     Stream = Map(0 -> "s0", 1 -> "s1"),
@@ -1303,6 +1382,10 @@ module CrosslinkResamplingModels {
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 2,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
@@ -1319,6 +1402,10 @@ module CrosslinkResamplingModels {
     Faulty = Set("p4"),
     N = 4,
     T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
     MaxRound = 2,
     Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
     Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
