@@ -114,11 +114,33 @@ module CrosslinkComposed {
   action Propose(p: Proc_t): bool =
     all { InsertProposal(p), FinalityUnchanged }
 
+  action DeliverProposalToAll(
+    p: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool =
+    all { DeliverProposalToAllCorrect(p, r, v, vr), FinalityUnchanged }
+
   action Prevote(p: Proc_t, v: Snapshot_t): bool =
     all { UponProposalPrevote(p, v), FinalityUnchanged }
 
+  action DeliverPrevoteQuorum(
+    p: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+  ): bool =
+    all { DeliverPrevotesTo(p, r, v, Corr), FinalityUnchanged }
+
   action PrecommitValue(p: Proc_t, v: Snapshot_t): bool =
     all { UponValuePrevoteQuorum(p, v), FinalityUnchanged }
+
+  action DeliverPrecommitQuorum(
+    p: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+  ): bool =
+    all { DeliverPrecommitsTo(p, r, v, Corr), FinalityUnchanged }
 
   action DecideValue(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
     all { Decide(p, r, v), FinalityUnchanged }
@@ -191,12 +213,17 @@ module CrosslinkComposedTest {
       .then(AdvanceAfterPrecommitQuorum("p2"))
       .then(AdvanceAfterPrecommitQuorum("p3"))
       .then(Propose("p2"))
+      .then(DeliverProposalToAll("p2", 1, "a2", -1))
       .then(Prevote("p1", "a2"))
       .then(Prevote("p2", "a2"))
       .then(Prevote("p3", "a2"))
+      .then(DeliverPrevoteQuorum("p1", 1, "a2"))
+      .then(DeliverPrevoteQuorum("p2", 1, "a2"))
+      .then(DeliverPrevoteQuorum("p3", 1, "a2"))
       .then(PrecommitValue("p1", "a2"))
       .then(PrecommitValue("p2", "a2"))
       .then(PrecommitValue("p3", "a2"))
+      .then(DeliverPrecommitQuorum("p1", 1, "a2"))
       .then(DecideValue("p1", 1, "a2"))
       .then(FinalizeDecision("p1", "a2", "a3"))
       .then(all {

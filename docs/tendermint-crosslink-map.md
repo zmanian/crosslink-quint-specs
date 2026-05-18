@@ -24,9 +24,9 @@ finality semantics.
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
 | Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value. |
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
-| Prevote quorum | `PrevoteQuorum` | Used for value precommit transition and computed over summed voting power. |
-| Precommit quorum | `PrecommitQuorum` | Used for decision and nil-certificate recovery and computed over summed voting power. |
-| Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | First receive-reactive slice: local delivery is separate from global broadcast, and local quorums only exist after delivery. |
+| Prevote quorum | `LocalPrevoteQuorum` | Used for the value precommit transition and computed over delivered votes in the receiver's local view. |
+| Precommit quorum | `LocalPrecommitQuorum`, `LocalNilPrecommitCert`, `LocalAnyPrecommitQuorum` | Used for decision, nil-certificate recovery, and round advancement over delivered precommits. |
+| Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | Main round receive guards now use local delivery state rather than global broadcast state. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
 | Agreement | `DecisionUniqueness` | Current value-domain agreement over one height. |
 | Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, and fat-pointer signer validation over observer evidence. |
@@ -87,11 +87,18 @@ actions copy those messages into the receiver's `seen*` state. The local quorum
 predicates (`LocalPrevoteQuorum` and `LocalPrecommitQuorum`) only use delivered
 messages.
 
-This is still a first slice: the legacy round actions continue to use global
-quorum helpers, while `CrosslinkLocalDeliveryModel` captures the intended
-receive-reactive semantics and guards against delivering messages that were not
-broadcast. The next step is to replace the global guards in the main round
-machine with local receive guards.
+The active receive rules now use this local state:
+
+```text
+UponProposalPrevote           requires SeenProposal
+UponValuePrevoteQuorum        requires LocalPrevoteQuorum
+StartNextRoundAfterPrecommit  requires LocalAnyPrecommitQuorum
+Decide                        requires LocalPrecommitQuorum
+```
+
+The global quorum helpers remain useful as broadcast-level evidence predicates
+for invariants and scripted assertions, but they are no longer the main
+validator-local receive guards.
 
 ### Nil Certificate as Round-Abandon Evidence
 
@@ -135,9 +142,8 @@ snapshot on the same branch while rejecting an incompatible fork after finality.
 
 ## Remaining Work To Match Upstream Quality
 
-- Replace the remaining global round guards with the local receive/delivery
-  transition system and then lift the focused one-height fragment to a fuller
-  multi-height model.
+- Lift the focused one-height local receive/timeout transition system to a
+  fuller multi-height model.
 - Connect the abstract proposal, prevote, precommit, and fat-pointer evidence
   checks to production message authentication and serialization.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

@@ -23,9 +23,10 @@ In the model this is:
 ObservedPrecommitQuorum(r, v)
 ```
 
-`PrecommitQuorum(r, v)` remains the protocol-side quorum used by decision
-rules. Accountability checks use observed evidence, so they can reason about
-certificates after the live protocol state has moved on.
+`LocalPrecommitQuorum(p, r, v)` is the receiver-local quorum used by decision
+rules. `PrecommitQuorum(r, v)` remains a broadcast-level helper in invariants
+and witnesses. Accountability checks use observed evidence, so they can reason
+about certificates after the live protocol state has moved on.
 
 ### Nil Round-Abandon Certificate
 
@@ -42,8 +43,9 @@ ObservedNilPrecommitCert(r)
 ```
 
 This is the only unlock evidence introduced by the resampling variant.
-`NilPrecommitCert(r)` remains the protocol-side condition that actually clears
-same-round state in the resampling transition.
+`LocalNilPrecommitCert(p, r)` is the receiver-local condition that actually
+clears same-round state in the resampling transition. `NilPrecommitCert(r)`
+remains a broadcast-level helper for invariants and witnesses.
 
 ### Mixed Precommit Set
 
@@ -62,7 +64,7 @@ hidden value commit quorum under Byzantine equivocation or message delay.
 The resampling rule is:
 
 ```text
-If NilPrecommitCert(r):
+If LocalNilPrecommitCert(p, r):
   clear cached proposal, validValue, and lockedValue only when their round is r
   preserve older locks
   allow the next round to resample the PoW stream
