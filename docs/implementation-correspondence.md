@@ -16,6 +16,9 @@ implementation that each rule has a clear code counterpart.
 | `StartNextRoundAfterPrecommitQuorum` | Tenderlink precommit-quorum processing and round start | In the resampling branch, nil quorum clears same-round state before moving on. |
 | `ApplyLateNilPrecommitCertificate` | Tenderlink late nil-certificate recovery path | Late certs clear abandoned-round state without rewinding the validator. |
 | `MixedPrecommitQuorumWithoutNilCert` | Negative guard test in Tenderlink | Mixed precommits can end waiting, but cannot unlock. |
+| `TimeoutProposePrevoteNil` | Propose-timeout handler | Local timeout emits nil prevote without touching lock or valid state. |
+| `TimeoutPrevotePrecommitNil` | Prevote-timeout handler | Local timeout emits nil precommit; a quorum of these can become nil-certificate evidence. |
+| `TimeoutPrecommitStartNextRound` | Precommit-timeout handler | Advances to the next round while preserving state unless a separate nil-precommit certificate is processed. |
 | `VotingPowerOf` / `QuorumVotingPower` | Validator-set voting power and quorum threshold | The current executable examples include both equal-weight and non-uniform-power instances. |
 
 ## Crosslink Finality

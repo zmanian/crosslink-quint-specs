@@ -121,6 +121,10 @@ For Crosslink, matching that quality means adding:
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
   have authorized signer sets with observed precommit quorum power.
+- The round model now includes initial Tenderlink timeout transitions:
+  propose timeout broadcasts a nil prevote, prevote timeout broadcasts a nil
+  precommit, and precommit timeout advances the round without clearing
+  lock/valid/cache state unless a nil-precommit certificate exists.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 

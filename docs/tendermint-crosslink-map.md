@@ -20,7 +20,7 @@ finality semantics.
 
 | Tendermint concept | Crosslink model location | Notes |
 | --- | --- | --- |
-| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt` | Current model is still a focused one-height fragment. |
+| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt` | Current model is still one-height, but now includes proposal, vote, precommit, and timeout transitions. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
 | Proposal with `validRound` | `Propose_t.validRound`, `InsertProposal` | Present, but valid-round rules are not yet as complete as upstream Tendermint. |
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
@@ -78,6 +78,21 @@ StartNextRoundAfterPrecommitQuorum
 ApplyLateNilPrecommitCertificate
 ```
 
+### Timeout Transitions
+
+The model now includes the first timeout slice:
+
+```text
+TimeoutProposePrevoteNil
+TimeoutPrevotePrecommitNil
+TimeoutPrecommitStartNextRound
+```
+
+A timeout can advance the local height/round/step machine, but it does not clear
+same-round lock, valid, or cached proposal state by itself. Only
+`StartNextRoundAfterPrecommitQuorum` with a nil-precommit certificate performs
+the resampling unlock.
+
 ### Finality Can Skip PoW Heights
 
 Crosslink finality is over a PoW branch prefix, not over every PoW block height.
@@ -86,8 +101,8 @@ snapshot on the same branch while rejecting an incompatible fork after finality.
 
 ## Remaining Work To Match Upstream Quality
 
-- Replace the focused one-height fragment with a more complete receive/timeout
-  transition system.
+- Replace the focused one-height fragment with a fuller multi-height
+  receive/timeout transition system.
 - Connect the abstract proposal, prevote, precommit, and fat-pointer evidence
   checks to production message authentication and serialization.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

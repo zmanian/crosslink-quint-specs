@@ -389,6 +389,80 @@ module CrosslinkResampling {
     }
   }
 
+  action TimeoutProposePrevoteNil(p: Proc_t): bool = {
+    val r = round.get(p)
+    all {
+      step.get(p) == "propose",
+      not(HasPrecommitFrom(p, r)),
+      BroadcastPrevote(p, r, NilSnapshot),
+      step' = step.set(p, "prevote"),
+      firedAction' = "TimeoutProposePrevoteNil",
+      round' = round,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrecommit' = evidencePrecommit,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+  }
+
+  action TimeoutPrevotePrecommitNil(p: Proc_t): bool = {
+    val r = round.get(p)
+    all {
+      step.get(p) == "prevote",
+      not(HasPrecommitFrom(p, r)),
+      BroadcastPrecommit(p, r, NilSnapshot),
+      step' = step.set(p, "precommit"),
+      firedAction' = "TimeoutPrevotePrecommitNil",
+      round' = round,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      evidencePropose' = evidencePropose,
+      evidencePrevote' = evidencePrevote,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+  }
+
+  action TimeoutPrecommitStartNextRound(p: Proc_t): bool = {
+    val oldRound = round.get(p)
+    val nextRound = oldRound + 1
+    all {
+      nextRound.in(Rounds),
+      step.get(p) == "precommit",
+      round' = round.set(p, nextRound),
+      step' = step.set(p, "propose"),
+      firedAction' = "TimeoutPrecommitStartNextRound",
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrevote' = evidencePrevote,
+      evidencePrecommit' = evidencePrecommit,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+  }
+
   action StartNextRoundAfterPrecommitQuorum(p: Proc_t): bool = {
     val oldRound = round.get(p)
     val nextRound = oldRound + 1
@@ -790,6 +864,9 @@ module CrosslinkResampling {
       nondet v = oneOf(Snapshots)
       UponValuePrevoteQuorum(p, v),
       UponStreamChangePrecommitNil(p),
+      TimeoutProposePrevoteNil(p),
+      TimeoutPrevotePrecommitNil(p),
+      TimeoutPrecommitStartNextRound(p),
       StartNextRoundAfterPrecommitQuorum(p),
       nondet r = oneOf(Rounds)
       nondet v = oneOf(Snapshots)
@@ -1428,6 +1505,93 @@ module CrosslinkMessageEvidenceModel {
       .then(SeedCorrectPrecommitEvidence("p2", 0, "s0"))
       .then(SeedFatPointerEvidence(0, "s0", Set("p1", "p2")))
       .fail()
+  }
+}
+
+module CrosslinkTimeoutModel {
+  import CrosslinkResamplingTest(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
+    MaxRound = 2,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
+    Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2"),
+    Snapshots = Set("s0", "s1", "s2"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
+    ResampleOnNilPrecommit = true,
+    ExpectedRound1Proposal = "s1",
+  ).*
+
+  run proposeTimeoutBroadcastsNilPrevoteTest = {
+    Init
+      .then(TimeoutProposePrevoteNil("p2"))
+      .then(all {
+        assert(step.get("p2") == "prevote"),
+        assert(msgsPrevote.get(0).exists(m =>
+          m.src == "p2" and m.id == NilSnapshot
+        )),
+        assert(ProtocolMessagesAreObserved),
+        unchangedAll,
+      })
+  }
+
+  run prevoteTimeoutBroadcastsNilPrecommitTest = {
+    Init
+      .then(TimeoutProposePrevoteNil("p1"))
+      .then(TimeoutPrevotePrecommitNil("p1"))
+      .then(all {
+        assert(step.get("p1") == "precommit"),
+        assert(msgsPrecommit.get(0).exists(m =>
+          m.src == "p1" and m.id == NilSnapshot
+        )),
+        assert(ProtocolMessagesAreObserved),
+        unchangedAll,
+      })
+  }
+
+  run precommitTimeoutDoesNotUnlockWithoutNilCertificateTest = {
+    Init
+      .then(SeedSameRoundValueLock("p1"))
+      .then(TimeoutPrecommitStartNextRound("p1"))
+      .then(all {
+        assert(round.get("p1") == 1),
+        assert(step.get("p1") == "propose"),
+        assert(lockedValue.get("p1") == "s0"),
+        assert(lockedRound.get("p1") == 0),
+        assert(validValue.get("p1") == "s0"),
+        assert(validRound.get("p1") == 0),
+        assert(not(NilPrecommitCert(0))),
+        assert(Safety),
+        unchangedAll,
+      })
+  }
+
+  run nilTimeoutCertificateUnlocksSameRoundStateTest = {
+    Init
+      .then(SeedSameRoundValueLock("p1"))
+      .then(TimeoutProposePrevoteNil("p2"))
+      .then(TimeoutProposePrevoteNil("p3"))
+      .then(TimeoutPrevotePrecommitNil("p2"))
+      .then(TimeoutPrevotePrecommitNil("p3"))
+      .then(SeedFaultyNilPrecommit("p4"))
+      .then(StartNextRoundAfterPrecommitQuorum("p1"))
+      .then(all {
+        assert(NilPrecommitCert(0)),
+        assert(not(PrecommitQuorum(0, "s0"))),
+        assert(lockedValue.get("p1") == "None"),
+        assert(lockedRound.get("p1") == -1),
+        assert(validValue.get("p1") == "None"),
+        assert(validRound.get("p1") == -1),
+        assert(Safety),
+        unchangedAll,
+      })
   }
 }
 

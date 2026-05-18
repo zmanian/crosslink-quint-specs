@@ -72,12 +72,14 @@ The important non-rule is:
 
 ```text
 Do not unlock on mixed precommits.
+Do not unlock on timeout alone.
 ```
 
 The model checks this with:
 
 ```text
 mixedPrecommitQuorumDoesNotUnlockTest
+precommitTimeoutDoesNotUnlockWithoutNilCertificateTest
 ```
 
 ## Conflicting Commit Accountability
