@@ -21,6 +21,7 @@ implementation that each rule has a clear code counterpart.
 | `TimeoutProposePrevoteNil` | Propose-timeout handler | Local timeout emits nil prevote without touching lock or valid state. |
 | `TimeoutPrevotePrecommitNil` | Prevote-timeout handler | Local timeout emits nil precommit; a quorum of these can become nil-certificate evidence. |
 | `TimeoutPrecommitStartNextRound` | Precommit-timeout handler | Advances to the next round while preserving state unless a separate nil-precommit certificate is processed. |
+| Heighted `Timeout*` rules | Per-BFT-height timeout handling | The heighted round-machine slice scopes timeouts to the validator's active BFT height and checks that timeout-only round advancement does not clear heighted locks. |
 | `DeliverProposal` / `DeliverPrevote` / `DeliverPrecommit` | P2P receive path plus per-peer/per-validator message cache | Delivery is modeled separately from broadcast. A receiver-local quorum only exists after the signed messages have been delivered into that validator's local view, and active round transitions now consume that local view. |
 | `VotingPowerOf` / `QuorumVotingPower` | Validator-set voting power and quorum threshold | The current executable examples include both equal-weight and non-uniform-power instances. |
 
@@ -58,7 +59,7 @@ implementation that each rule has a clear code counterpart.
 - Connect the abstract message-authentication, evidence, and standalone gossip
   models to concrete signature verification, serialized message bytes, and
   production gossip.
-- Compose the height-indexed finality slice with the richer one-height timeout,
+- Compose the height-indexed finality slice with the richer one-height
   valid-round, message-authentication, and evidence-gossip models.
 - Add implementation-linked test vectors once the Tenderlink message format and
   Crosslink BFT block encoding stabilize.

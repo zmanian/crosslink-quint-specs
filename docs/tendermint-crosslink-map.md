@@ -150,8 +150,9 @@ genesis when the candidate is tail-confirmed by `a3`.
 
 `CrosslinkHeightedRound.qnt` adds the corresponding BFT-height dimension around
 a compact Tenderlink round machine: each validator has a height cursor, each
-height has its own round/step/lock/valid/cache state, and nil-precommit
-resampling only clears state for the active height and abandoned round.
+height has its own round/step/lock/valid/cache state, timeout transitions are
+scoped to the active height, and nil-precommit resampling only clears state for
+the active height and abandoned round.
 
 `CrosslinkHeightedFinality.qnt` then requires the finality cursor to consume
 local heighted decisions in BFT-height order. This catches the Crosslink
@@ -161,7 +162,7 @@ branch.
 
 ## Remaining Work To Match Upstream Quality
 
-- Compose the height-indexed finality model with the richer one-height timeout,
+- Compose the height-indexed finality model with the richer one-height
   valid-round, message-authentication, and evidence-gossip slices.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.

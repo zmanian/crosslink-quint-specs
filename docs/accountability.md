@@ -92,6 +92,7 @@ The model checks this with:
 mixedPrecommitQuorumDoesNotUnlockTest
 mixedPrecommitQuorumDoesNotClearHeightedLockTest
 precommitTimeoutDoesNotUnlockWithoutNilCertificateTest
+precommitTimeoutDoesNotClearHeightedLockTest
 ```
 
 ## Conflicting Commit Accountability

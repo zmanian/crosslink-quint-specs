@@ -167,9 +167,10 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkHeightedRound.qnt` adds the first height-indexed
   receive-reactive round-machine slice. Each validator has a sequential BFT
   height cursor, per-height round/step/lock/valid/cache state, per-height
-  local delivery, and per-height decisions. It checks that nil-precommit
-  resampling clears only the same height and same round, that mixed
-  precommit quorums do not unlock heighted lock state, and that a validator
+  local delivery, timeout transitions, and per-height decisions. It checks
+  that nil-precommit resampling clears only the same height and same round,
+  that mixed precommit quorums do not unlock heighted lock state, that
+  precommit timeout does not unlock heighted lock state, and that a validator
   cannot decide height `h + 1` before height `h`.
 - `CrosslinkHeightedFinality.qnt` composes that height-indexed round machine
   with a finality cursor. A BFT height only advances finality after a local
@@ -178,5 +179,5 @@ For Crosslink, matching that quality means adding:
   rejection of undecided-height finality, and rejection of a later fork after
   an earlier BFT height is final.
 - The remaining multi-height work is to compose the height-indexed model with
-  the richer one-height timeout/valid-round, message-authentication, and
+  the richer one-height valid-round, message-authentication, and
   evidence-gossip slices.

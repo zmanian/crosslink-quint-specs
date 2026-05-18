@@ -433,6 +433,93 @@ module CrosslinkHeightedRound {
     }
   }
 
+  action TimeoutProposePrevoteNil(p: Proc_t): bool = {
+    val h = height.get(p)
+    val r = round.get(p).get(h)
+    val msg = { src: p, height: h, round: r, id: NilSnapshot }
+    all {
+      ActiveHeight(p, h),
+      r.in(Rounds),
+      step.get(p).get(h) == "propose",
+      msgsPrevote.get(h).get(r).forall(m => m.src != p),
+      msgsPropose' = msgsPropose,
+      msgsPrevote' =
+        msgsPrevote.setBy(h, byRound =>
+          byRound.setBy(r, old => old.union(Set(msg)))
+        ),
+      msgsPrecommit' = msgsPrecommit,
+      seenPropose' = seenPropose,
+      seenPrevote' = seenPrevote,
+      seenPrecommit' = seenPrecommit,
+      height' = height,
+      round' = round,
+      step' = step.setBy(p, byHeight => byHeight.set(h, "prevote")),
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      firedAction' = "TimeoutProposePrevoteNil",
+    }
+  }
+
+  action TimeoutPrevotePrecommitNil(p: Proc_t): bool = {
+    val h = height.get(p)
+    val r = round.get(p).get(h)
+    val msg = { src: p, height: h, round: r, id: NilSnapshot }
+    all {
+      ActiveHeight(p, h),
+      r.in(Rounds),
+      step.get(p).get(h) == "prevote",
+      not(HasPrecommitFrom(p, h, r)),
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' =
+        msgsPrecommit.setBy(h, byRound =>
+          byRound.setBy(r, old => old.union(Set(msg)))
+        ),
+      seenPropose' = seenPropose,
+      seenPrevote' = seenPrevote,
+      seenPrecommit' = seenPrecommit,
+      height' = height,
+      round' = round,
+      step' = step.setBy(p, byHeight => byHeight.set(h, "precommit")),
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      firedAction' = "TimeoutPrevotePrecommitNil",
+    }
+  }
+
+  action TimeoutPrecommitStartNextRound(p: Proc_t): bool = {
+    val h = height.get(p)
+    val oldRound = round.get(p).get(h)
+    val nextRound = oldRound + 1
+    all {
+      ActiveHeight(p, h),
+      nextRound.in(Rounds),
+      step.get(p).get(h) == "precommit",
+      KeepMessages,
+      height' = height,
+      round' = round.setBy(p, byHeight => byHeight.set(h, nextRound)),
+      step' = step.setBy(p, byHeight => byHeight.set(h, "propose")),
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      firedAction' = "TimeoutPrecommitStartNextRound",
+    }
+  }
+
   action AdvanceAfterPrecommitQuorum(p: Proc_t): bool = {
     val h = height.get(p)
     val oldRound = round.get(p).get(h)
@@ -601,6 +688,9 @@ module CrosslinkHeightedRound {
       nondet v = oneOf(Snapshots)
       PrecommitValue(p, v),
       PrecommitNilOnStreamChange(p),
+      TimeoutProposePrevoteNil(p),
+      TimeoutPrevotePrecommitNil(p),
+      TimeoutPrecommitStartNextRound(p),
       AdvanceAfterPrecommitQuorum(p),
       nondet v = oneOf(Snapshots)
       Decide(p, v),
@@ -768,6 +858,25 @@ module CrosslinkHeightedRoundTest {
         assert(validValue.get("p1").get(1) == "h1r0"),
         assert(cachedProposal.get("p1").get(1) == "h1r0"),
         assert(cachedProposalRound.get("p1").get(1) == 0),
+        unchangedAll,
+      })
+  }
+
+  run precommitTimeoutDoesNotClearHeightedLockTest = {
+    Init
+      .then(SeedValueLockAt("p1", 1, 0, "h1r0"))
+      .then(SeedValueLockAt("p1", 2, 0, "h2r0"))
+      .then(TimeoutProposePrevoteNil("p1"))
+      .then(TimeoutPrevotePrecommitNil("p1"))
+      .then(TimeoutPrecommitStartNextRound("p1"))
+      .then(all {
+        assert(round.get("p1").get(1) == 1),
+        assert(step.get("p1").get(1) == "propose"),
+        assert(lockedValue.get("p1").get(1) == "h1r0"),
+        assert(validValue.get("p1").get(1) == "h1r0"),
+        assert(cachedProposal.get("p1").get(1) == "h1r0"),
+        assert(lockedValue.get("p1").get(2) == "h2r0"),
+        assert(cachedProposal.get("p1").get(2) == "h2r0"),
         unchangedAll,
       })
   }
