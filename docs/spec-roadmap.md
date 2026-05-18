@@ -121,6 +121,12 @@ For Crosslink, matching that quality means adding:
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
   have authorized signer sets with observed precommit quorum power.
+- The model now has a first local-delivery slice: `seenPropose`,
+  `seenPrevote`, and `seenPrecommit` track receiver-local messages,
+  `DeliverProposal`/`DeliverPrevote`/`DeliverPrecommit` refuse messages that
+  were not broadcast, and `CrosslinkLocalDeliveryModel` shows that local quorum
+  evidence only appears after delivery. The remaining work is to make the main
+  round machine use these local receive guards instead of global quorum helpers.
 - The round model now includes initial Tenderlink timeout transitions:
   propose timeout broadcasts a nil prevote, prevote timeout broadcasts a nil
   precommit, and precommit timeout advances the round without clearing

@@ -53,6 +53,8 @@ module CrosslinkResampling {
   pure val NilRound = -1
   pure val NilSnapshot = "None"
   pure val THRESHOLD2 = QuorumVotingPower
+  pure val ProposalValidRounds = Rounds.union(Set(NilRound))
+  pure val VoteValues = Snapshots.union(Set(NilSnapshot))
 
   pure def VotingPowerOf(voters: Set[Proc_t]): int =
     voters.fold(0, (acc, p) => acc + VotingPower.get(p))
@@ -107,6 +109,9 @@ module CrosslinkResampling {
   var evidencePrevote: Round_t -> Set[Vote_t]
   var evidencePrecommit: Round_t -> Set[Vote_t]
   var evidenceFatPointer: Set[FatPointer_t]
+  var seenPropose: Proc_t -> Round_t -> Set[Propose_t]
+  var seenPrevote: Proc_t -> Round_t -> Set[Vote_t]
+  var seenPrecommit: Proc_t -> Round_t -> Set[Vote_t]
   var firedAction: str
 
   pure def IsValidSnapshot(v: Snapshot_t): bool =
@@ -180,6 +185,17 @@ module CrosslinkResampling {
       m.src == Proposer.get(r) and m.round == r and m.proposal == v
     )
 
+  def SeenProposal(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
+    seenPropose.get(p).get(r).exists(m =>
+      m.src == Proposer.get(r) and m.round == r and m.proposal == v
+    )
+
+  def LocalPrevoteQuorum(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
+    VotingPowerOf(Voters(seenPrevote.get(p).get(r).filter(m => m.id == v))) >= THRESHOLD2
+
+  def LocalPrecommitQuorum(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
+    VotingPowerOf(Voters(seenPrecommit.get(p).get(r).filter(m => m.id == v))) >= THRESHOLD2
+
   def ValidRoundJustified(r: Round_t, v: Snapshot_t, vr: Round_t): bool =
     vr == NilRound or (
       vr.in(Rounds) and
@@ -234,7 +250,16 @@ module CrosslinkResampling {
     evidencePrevote' = Rounds.mapBy(_ => Set()),
     evidencePrecommit' = Rounds.mapBy(_ => Set()),
     evidenceFatPointer' = Set(),
+    seenPropose' = Corr.mapBy(_ => Rounds.mapBy(_ => Set())),
+    seenPrevote' = Corr.mapBy(_ => Rounds.mapBy(_ => Set())),
+    seenPrecommit' = Corr.mapBy(_ => Rounds.mapBy(_ => Set())),
     firedAction' = "Init",
+  }
+
+  action KeepSeenMessages = all {
+    seenPropose' = seenPropose,
+    seenPrevote' = seenPrevote,
+    seenPrecommit' = seenPrecommit,
   }
 
   action BroadcastProposal(p: Proc_t, r: Round_t, v: Snapshot_t, vr: Round_t): bool =
@@ -305,6 +330,122 @@ module CrosslinkResampling {
     }
   }
 
+  action DeliverProposal(
+    dst: Proc_t,
+    from: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool = {
+    val msg = { src: from, round: r, proposal: v, validRound: vr }
+    all {
+      dst.in(Corr),
+      from.in(Corr.union(Faulty)),
+      r.in(Rounds),
+      IsValidSnapshot(v),
+      vr.in(ProposalValidRounds),
+      msgsPropose.get(r).contains(msg),
+      seenPropose' = seenPropose.setBy(dst, byRound =>
+        byRound.setBy(r, old => old.union(Set(msg)))
+      ),
+      seenPrevote' = seenPrevote,
+      seenPrecommit' = seenPrecommit,
+      firedAction' = "DeliverProposal",
+      round' = round,
+      step' = step,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrevote' = evidencePrevote,
+      evidencePrecommit' = evidencePrecommit,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+  }
+
+  action DeliverPrevote(
+    dst: Proc_t,
+    from: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+  ): bool = {
+    val msg = { src: from, round: r, id: v }
+    all {
+      dst.in(Corr),
+      from.in(Corr.union(Faulty)),
+      r.in(Rounds),
+      v.in(VoteValues),
+      msgsPrevote.get(r).contains(msg),
+      seenPropose' = seenPropose,
+      seenPrevote' = seenPrevote.setBy(dst, byRound =>
+        byRound.setBy(r, old => old.union(Set(msg)))
+      ),
+      seenPrecommit' = seenPrecommit,
+      firedAction' = "DeliverPrevote",
+      round' = round,
+      step' = step,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrevote' = evidencePrevote,
+      evidencePrecommit' = evidencePrecommit,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+  }
+
+  action DeliverPrecommit(
+    dst: Proc_t,
+    from: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+  ): bool = {
+    val msg = { src: from, round: r, id: v }
+    all {
+      dst.in(Corr),
+      from.in(Corr.union(Faulty)),
+      r.in(Rounds),
+      v.in(VoteValues),
+      msgsPrecommit.get(r).contains(msg),
+      seenPropose' = seenPropose,
+      seenPrevote' = seenPrevote,
+      seenPrecommit' = seenPrecommit.setBy(dst, byRound =>
+        byRound.setBy(r, old => old.union(Set(msg)))
+      ),
+      firedAction' = "DeliverPrecommit",
+      round' = round,
+      step' = step,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrevote' = evidencePrevote,
+      evidencePrecommit' = evidencePrecommit,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+  }
+
   action InsertProposal(p: Proc_t): bool = {
     val r = round.get(p)
     val proposal = StickyOrStreamProposal(p)
@@ -329,6 +470,7 @@ module CrosslinkResampling {
       evidencePrevote' = evidencePrevote,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -358,6 +500,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -385,6 +528,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -410,6 +554,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -434,6 +579,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -458,6 +604,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -484,6 +631,7 @@ module CrosslinkResampling {
       evidencePrevote' = evidencePrevote,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -541,6 +689,7 @@ module CrosslinkResampling {
       evidencePrevote' = evidencePrevote,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -597,6 +746,7 @@ module CrosslinkResampling {
       evidencePrevote' = evidencePrevote,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -622,6 +772,7 @@ module CrosslinkResampling {
     evidencePrevote' = evidencePrevote,
     evidencePrecommit' = evidencePrecommit,
     evidenceFatPointer' = evidenceFatPointer,
+    KeepSeenMessages,
   }
 
   action SeedAbandonedRoundStateAt(p: Proc_t, r: Round_t): bool = {
@@ -645,6 +796,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -677,6 +829,7 @@ module CrosslinkResampling {
       evidencePrevote' = evidencePrevote,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
 
   action SeedPrevote(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
@@ -700,6 +853,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrecommit' = evidencePrecommit,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
 
   action SeedValidNilPrecommitStateAt(p: Proc_t, r: Round_t): bool = {
@@ -722,6 +876,7 @@ module CrosslinkResampling {
       msgsPropose' = msgsPropose,
       evidencePropose' = evidencePropose,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -748,6 +903,7 @@ module CrosslinkResampling {
       msgsPropose' = msgsPropose,
       evidencePropose' = evidencePropose,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -780,6 +936,7 @@ module CrosslinkResampling {
       msgsPropose' = msgsPropose,
       evidencePropose' = evidencePropose,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -806,6 +963,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -865,6 +1023,7 @@ module CrosslinkResampling {
       msgsPropose' = msgsPropose,
       evidencePropose' = evidencePropose,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
   }
 
@@ -890,6 +1049,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
 
   action SeedFaultyPrecommitEvidence(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
@@ -914,6 +1074,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
     }
 
   action SeedFatPointerEvidence(
@@ -939,6 +1100,7 @@ module CrosslinkResampling {
       evidencePropose' = evidencePropose,
       evidencePrevote' = evidencePrevote,
       evidencePrecommit' = evidencePrecommit,
+      KeepSeenMessages,
     }
 
   action Next =
@@ -954,6 +1116,19 @@ module CrosslinkResampling {
       TimeoutPrevotePrecommitNil(p),
       TimeoutPrecommitStartNextRound(p),
       StartNextRoundAfterPrecommitQuorum(p),
+      nondet from = oneOf(Corr.union(Faulty))
+      nondet r = oneOf(Rounds)
+      nondet v = oneOf(Snapshots)
+      nondet vr = oneOf(ProposalValidRounds)
+      DeliverProposal(p, from, r, v, vr),
+      nondet from = oneOf(Corr.union(Faulty))
+      nondet r = oneOf(Rounds)
+      nondet v = oneOf(VoteValues)
+      DeliverPrevote(p, from, r, v),
+      nondet from = oneOf(Corr.union(Faulty))
+      nondet r = oneOf(Rounds)
+      nondet v = oneOf(VoteValues)
+      DeliverPrecommit(p, from, r, v),
       nondet r = oneOf(Rounds)
       nondet v = oneOf(Snapshots)
       Decide(p, r, v),
@@ -989,6 +1164,15 @@ module CrosslinkResampling {
       msgsPrecommit.get(r).subseteq(evidencePrecommit.get(r))
     )
 
+  val DeliveredMessagesWereBroadcast =
+    Corr.forall(p =>
+      Rounds.forall(r =>
+        seenPropose.get(p).get(r).subseteq(msgsPropose.get(r)) and
+        seenPrevote.get(p).get(r).subseteq(msgsPrevote.get(r)) and
+        seenPrecommit.get(p).get(r).subseteq(msgsPrecommit.get(r))
+      )
+    )
+
   val FatPointerEvidenceSound =
     evidenceFatPointer.forall(fp => ValidFatPointer(fp))
 
@@ -1005,6 +1189,7 @@ module CrosslinkResampling {
 
   val MessageEvidenceSoundness =
     ProtocolMessagesAreObserved and
+    DeliveredMessagesWereBroadcast and
     FatPointerEvidenceSound and
     CorrectProposalValidRoundSound
 
@@ -1162,6 +1347,9 @@ module CrosslinkResamplingTest {
     evidencePrevote' = evidencePrevote,
     evidencePrecommit' = evidencePrecommit,
     evidenceFatPointer' = evidenceFatPointer,
+    seenPropose' = seenPropose,
+    seenPrevote' = seenPrevote,
+    seenPrecommit' = seenPrecommit,
     firedAction' = firedAction,
   }
 
@@ -1604,6 +1792,96 @@ module CrosslinkMessageEvidenceModel {
       .then(SeedCorrectPrecommitEvidence("p2", 0, "s0"))
       .then(SeedFatPointerEvidence(0, "s0", Set("p1", "p2")))
       .fail()
+  }
+}
+
+module CrosslinkLocalDeliveryModel {
+  import CrosslinkResamplingTest(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
+    MaxRound = 1,
+    Proposer = Map(0 -> "p1", 1 -> "p2"),
+    Stream = Map(0 -> "s0", 1 -> "s0"),
+    Snapshots = Set("s0", "s1"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true),
+    ResampleOnNilPrecommit = true,
+    ExpectedRound1Proposal = "s0",
+  ).*
+
+  run proposalDeliveryIsLocalTest = {
+    Init
+      .then(InsertProposal("p1"))
+      .then(all {
+        assert(HasProposal(0, "s0")),
+        assert(not(SeenProposal("p2", 0, "s0"))),
+        unchangedAll,
+      })
+      .then(DeliverProposal("p2", "p1", 0, "s0", -1))
+      .then(all {
+        assert(SeenProposal("p2", 0, "s0")),
+        assert(DeliveredMessagesWereBroadcast),
+        assert(Safety),
+        unchangedAll,
+      })
+  }
+
+  run cannotDeliverUnbroadcastPrevoteTest = {
+    Init
+      .then(DeliverPrevote("p1", "p2", 0, "s0"))
+      .fail()
+  }
+
+  run localPrevoteQuorumRequiresDeliveredVotesTest = {
+    Init
+      .then(InsertProposal("p1"))
+      .then(UponProposalPrevote("p1", "s0"))
+      .then(UponProposalPrevote("p2", "s0"))
+      .then(UponProposalPrevote("p3", "s0"))
+      .then(all {
+        assert(PrevoteQuorum(0, "s0")),
+        assert(not(LocalPrevoteQuorum("p1", 0, "s0"))),
+        unchangedAll,
+      })
+      .then(DeliverPrevote("p1", "p1", 0, "s0"))
+      .then(DeliverPrevote("p1", "p2", 0, "s0"))
+      .then(DeliverPrevote("p1", "p3", 0, "s0"))
+      .then(all {
+        assert(LocalPrevoteQuorum("p1", 0, "s0")),
+        assert(DeliveredMessagesWereBroadcast),
+        unchangedAll,
+      })
+  }
+
+  run localPrecommitQuorumRequiresDeliveredVotesTest = {
+    Init
+      .then(InsertProposal("p1"))
+      .then(UponProposalPrevote("p1", "s0"))
+      .then(UponProposalPrevote("p2", "s0"))
+      .then(UponProposalPrevote("p3", "s0"))
+      .then(UponValuePrevoteQuorum("p1", "s0"))
+      .then(UponValuePrevoteQuorum("p2", "s0"))
+      .then(UponValuePrevoteQuorum("p3", "s0"))
+      .then(all {
+        assert(PrecommitQuorum(0, "s0")),
+        assert(not(LocalPrecommitQuorum("p2", 0, "s0"))),
+        unchangedAll,
+      })
+      .then(DeliverPrecommit("p2", "p1", 0, "s0"))
+      .then(DeliverPrecommit("p2", "p2", 0, "s0"))
+      .then(DeliverPrecommit("p2", "p3", 0, "s0"))
+      .then(all {
+        assert(LocalPrecommitQuorum("p2", 0, "s0")),
+        assert(DeliveredMessagesWereBroadcast),
+        unchangedAll,
+      })
   }
 }
 

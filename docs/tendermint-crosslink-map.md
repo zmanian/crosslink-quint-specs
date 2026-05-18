@@ -26,6 +26,7 @@ finality semantics.
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
 | Prevote quorum | `PrevoteQuorum` | Used for value precommit transition and computed over summed voting power. |
 | Precommit quorum | `PrecommitQuorum` | Used for decision and nil-certificate recovery and computed over summed voting power. |
+| Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | First receive-reactive slice: local delivery is separate from global broadcast, and local quorums only exist after delivery. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
 | Agreement | `DecisionUniqueness` | Current value-domain agreement over one height. |
 | Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, and fat-pointer signer validation over observer evidence. |
@@ -78,6 +79,20 @@ UponStreamChangePrecommitNil
 That action is the Crosslink-specific reason correct validators precommit nil
 after seeing a value-prevote quorum.
 
+### Local Delivery
+
+The model now separates protocol broadcast from local delivery. Broadcast
+messages enter `msgsPropose`, `msgsPrevote`, or `msgsPrecommit`; delivery
+actions copy those messages into the receiver's `seen*` state. The local quorum
+predicates (`LocalPrevoteQuorum` and `LocalPrecommitQuorum`) only use delivered
+messages.
+
+This is still a first slice: the legacy round actions continue to use global
+quorum helpers, while `CrosslinkLocalDeliveryModel` captures the intended
+receive-reactive semantics and guards against delivering messages that were not
+broadcast. The next step is to replace the global guards in the main round
+machine with local receive guards.
+
 ### Nil Certificate as Round-Abandon Evidence
 
 Plain Tendermint nil precommits do not normally unlock a value lock. The
@@ -120,8 +135,9 @@ snapshot on the same branch while rejecting an incompatible fork after finality.
 
 ## Remaining Work To Match Upstream Quality
 
-- Replace the focused one-height fragment with a fuller multi-height
-  receive/timeout transition system.
+- Replace the remaining global round guards with the local receive/delivery
+  transition system and then lift the focused one-height fragment to a fuller
+  multi-height model.
 - Connect the abstract proposal, prevote, precommit, and fat-pointer evidence
   checks to production message authentication and serialization.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

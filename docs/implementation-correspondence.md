@@ -20,6 +20,7 @@ implementation that each rule has a clear code counterpart.
 | `TimeoutProposePrevoteNil` | Propose-timeout handler | Local timeout emits nil prevote without touching lock or valid state. |
 | `TimeoutPrevotePrecommitNil` | Prevote-timeout handler | Local timeout emits nil precommit; a quorum of these can become nil-certificate evidence. |
 | `TimeoutPrecommitStartNextRound` | Precommit-timeout handler | Advances to the next round while preserving state unless a separate nil-precommit certificate is processed. |
+| `DeliverProposal` / `DeliverPrevote` / `DeliverPrecommit` | P2P receive path plus per-peer/per-validator message cache | Delivery is modeled separately from broadcast. A receiver-local quorum only exists after the signed messages have been delivered into that validator's local view. |
 | `VotingPowerOf` / `QuorumVotingPower` | Validator-set voting power and quorum threshold | The current executable examples include both equal-weight and non-uniform-power instances. |
 
 ## Crosslink Finality
@@ -53,5 +54,7 @@ implementation that each rule has a clear code counterpart.
   bookkeeping state.
 - Add multi-height state, since the current round model is still focused on a
   single Crosslink decision height.
+- Replace remaining global quorum guards in the main round transitions with the
+  receiver-local delivery predicates.
 - Add implementation-linked test vectors once the Tenderlink message format and
   Crosslink BFT block encoding stabilize.

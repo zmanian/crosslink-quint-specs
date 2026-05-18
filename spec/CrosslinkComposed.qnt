@@ -93,6 +93,9 @@ module CrosslinkComposed {
     evidencePrevote' = evidencePrevote,
     evidencePrecommit' = evidencePrecommit,
     evidenceFatPointer' = evidenceFatPointer,
+    seenPropose' = seenPropose,
+    seenPrevote' = seenPrevote,
+    seenPrecommit' = seenPrecommit,
     firedAction' = firedAction,
   }
 
