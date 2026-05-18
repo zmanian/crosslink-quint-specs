@@ -51,7 +51,8 @@ See `docs/spec-roadmap.md` for the planned path to that completeness level.
 The current Tendermint-to-Crosslink rule mapping is in
 `docs/tendermint-crosslink-map.md`, and the nil-precommit accountability notes
 are in `docs/accountability.md`. The implementation correspondence notes are in
-`docs/implementation-correspondence.md`.
+`docs/implementation-correspondence.md`. `docs/completeness-audit.md` tracks
+which roadmap requirements are covered, partial, or still open.
 
 ## Running Checks
 
