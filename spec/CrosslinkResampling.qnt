@@ -395,8 +395,7 @@ module CrosslinkResampling {
     msgsPrecommit' = msgsPrecommit,
   }
 
-  action SeedAbandonedRoundState(p: Proc_t): bool = {
-    val r = 0
+  action SeedAbandonedRoundStateAt(p: Proc_t, r: Round_t): bool = {
     val stale = Stream.get(r)
     all {
       r.in(Rounds),
@@ -417,8 +416,10 @@ module CrosslinkResampling {
     }
   }
 
-  action SeedValidNilPrecommitState(p: Proc_t): bool = {
-    val r = 0
+  action SeedAbandonedRoundState(p: Proc_t): bool =
+    SeedAbandonedRoundStateAt(p, 0)
+
+  action SeedValidNilPrecommitStateAt(p: Proc_t, r: Round_t): bool = {
     val stale = Stream.get(r)
     all {
       r.in(Rounds),
@@ -439,8 +440,10 @@ module CrosslinkResampling {
     }
   }
 
-  action SeedSameRoundValueLock(p: Proc_t): bool = {
-    val r = 0
+  action SeedValidNilPrecommitState(p: Proc_t): bool =
+    SeedValidNilPrecommitStateAt(p, 0)
+
+  action SeedSameRoundValueLockAt(p: Proc_t, r: Round_t): bool = {
     val locked = Stream.get(r)
     all {
       r.in(Rounds),
@@ -460,6 +463,9 @@ module CrosslinkResampling {
       msgsPrevote' = msgsPrevote,
     }
   }
+
+  action SeedSameRoundValueLock(p: Proc_t): bool =
+    SeedSameRoundValueLockAt(p, 0)
 
   action SeedTimedOutSameRoundValueLock(p: Proc_t): bool = {
     val r = 0
@@ -485,8 +491,7 @@ module CrosslinkResampling {
     }
   }
 
-  action SeedFaultyNilPrecommit(p: Proc_t): bool = {
-    val r = 0
+  action SeedFaultyNilPrecommitAt(p: Proc_t, r: Round_t): bool = {
     all {
       r.in(Rounds),
       p.in(Faulty),
@@ -505,6 +510,9 @@ module CrosslinkResampling {
       msgsPrevote' = msgsPrevote,
     }
   }
+
+  action SeedFaultyNilPrecommit(p: Proc_t): bool =
+    SeedFaultyNilPrecommitAt(p, 0)
 
   action SeedOlderLockWithNilPrecommit(p: Proc_t): bool = {
     val activeRound = 1
@@ -602,6 +610,15 @@ module CrosslinkResampling {
       decision.get(p) == decision.get(q)
     )
 
+  val DecisionUniqueness =
+    Agreement
+
+  val DecisionsHaveCommitQuorum =
+    Corr.forall(p =>
+      decision.get(p) == NilSnapshot or
+      Rounds.exists(r => PrecommitQuorum(r, decision.get(p)))
+    )
+
   val NoCorrectPrecommitEquivocation =
     Corr.forall(p =>
       Rounds.forall(r =>
@@ -632,11 +649,25 @@ module CrosslinkResampling {
       )
     )
 
+  val LockSafety =
+    LockedValueHasMatchingValidValue and
+    CorrectValueLocksHavePrecommitEvidence
+
   val NilCertLeavesAtMostFCurrentRoundLocks =
     Rounds.forall(r =>
       NilPrecommitCert(r) implies
         Snapshots.forall(v => size(CorrectValueLocks(r, v)) <= T)
     )
+
+  def MixedPrecommitQuorumWithoutNilCert(r: Round_t): bool =
+    size(Voters(msgsPrecommit.get(r))) >= THRESHOLD2 and
+    not(NilPrecommitCert(r)) and
+    msgsPrecommit.get(r).exists(m => m.id == NilSnapshot) and
+    msgsPrecommit.get(r).exists(m => IsValidSnapshot(m.id))
+
+  val NilCertificateUnlockSafety =
+    SameRoundNilAndValueCommitExcluded and
+    NilCertLeavesAtMostFCurrentRoundLocks
 
   def ConflictingValueCommits(
     r1: Round_t,
@@ -715,12 +746,11 @@ module CrosslinkResampling {
     )
 
   val Safety =
-    Agreement and
+    DecisionUniqueness and
+    DecisionsHaveCommitQuorum and
     NoCorrectPrecommitEquivocation and
-    SameRoundNilAndValueCommitExcluded and
-    LockedValueHasMatchingValidValue and
-    CorrectValueLocksHavePrecommitEvidence and
-    NilCertLeavesAtMostFCurrentRoundLocks and
+    LockSafety and
+    NilCertificateUnlockSafety and
     ConflictingCommitsAccountable
 }
 
@@ -762,7 +792,7 @@ module CrosslinkResamplingTest {
   }
 }
 
-module CrosslinkStickyModel {
+module BaselineCrosslink {
   import CrosslinkResamplingTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p4"),
@@ -776,7 +806,7 @@ module CrosslinkStickyModel {
     ExpectedRound1Proposal = "s0",
   ).*
 
-  run currentProtocolCarriesStaleSampleTest = {
+  run baselineCarriesStaleSampleTest = {
     Init
       .then(SeedAbandonedRoundState("p1"))
       .then(SeedAbandonedRoundState("p2"))
@@ -791,7 +821,7 @@ module CrosslinkStickyModel {
       })
   }
 
-  run currentProtocolSameRoundLockBlocksFreshDecisionTest = {
+  run baselineSameRoundLockBlocksFreshDecisionTest = {
     Init
       .then(SeedValidNilPrecommitState("p1"))
       .then(SeedValidNilPrecommitState("p2"))
@@ -806,7 +836,7 @@ module CrosslinkStickyModel {
   }
 }
 
-module CrosslinkNilResamplingModel {
+module NilPrecommitResamplingCrosslink {
   import CrosslinkResamplingTest(
     Corr = Set("p1", "p2", "p3"),
     Faulty = Set("p4"),
@@ -991,6 +1021,24 @@ module CrosslinkNilResamplingModel {
         unchangedAll,
       })
   }
+
+  run mixedPrecommitQuorumDoesNotUnlockTest = {
+    Init
+      .then(SeedSameRoundValueLock("p1"))
+      .then(SeedSameRoundValueLock("p2"))
+      .then(SeedValidNilPrecommitState("p3"))
+      .then(StartNextRoundAfterPrecommitQuorum("p1"))
+      .then(all {
+        assert(MixedPrecommitQuorumWithoutNilCert(0)),
+        assert(not(NilPrecommitCert(0))),
+        assert(lockedValue.get("p1") == "s0"),
+        assert(lockedRound.get("p1") == 0),
+        assert(validValue.get("p1") == "s0"),
+        assert(validRound.get("p1") == 0),
+        assert(Safety),
+        unchangedAll,
+      })
+  }
 }
 
 module CrosslinkNilResamplingLivenessModel {
@@ -1038,6 +1086,55 @@ module CrosslinkNilResamplingLivenessModel {
 
   val LivenessSafety =
     Safety and FreshDecisionByEnd
+}
+
+module NilPrecommitResamplingStableWindowLiveness {
+  import CrosslinkResamplingTest(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    MaxRound = 3,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p1"),
+    Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2", 3 -> "s2"),
+    Snapshots = Set("s0", "s1", "s2"),
+    ResampleOnNilPrecommit = true,
+    ExpectedRound1Proposal = "s1",
+  ).*
+
+  run repeatedStreamChangesBurnRoundsUntilStableDecisionTest = {
+    Init
+      .then(SeedValidNilPrecommitStateAt("p1", 0))
+      .then(SeedValidNilPrecommitStateAt("p2", 0))
+      .then(SeedFaultyNilPrecommitAt("p4", 0))
+      .then(SeedSameRoundValueLockAt("p3", 0))
+      .then(StartNextRoundAfterPrecommitQuorum("p1"))
+      .then(StartNextRoundAfterPrecommitQuorum("p2"))
+      .then(StartNextRoundAfterPrecommitQuorum("p3"))
+      .then(SeedValidNilPrecommitStateAt("p1", 1))
+      .then(SeedValidNilPrecommitStateAt("p2", 1))
+      .then(SeedFaultyNilPrecommitAt("p4", 1))
+      .then(SeedSameRoundValueLockAt("p3", 1))
+      .then(StartNextRoundAfterPrecommitQuorum("p1"))
+      .then(StartNextRoundAfterPrecommitQuorum("p2"))
+      .then(StartNextRoundAfterPrecommitQuorum("p3"))
+      .then(InsertProposal("p3"))
+      .then(UponProposalPrevote("p1", "s2"))
+      .then(UponProposalPrevote("p2", "s2"))
+      .then(UponProposalPrevote("p3", "s2"))
+      .then(UponValuePrevoteQuorum("p1", "s2"))
+      .then(UponValuePrevoteQuorum("p2", "s2"))
+      .then(UponValuePrevoteQuorum("p3", "s2"))
+      .then(Decide("p1", 2, "s2"))
+      .then(all {
+        assert(NilPrecommitCert(0)),
+        assert(NilPrecommitCert(1)),
+        assert(not(StreamChangedAfter(2))),
+        assert(decision.get("p1") == "s2"),
+        assert(Safety),
+        unchangedAll,
+      })
+  }
 }
 
 module CrosslinkResamplingModels {

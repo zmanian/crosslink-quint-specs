@@ -17,8 +17,17 @@ jobs:
         with:
           node-version: 22
 
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
       - name: Install
         run: npm install
 
       - name: Check specs
         run: npm test
+
+      - name: Bounded safety verification
+        run: npm run verify

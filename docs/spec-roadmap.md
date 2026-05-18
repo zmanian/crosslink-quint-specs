@@ -85,3 +85,28 @@ For Crosslink, matching that quality means adding:
 6. Document the accountability model: what evidence proves a bad unlock, what
    evidence proves nil/value equivocation, and what cannot be inferred from a
    mixed precommit set.
+
+## Progress Log
+
+### 2026-05-18
+
+- Milestone 1 has an initial implementation: `CrosslinkResampling.qnt` now has
+  explicit `BaselineCrosslink` and `NilPrecommitResamplingCrosslink` modules
+  over the shared `CrosslinkResampling` core.
+- Milestone 2 has a first mapping document in
+  `docs/tendermint-crosslink-map.md`.
+- Milestone 3 has named safety obligations in the round-recovery model:
+  `DecisionUniqueness`, `DecisionsHaveCommitQuorum`, `LockSafety`, and
+  `NilCertificateUnlockSafety`, all included in `Safety`.
+- Milestone 4 has an executable negative witness:
+  `mixedPrecommitQuorumDoesNotUnlockTest`.
+- Milestone 6 has a first accountability document in
+  `docs/accountability.md`.
+- The implementation-correspondence track has a first document in
+  `docs/implementation-correspondence.md`.
+
+- Milestone 5 has an initial stream-stability witness:
+  `NilPrecommitResamplingStableWindowLiveness` shows two stream-change aborts
+  followed by a stable window where resampling reaches a decision. This still
+  needs to become a general temporal liveness property rather than a scripted
+  executable trace.

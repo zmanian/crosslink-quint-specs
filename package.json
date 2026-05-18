@@ -5,11 +5,15 @@
   "description": "Quint specifications for baseline Crosslink and nil-precommit resampling variants",
   "scripts": {
     "typecheck": "quint typecheck spec/CrosslinkResampling.qnt && quint typecheck spec/CrosslinkForkFinality.qnt && quint typecheck spec/CrosslinkComposed.qnt",
-    "test": "npm run typecheck && npm run test:baseline && npm run test:resampling && npm run test:finality && npm run test:composed",
-    "test:baseline": "quint test spec/CrosslinkResampling.qnt --main=CrosslinkStickyModel --max-samples=100 --backend=rust",
-    "test:resampling": "quint test spec/CrosslinkResampling.qnt --main=CrosslinkNilResamplingModel --max-samples=100 --backend=rust",
+    "test": "npm run typecheck && npm run test:baseline && npm run test:resampling && npm run test:liveness && npm run test:finality && npm run test:composed",
+    "test:baseline": "quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust",
+    "test:resampling": "quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust",
+    "test:liveness": "quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingStableWindowLiveness --max-samples=100 --backend=rust",
     "test:finality": "quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --max-samples=100 --backend=rust",
-    "test:composed": "quint test spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --max-samples=100 --backend=rust"
+    "test:composed": "quint test spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --max-samples=100 --backend=rust",
+    "verify": "npm run verify:baseline-safety && npm run verify:resampling-safety",
+    "verify:baseline-safety": "quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3",
+    "verify:resampling-safety": "quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3"
   },
   "devDependencies": {
     "@informalsystems/quint": "0.31.0"
