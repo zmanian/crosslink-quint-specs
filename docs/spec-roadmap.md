@@ -129,6 +129,9 @@ For Crosslink, matching that quality means adding:
   proposals, prevotes, precommits, and fat-pointer signatures are only accepted
   when the bytes match the claimed message and the signature verifies for the
   claimed validator.
+- `CrosslinkHeightedMessageAuth.qnt` adds the same boundary for height-indexed
+  messages. Canonical proposal, vote, and fat-pointer bytes bind the claimed
+  BFT height, preventing cross-height replay at the model boundary.
 - The model now has a first local-delivery slice: `seenPropose`,
   `seenPrevote`, and `seenPrecommit` track receiver-local messages,
   `DeliverProposal`/`DeliverPrevote`/`DeliverPrecommit` refuse messages that
@@ -180,4 +183,5 @@ For Crosslink, matching that quality means adding:
   rejection of undecided-height finality, and rejection of a later fork after
   an earlier BFT height is final.
 - The remaining multi-height work is to compose the height-indexed model with
-  the richer message-authentication and evidence-gossip slices.
+  the richer evidence-gossip slice and connect both heighted auth and evidence
+  to production serialization, signatures, and gossip transport.

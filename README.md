@@ -28,6 +28,9 @@ the Zebra Crosslink working branch:
   observer-local accepted evidence for accountability checks.
 - `spec/CrosslinkMessageAuth.qnt` models canonical payload bytes and signature
   acceptance before messages become evidence.
+- `spec/CrosslinkHeightedMessageAuth.qnt` adds the BFT-height dimension to
+  the authentication boundary so signed proposals, votes, and fat-pointer
+  signatures bind the claimed height as well as the round and value.
 
 The round-recovery model has two first-class instantiations:
 
@@ -84,6 +87,7 @@ quint typecheck spec/CrosslinkHeightedRound.qnt
 quint typecheck spec/CrosslinkHeightedFinality.qnt
 quint typecheck spec/CrosslinkEvidenceGossip.qnt
 quint typecheck spec/CrosslinkMessageAuth.qnt
+quint typecheck spec/CrosslinkHeightedMessageAuth.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -103,6 +107,7 @@ quint test spec/CrosslinkHeightedRound.qnt --main=CrosslinkHeightedRoundModel --
 quint test spec/CrosslinkHeightedFinality.qnt --main=CrosslinkHeightedFinalityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --max-samples=100 --backend=rust
 
 quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -113,6 +118,7 @@ quint verify spec/CrosslinkHeightedRound.qnt --main=CrosslinkHeightedRoundModel 
 quint verify spec/CrosslinkHeightedFinality.qnt --main=CrosslinkHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=ComposedSafety --max-steps=3
 quint verify spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 ```
 
 ## Source

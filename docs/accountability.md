@@ -142,6 +142,10 @@ acceptsCanonicalProposalSignatureTest
 rejectsMismatchedPrecommitBytesTest
 rejectsForgedSignatureTest
 acceptsFatPointerSignatureQuorumTest
+acceptsCanonicalHeightedProposalSignatureTest
+rejectsCrossHeightPrecommitReplayTest
+rejectsForgedHeightedPrevoteSignatureTest
+acceptsHeightedFatPointerSignatureQuorumTest
 ```
 
 ## Current Limitations
@@ -150,7 +154,9 @@ The round model now has separate bookkeeping for proposal, prevote, precommit,
 and fat-pointer evidence. The standalone evidence-gossip model adds explicit
 gossip-to-observer acceptance ordering, including the rule that a fat pointer is
 not accepted until its signer precommits have been observed locally. This is
-paired with a standalone message-authentication model that checks canonical
-payload bytes and validator signatures before messages are accepted. This is
-still abstract: it models the authentication boundary but does not yet call
+paired with standalone message-authentication models that check canonical
+payload bytes and validator signatures before messages are accepted. The
+heighted authentication slice binds BFT height into proposal, vote, and
+fat-pointer sign bytes, including cross-height replay rejection. This is still
+abstract: it models the authentication boundary but does not yet call
 production signature verification, serialization code, or gossip transport.

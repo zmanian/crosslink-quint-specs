@@ -43,7 +43,7 @@ finality semantics.
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
 | Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt` | Wires a resampled BFT decision into Crosslink finality, including a first height-indexed composition. |
 | Evidence gossip | `CrosslinkEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence. |
-| Message authentication | `CrosslinkMessageAuth.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted. |
+| Message authentication | `CrosslinkMessageAuth.qnt`, `CrosslinkHeightedMessageAuth.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted; the heighted variant binds BFT height into the sign bytes. |
 
 ## Deliberate Deviations From Tendermint
 
@@ -164,7 +164,7 @@ branch.
 ## Remaining Work To Match Upstream Quality
 
 - Compose the height-indexed finality model with the richer
-  message-authentication and evidence-gossip slices.
+  evidence-gossip slice.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
