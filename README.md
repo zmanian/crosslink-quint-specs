@@ -17,6 +17,8 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkMultiHeight.qnt` lifts the finality obligations to sequential
   BFT heights, while still allowing a BFT decision to skip PoW heights on the
   same branch.
+- `spec/CrosslinkEvidenceGossip.qnt` separates evidence gossip from
+  observer-local accepted evidence for accountability checks.
 
 The round-recovery model has two first-class instantiations:
 
@@ -68,6 +70,7 @@ quint typecheck spec/CrosslinkResampling.qnt
 quint typecheck spec/CrosslinkForkFinality.qnt
 quint typecheck spec/CrosslinkComposed.qnt
 quint typecheck spec/CrosslinkMultiHeight.qnt
+quint typecheck spec/CrosslinkEvidenceGossip.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -83,12 +86,14 @@ quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --ma
 quint test spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkComposed.qnt --main=CrosslinkComposedLivenessModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --max-samples=100 --backend=rust
 
 quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --init=ComposedInit --step=ComposedNext --invariants=ComposedSafety --max-steps=3
 quint verify spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3
 ```
 
 ## Source

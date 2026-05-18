@@ -43,6 +43,7 @@ implementation that each rule has a clear code counterpart.
 | `ObservedNilPrecommitCert(r)` | Observer/bookkeeping evidence for `2f + 1` signed nil precommits for round `r`. |
 | `ObservedFatPointerQuorum(r, v)` | Decided/fat-pointer evidence whose signer set has quorum voting power and matching observed precommits. |
 | `MessageEvidenceSoundness` | Invariant that live protocol messages are mirrored into observer evidence and fat-pointer evidence validates against observed signatures. |
+| `CrosslinkEvidenceGossip.qnt` / `ObservedMessagesWereGossiped` | Evidence gossip and observer ingestion pipeline | Observer-local evidence is only accepted after the corresponding signed message or fat pointer appears in gossip. |
 | `CorrectNilValueEquivocationEvidence` | Same validator signs both nil and value precommit in the same round. |
 | `CorrectValueSwitchWithoutUnlock` | Validator signs a later conflicting value without a nil certificate for the earlier lock round. |
 
@@ -50,10 +51,8 @@ implementation that each rule has a clear code counterpart.
 
 - Connect weighted signer sets to the concrete Tenderlink validator-set and
   signature formats.
-- Connect the abstract message evidence model to concrete signature
-  verification and serialized message bytes.
-- Add evidence gossip and observer-process transitions around the current
-  bookkeeping state.
+- Connect the abstract message evidence and standalone gossip model to concrete
+  signature verification, serialized message bytes, and production gossip.
 - Instantiate the local receive/timeout round machine per BFT height. The
   current multi-height model covers cross-height finality, but not per-height
   Tenderlink state instances yet.

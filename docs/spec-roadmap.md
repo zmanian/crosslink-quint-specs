@@ -121,6 +121,10 @@ For Crosslink, matching that quality means adding:
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
   have authorized signer sets with observed precommit quorum power.
+- `CrosslinkEvidenceGossip.qnt` adds an explicit gossip/observer-process
+  model: observers can only accept gossiped consensus messages, observed
+  precommit quorums require corresponding gossip quorums, and observed fat
+  pointers must be locally justified by already-observed signer precommits.
 - The model now has a first local-delivery slice: `seenPropose`,
   `seenPrevote`, and `seenPrecommit` track receiver-local messages,
   `DeliverProposal`/`DeliverPrevote`/`DeliverPrecommit` refuse messages that

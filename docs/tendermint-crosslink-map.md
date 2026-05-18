@@ -29,7 +29,7 @@ finality semantics.
 | Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | Main round receive guards now use local delivery state rather than global broadcast state. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
 | Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix` | Current round-machine agreement is one-height; the multi-height layer prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix across BFT heights. |
-| Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, and fat-pointer signer validation over observer evidence. |
+| Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, `CrosslinkEvidenceGossip.qnt`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, fat-pointer signer validation, and an explicit gossip-to-observer evidence pipeline. |
 
 ## Crosslink-Specific Concepts
 
@@ -42,6 +42,7 @@ finality semantics.
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink` | A `2f + 1 PRECOMMIT nil` cert clears only same-round cached/lock/valid state. |
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
 | Round recovery plus finality | `CrosslinkComposed.qnt` | Wires a resampled BFT decision into Crosslink finality. |
+| Evidence gossip | `CrosslinkEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence. |
 
 ## Deliberate Deviations From Tendermint
 
@@ -156,7 +157,7 @@ genesis when the candidate is tail-confirmed by `a3`.
   `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
 - Expand validator-set modeling beyond the current finite weighted examples to
   dynamic set changes and production signer-set formats.
-- Add evidence gossip and observer-process transitions around the bookkeeping
-  state.
+- Connect the standalone evidence gossip model to production gossip messages
+  and signature verification.
 - Expand bounded verification beyond `Safety` at depth 3.
 - Add temporal liveness checks parameterized by stream stability after GST.
