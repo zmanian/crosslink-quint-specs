@@ -149,3 +149,13 @@ For Crosslink, matching that quality means adding:
   followed by a stable window where resampling reaches a decision. This still
   needs to become a general temporal liveness property rather than a scripted
   executable trace.
+- `CrosslinkComposedLivenessModel` now has an executable end-to-end liveness
+  script that includes explicit local delivery of the proposal, prevotes, and
+  precommits before finalizing the fresh candidate.
+- The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
+  It makes BFT decision heights sequential, permits a decision to skip PoW
+  heights on the same branch, rejects skipped or duplicate BFT-height
+  decisions, and keeps the finalized PoW prefix linear across BFT heights.
+  The remaining multi-height work is to instantiate the Tenderlink round
+  machine per BFT height instead of modeling the cross-height finality layer
+  alone.

@@ -20,7 +20,7 @@ finality semantics.
 
 | Tendermint concept | Crosslink model location | Notes |
 | --- | --- | --- |
-| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt` | Current model is still one-height, but now includes proposal, vote, precommit, and timeout transitions. |
+| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt`; `nextBftHeight`, `decision`, and `Next` in `CrosslinkMultiHeight.qnt` | The round machine is still one-height, but the finality layer now has sequential BFT heights. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
 | Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value. |
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
@@ -28,7 +28,7 @@ finality semantics.
 | Precommit quorum | `LocalPrecommitQuorum`, `LocalNilPrecommitCert`, `LocalAnyPrecommitQuorum` | Used for decision, nil-certificate recovery, and round advancement over delivered precommits. |
 | Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | Main round receive guards now use local delivery state rather than global broadcast state. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
-| Agreement | `DecisionUniqueness` | Current value-domain agreement over one height. |
+| Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix` | Current round-machine agreement is one-height; the multi-height layer prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix across BFT heights. |
 | Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, and fat-pointer signer validation over observer evidence. |
 
 ## Crosslink-Specific Concepts
@@ -40,7 +40,7 @@ finality semantics.
 | Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink` | A `2f + 1 PRECOMMIT nil` cert clears only same-round cached/lock/valid state. |
-| Fork finality | `CrosslinkForkFinality.qnt` | Models finalized-prefix linearity over a finite PoW fork tree. |
+| Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
 | Round recovery plus finality | `CrosslinkComposed.qnt` | Wires a resampled BFT decision into Crosslink finality. |
 
 ## Deliberate Deviations From Tendermint
@@ -140,10 +140,16 @@ Crosslink finality is over a PoW branch prefix, not over every PoW block height.
 `CrosslinkForkFinality.qnt` therefore allows finalizing a later tail-confirmed
 snapshot on the same branch while rejecting an incompatible fork after finality.
 
+`CrosslinkMultiHeight.qnt` lifts that obligation across sequential BFT heights:
+height `h + 1` cannot decide before height `h`, a decided BFT height cannot be
+decided again, and every later decision must extend earlier decisions. A BFT
+height may still finalize a later PoW snapshot such as `a2` directly from
+genesis when the candidate is tail-confirmed by `a3`.
+
 ## Remaining Work To Match Upstream Quality
 
-- Lift the focused one-height local receive/timeout transition system to a
-  fuller multi-height model.
+- Instantiate the local receive/timeout round machine per BFT height, building
+  on the standalone multi-height finality model.
 - Connect the abstract proposal, prevote, precommit, and fat-pointer evidence
   checks to production message authentication and serialization.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

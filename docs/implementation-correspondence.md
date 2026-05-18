@@ -29,6 +29,7 @@ implementation that each rule has a clear code counterpart.
 | --- | --- | --- |
 | `ValidFinalityCandidate` | Crosslink BFT block/finality candidate validation | Should check branch extension, sigma/tail confirmation, and declared candidate height. |
 | `FinalizeCandidate` | Push/accept decided Crosslink BFT block | The model allows skipped PoW heights on the same branch. |
+| `DecideAt` / `DecisionCursorIsSequential` | BFT-height progression and duplicate-decision rejection | The first multi-height model requires sequential BFT heights while permitting skipped PoW heights inside a valid candidate. |
 | `FinalizedPrefixLinear` | Crosslink finalized-prefix safety | Finalized snapshots must remain on one PoW branch. |
 
 ## Evidence and Accountability
@@ -53,7 +54,8 @@ implementation that each rule has a clear code counterpart.
   verification and serialized message bytes.
 - Add evidence gossip and observer-process transitions around the current
   bookkeeping state.
-- Add multi-height state, since the current round model is still focused on a
-  single Crosslink decision height.
+- Instantiate the local receive/timeout round machine per BFT height. The
+  current multi-height model covers cross-height finality, but not per-height
+  Tenderlink state instances yet.
 - Add implementation-linked test vectors once the Tenderlink message format and
   Crosslink BFT block encoding stabilize.

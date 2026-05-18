@@ -334,20 +334,61 @@ module CrosslinkComposedLivenessModel {
     all { phase == 5, AdvanceAfterPrecommitQuorum("p2"), phase' = 6 },
     all { phase == 6, AdvanceAfterPrecommitQuorum("p3"), phase' = 7 },
     all { phase == 7, Propose("p2"), phase' = 8 },
-    all { phase == 8, Prevote("p1", "a2"), phase' = 9 },
-    all { phase == 9, Prevote("p2", "a2"), phase' = 10 },
-    all { phase == 10, Prevote("p3", "a2"), phase' = 11 },
-    all { phase == 11, PrecommitValue("p1", "a2"), phase' = 12 },
-    all { phase == 12, PrecommitValue("p2", "a2"), phase' = 13 },
-    all { phase == 13, PrecommitValue("p3", "a2"), phase' = 14 },
-    all { phase == 14, DecideValue("p1", 1, "a2"), phase' = 15 },
-    all { phase == 15, FinalizeDecision("p1", "a2", "a3"), phase' = 16 },
-    all { phase == 16, ComposedStutter, phase' = 16 },
+    all { phase == 8, DeliverProposalToAll("p2", 1, "a2", -1), phase' = 9 },
+    all { phase == 9, Prevote("p1", "a2"), phase' = 10 },
+    all { phase == 10, Prevote("p2", "a2"), phase' = 11 },
+    all { phase == 11, Prevote("p3", "a2"), phase' = 12 },
+    all { phase == 12, DeliverPrevoteQuorum("p1", 1, "a2"), phase' = 13 },
+    all { phase == 13, DeliverPrevoteQuorum("p2", 1, "a2"), phase' = 14 },
+    all { phase == 14, DeliverPrevoteQuorum("p3", 1, "a2"), phase' = 15 },
+    all { phase == 15, PrecommitValue("p1", "a2"), phase' = 16 },
+    all { phase == 16, PrecommitValue("p2", "a2"), phase' = 17 },
+    all { phase == 17, PrecommitValue("p3", "a2"), phase' = 18 },
+    all { phase == 18, DeliverPrecommitQuorum("p1", 1, "a2"), phase' = 19 },
+    all { phase == 19, DecideValue("p1", 1, "a2"), phase' = 20 },
+    all { phase == 20, FinalizeDecision("p1", "a2", "a3"), phase' = 21 },
+    all { phase == 21, ComposedStutter, phase' = 21 },
   }
 
   val FreshFinalityByEnd =
-    phase < 16 or latestFinal == "a2"
+    phase < 21 or latestFinal == "a2"
 
   val LivenessSafety =
     ComposedSafety and FreshFinalityByEnd
+
+  run livenessScriptReachesFreshFinalityTest = {
+    LivenessInit
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(LivenessStep)
+      .then(all {
+        assert(phase == 21),
+        assert(latestFinal == "a2"),
+        assert(finalized.contains("a2")),
+        assert(LivenessSafety),
+        phase' = phase,
+        ProtocolUnchanged,
+        latestFinal' = latestFinal,
+        finalized' = finalized,
+        finalityAction' = finalityAction,
+      })
+  }
 }
