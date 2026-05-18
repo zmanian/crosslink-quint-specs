@@ -116,12 +116,15 @@ The bookkeeping-specific witnesses are:
 ```text
 observedEvidenceDoesNotMutateProtocolMessagesTest
 evidenceOnlyConflictStillHasAccountabilityWitnessTest
+validFatPointerEvidenceWitnessTest
+fatPointerRequiresSignerPrecommitEvidenceTest
+fatPointerRequiresQuorumVotingPowerTest
 ```
 
 ## Current Limitations
 
-The round model now has separate `evidencePrecommit` bookkeeping and
-accountability predicates use the `Observed*` quorum helpers. This is still only
-the first slice of the upstream Tendermint accountability shape: it records
-precommit evidence, but it does not yet model authenticated proposal/prevote
-evidence, fat-pointer signatures, evidence gossip, or a full observer process.
+The round model now has separate bookkeeping for proposal, prevote, precommit,
+and fat-pointer evidence. This is still abstract: it validates signer sets and
+matching observed precommits, but it does not yet model concrete signature
+verification, serialized message bytes, evidence gossip, or a full observer
+process.

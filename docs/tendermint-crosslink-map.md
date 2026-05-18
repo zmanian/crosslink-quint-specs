@@ -28,7 +28,7 @@ finality semantics.
 | Precommit quorum | `PrecommitQuorum` | Used for decision and nil-certificate recovery and computed over summed voting power. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
 | Agreement | `DecisionUniqueness` | Current value-domain agreement over one height. |
-| Accountability | `evidencePrecommit`, `ObservedPrecommitQuorum`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks and nil/value equivocation over observer evidence. |
+| Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, and fat-pointer signer validation over observer evidence. |
 
 ## Crosslink-Specific Concepts
 
@@ -88,13 +88,13 @@ snapshot on the same branch while rejecting an incompatible fork after finality.
 
 - Replace the focused one-height fragment with a more complete receive/timeout
   transition system.
-- Add explicit proposal, prevote, precommit, and decided/fat-pointer message
-  validity checks.
+- Connect the abstract proposal, prevote, precommit, and fat-pointer evidence
+  checks to production message authentication and serialization.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
   `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
 - Expand validator-set modeling beyond the current finite weighted examples to
   dynamic set changes and production signer-set formats.
-- Extend bookkeeping-only evidence beyond precommits to proposals, prevotes,
-  decided/fat-pointer signatures, and evidence gossip.
+- Add evidence gossip and observer-process transitions around the bookkeeping
+  state.
 - Expand bounded verification beyond `Safety` at depth 3.
 - Add temporal liveness checks parameterized by stream stability after GST.

@@ -117,6 +117,10 @@ For Crosslink, matching that quality means adding:
   instead of raw signer counts. The default examples remain equal-weight, and
   `CrosslinkWeightedQuorumModel` checks that two high-power validators can form
   a quorum when their summed power reaches the threshold.
+- Message-domain evidence now covers proposals, prevotes, precommits, and
+  decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
+  protocol messages are mirrored into observer evidence and that fat pointers
+  have authorized signer sets with observed precommit quorum power.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 

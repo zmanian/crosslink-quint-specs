@@ -34,6 +34,8 @@ implementation that each rule has a clear code counterpart.
 | `NilPrecommitCert(r)` | Live `2f + 1` nil-precommit quorum used to clear same-round state. |
 | `ObservedPrecommitQuorum(r, v)` | Observer/bookkeeping evidence for a fat pointer or precommit certificate for value `v`. |
 | `ObservedNilPrecommitCert(r)` | Observer/bookkeeping evidence for `2f + 1` signed nil precommits for round `r`. |
+| `ObservedFatPointerQuorum(r, v)` | Decided/fat-pointer evidence whose signer set has quorum voting power and matching observed precommits. |
+| `MessageEvidenceSoundness` | Invariant that live protocol messages are mirrored into observer evidence and fat-pointer evidence validates against observed signatures. |
 | `CorrectNilValueEquivocationEvidence` | Same validator signs both nil and value precommit in the same round. |
 | `CorrectValueSwitchWithoutUnlock` | Validator signs a later conflicting value without a nil certificate for the earlier lock round. |
 
@@ -41,9 +43,10 @@ implementation that each rule has a clear code counterpart.
 
 - Connect weighted signer sets to the concrete Tenderlink validator-set and
   signature formats.
-- Model message authentication and fat-pointer signer validation explicitly.
-- Extend observer/evidence bookkeeping to proposals, prevotes, decided
-  fat-pointers, evidence gossip, and signer authentication.
+- Connect the abstract message evidence model to concrete signature
+  verification and serialized message bytes.
+- Add evidence gossip and observer-process transitions around the current
+  bookkeeping state.
 - Add multi-height state, since the current round model is still focused on a
   single Crosslink decision height.
 - Add implementation-linked test vectors once the Tenderlink message format and
