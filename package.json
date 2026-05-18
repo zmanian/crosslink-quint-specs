@@ -4,8 +4,8 @@
   "private": true,
   "description": "Quint specifications for baseline Crosslink and nil-precommit resampling variants",
   "scripts": {
-    "typecheck": "quint typecheck spec/CrosslinkResampling.qnt && quint typecheck spec/CrosslinkForkFinality.qnt && quint typecheck spec/CrosslinkComposed.qnt && quint typecheck spec/CrosslinkMultiHeight.qnt && quint typecheck spec/CrosslinkEvidenceGossip.qnt",
-    "test": "npm run typecheck && npm run test:baseline && npm run test:resampling && npm run test:evidence && npm run test:weighted && npm run test:message-evidence && npm run test:local-delivery && npm run test:timeout && npm run test:liveness && npm run test:proposal-validity && npm run test:valid-round && npm run test:finality && npm run test:composed && npm run test:composed-liveness && npm run test:multi-height && npm run test:evidence-gossip",
+    "typecheck": "quint typecheck spec/CrosslinkResampling.qnt && quint typecheck spec/CrosslinkForkFinality.qnt && quint typecheck spec/CrosslinkComposed.qnt && quint typecheck spec/CrosslinkMultiHeight.qnt && quint typecheck spec/CrosslinkEvidenceGossip.qnt && quint typecheck spec/CrosslinkMessageAuth.qnt",
+    "test": "npm run typecheck && npm run test:baseline && npm run test:resampling && npm run test:evidence && npm run test:weighted && npm run test:message-evidence && npm run test:local-delivery && npm run test:timeout && npm run test:liveness && npm run test:proposal-validity && npm run test:valid-round && npm run test:finality && npm run test:composed && npm run test:composed-liveness && npm run test:multi-height && npm run test:evidence-gossip && npm run test:message-auth",
     "test:baseline": "quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust",
     "test:resampling": "quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust",
     "test:evidence": "quint test spec/CrosslinkResampling.qnt --main=CrosslinkEvidenceBookkeepingModel --max-samples=100 --backend=rust",
@@ -21,13 +21,15 @@
     "test:composed-liveness": "quint test spec/CrosslinkComposed.qnt --main=CrosslinkComposedLivenessModel --max-samples=100 --backend=rust",
     "test:multi-height": "quint test spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --max-samples=100 --backend=rust",
     "test:evidence-gossip": "quint test spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --max-samples=100 --backend=rust",
-    "verify": "npm run verify:baseline-safety && npm run verify:resampling-safety && npm run verify:finality-safety && npm run verify:composed-safety && npm run verify:multi-height-safety && npm run verify:evidence-gossip-safety",
+    "test:message-auth": "quint test spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --max-samples=100 --backend=rust",
+    "verify": "npm run verify:baseline-safety && npm run verify:resampling-safety && npm run verify:finality-safety && npm run verify:composed-safety && npm run verify:multi-height-safety && npm run verify:evidence-gossip-safety && npm run verify:message-auth-safety",
     "verify:baseline-safety": "quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3",
     "verify:resampling-safety": "quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3",
     "verify:finality-safety": "quint verify spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --init=Init --step=Next --invariants=Safety --max-steps=3",
     "verify:composed-safety": "quint verify spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --init=ComposedInit --step=ComposedNext --invariants=ComposedSafety --max-steps=3",
     "verify:multi-height-safety": "quint verify spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --init=Init --step=Next --invariants=Safety --max-steps=3",
-    "verify:evidence-gossip-safety": "quint verify spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3"
+    "verify:evidence-gossip-safety": "quint verify spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3",
+    "verify:message-auth-safety": "quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3"
   },
   "devDependencies": {
     "@informalsystems/quint": "0.31.0"

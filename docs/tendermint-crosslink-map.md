@@ -43,6 +43,7 @@ finality semantics.
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
 | Round recovery plus finality | `CrosslinkComposed.qnt` | Wires a resampled BFT decision into Crosslink finality. |
 | Evidence gossip | `CrosslinkEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence. |
+| Message authentication | `CrosslinkMessageAuth.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted. |
 
 ## Deliberate Deviations From Tendermint
 
@@ -151,8 +152,8 @@ genesis when the candidate is tail-confirmed by `a3`.
 
 - Instantiate the local receive/timeout round machine per BFT height, building
   on the standalone multi-height finality model.
-- Connect the abstract proposal, prevote, precommit, and fat-pointer evidence
-  checks to production message authentication and serialization.
+- Connect the abstract message-authentication model to production signature
+  verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
   `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
 - Expand validator-set modeling beyond the current finite weighted examples to

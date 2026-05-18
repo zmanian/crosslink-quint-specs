@@ -125,6 +125,10 @@ For Crosslink, matching that quality means adding:
   model: observers can only accept gossiped consensus messages, observed
   precommit quorums require corresponding gossip quorums, and observed fat
   pointers must be locally justified by already-observed signer precommits.
+- `CrosslinkMessageAuth.qnt` adds a first canonical payload/signature boundary:
+  proposals, prevotes, precommits, and fat-pointer signatures are only accepted
+  when the bytes match the claimed message and the signature verifies for the
+  claimed validator.
 - The model now has a first local-delivery slice: `seenPropose`,
   `seenPrevote`, and `seenPrecommit` track receiver-local messages,
   `DeliverProposal`/`DeliverPrevote`/`DeliverPrecommit` refuse messages that

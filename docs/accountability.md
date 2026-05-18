@@ -127,6 +127,10 @@ cannotObserveUngossipedPrecommitTest
 observedPrecommitQuorumRequiresGossipTest
 cannotObserveFatPointerBeforeSignerPrecommitsObservedTest
 observesFatPointerAfterSignerPrecommitsTest
+acceptsCanonicalProposalSignatureTest
+rejectsMismatchedPrecommitBytesTest
+rejectsForgedSignatureTest
+acceptsFatPointerSignatureQuorumTest
 ```
 
 ## Current Limitations
@@ -135,6 +139,7 @@ The round model now has separate bookkeeping for proposal, prevote, precommit,
 and fat-pointer evidence. The standalone evidence-gossip model adds explicit
 gossip-to-observer acceptance ordering, including the rule that a fat pointer is
 not accepted until its signer precommits have been observed locally. This is
-still abstract: it validates signer sets, quorum power, and evidence ordering,
-but it does not yet model concrete signature verification, serialized message
-bytes, or production gossip transport.
+paired with a standalone message-authentication model that checks canonical
+payload bytes and validator signatures before messages are accepted. This is
+still abstract: it models the authentication boundary but does not yet call
+production signature verification, serialization code, or gossip transport.
