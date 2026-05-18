@@ -97,7 +97,9 @@ For Crosslink, matching that quality means adding:
   `docs/tendermint-crosslink-map.md`.
 - Milestone 3 has named safety obligations in the round-recovery model:
   `DecisionUniqueness`, `DecisionsHaveCommitQuorum`, `LockSafety`, and
-  `NilCertificateUnlockSafety`, all included in `Safety`.
+  `NilCertificateUnlockSafety`, all included in `Safety`. CI now also runs
+  bounded Apalache safety checks for baseline round recovery, nil-precommit
+  resampling, fork finality, and the composed resampling/finality model.
 - Milestone 4 has an executable negative witness:
   `mixedPrecommitQuorumDoesNotUnlockTest`.
 - Milestone 6 has a first accountability document in
