@@ -22,7 +22,7 @@ finality semantics.
 | --- | --- | --- |
 | Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt`; `nextBftHeight`, `decision`, and `Next` in `CrosslinkMultiHeight.qnt`; `height`, per-height `round`/`step`, and `Next` in `CrosslinkHeightedRound.qnt` | The first height-indexed round-machine slice now exists, but it is not yet composed with every richer one-height rule. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
-| Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value. |
+| Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal`; heighted equivalents in `CrosslinkHeightedRound.qnt` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value at the same BFT height. |
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
 | Prevote quorum | `LocalPrevoteQuorum` | Used for the value precommit transition and computed over delivered votes in the receiver's local view. |
 | Precommit quorum | `LocalPrecommitQuorum`, `LocalNilPrecommitCert`, `LocalAnyPrecommitQuorum` | Used for decision, nil-certificate recovery, and round advancement over delivered precommits. |
@@ -150,9 +150,10 @@ genesis when the candidate is tail-confirmed by `a3`.
 
 `CrosslinkHeightedRound.qnt` adds the corresponding BFT-height dimension around
 a compact Tenderlink round machine: each validator has a height cursor, each
-height has its own round/step/lock/valid/cache state, timeout transitions are
-scoped to the active height, and nil-precommit resampling only clears state for
-the active height and abandoned round.
+height has its own round/step/lock/valid/cache state, valid-round/POL evidence
+is scoped to the same BFT height, timeout transitions are scoped to the active
+height, and nil-precommit resampling only clears state for the active height
+and abandoned round.
 
 `CrosslinkHeightedFinality.qnt` then requires the finality cursor to consume
 local heighted decisions in BFT-height order. This catches the Crosslink
@@ -162,8 +163,8 @@ branch.
 
 ## Remaining Work To Match Upstream Quality
 
-- Compose the height-indexed finality model with the richer one-height
-  valid-round, message-authentication, and evidence-gossip slices.
+- Compose the height-indexed finality model with the richer
+  message-authentication and evidence-gossip slices.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

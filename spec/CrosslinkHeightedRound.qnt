@@ -34,6 +34,7 @@ module CrosslinkHeightedRound {
   pure val CursorHeights = 1.to(MaxBftHeight + 1)
   pure val Rounds = 0.to(MaxRound)
   pure val NilRound = -1
+  pure val ProposalValidRounds = Rounds.union(Set(NilRound))
   pure val NilSnapshot = "None"
   pure val VoteValues = Snapshots.union(Set(NilSnapshot))
 
@@ -58,6 +59,7 @@ module CrosslinkHeightedRound {
     height: Height_t,
     round: Round_t,
     proposal: Snapshot_t,
+    validRound: Round_t,
   }
 
   type Vote_t = {
@@ -139,6 +141,57 @@ module CrosslinkHeightedRound {
   def LocalNilPrecommitCert(p: Proc_t, h: Height_t, r: Round_t): bool =
     LocalPrecommitQuorum(p, h, r, NilSnapshot)
 
+  def ValidRoundJustified(
+    h: Height_t,
+    r: Round_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool =
+    vr == NilRound or (
+      vr.in(Rounds) and
+      vr < r and
+      VotingPowerOf(Voters(msgsPrevote.get(h).get(vr).filter(m => m.id == v))) >=
+      QuorumVotingPower
+    )
+
+  def LocalValidRoundJustified(
+    p: Proc_t,
+    h: Height_t,
+    r: Round_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool =
+    vr == NilRound or (
+      vr.in(Rounds) and
+      vr < r and
+      LocalPrevoteQuorum(p, h, vr, v)
+    )
+
+  def ProposalUnlocksCurrentLock(
+    p: Proc_t,
+    h: Height_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool =
+    lockedRound.get(p).get(h) == NilRound or
+    lockedValue.get(p).get(h) == v or
+    lockedRound.get(p).get(h) <= vr
+
+  def AcceptableProposalFor(
+    p: Proc_t,
+    h: Height_t,
+    r: Round_t,
+    v: Snapshot_t,
+  ): bool =
+    seenPropose.get(p).get(h).get(r).exists(m =>
+      m.src == Proposer.get(h).get(r) and
+      m.height == h and
+      m.round == r and
+      m.proposal == v and
+      LocalValidRoundJustified(p, h, r, v, m.validRound) and
+      ProposalUnlocksCurrentLock(p, h, v, m.validRound)
+    )
+
   action Init = all {
     height' = Corr.mapBy(_ => 1),
     round' = Corr.mapBy(_ => Heights.mapBy(_ => 0)),
@@ -185,14 +238,17 @@ module CrosslinkHeightedRound {
     val h = height.get(p)
     val r = round.get(p).get(h)
     val v = ProposalFor(p, h, r)
-    val msg = { src: p, height: h, round: r, proposal: v }
+    val vr = validRound.get(p).get(h)
+    val msg = { src: p, height: h, round: r, proposal: v, validRound: vr }
     all {
       ActiveHeight(p, h),
       r.in(Rounds),
+      vr.in(ProposalValidRounds),
       step.get(p).get(h) == "propose",
       p == Proposer.get(h).get(r),
       IsSnapshot(v),
       msgsPropose.get(h).get(r).forall(m => m.src != p),
+      LocalValidRoundJustified(p, h, r, v, vr),
       msgsPropose' =
         msgsPropose.setBy(h, byRound =>
           byRound.setBy(r, old => old.union(Set(msg)))
@@ -224,12 +280,14 @@ module CrosslinkHeightedRound {
     h: Height_t,
     r: Round_t,
     v: Snapshot_t,
+    vr: Round_t,
   ): bool = {
-    val msg = { src: from, height: h, round: r, proposal: v }
+    val msg = { src: from, height: h, round: r, proposal: v, validRound: vr }
     all {
       dst.in(Corr),
       h.in(Heights),
       r.in(Rounds),
+      vr.in(ProposalValidRounds),
       msgsPropose.get(h).get(r).contains(msg),
       seenPropose' =
         seenPropose.setBy(dst, byHeight =>
@@ -328,7 +386,7 @@ module CrosslinkHeightedRound {
   action Prevote(p: Proc_t, v: Snapshot_t): bool = {
     val h = height.get(p)
     val r = round.get(p).get(h)
-    val vote = if (SeenProposal(p, h, r, v) and LockAllows(p, h, v)) {
+    val vote = if (AcceptableProposalFor(p, h, r, v)) {
       v
     } else {
       NilSnapshot
@@ -698,7 +756,8 @@ module CrosslinkHeightedRound {
       nondet h = oneOf(Heights)
       nondet r = oneOf(Rounds)
       nondet v = oneOf(Snapshots)
-      DeliverProposal(p, from, h, r, v),
+      nondet vr = oneOf(ProposalValidRounds)
+      DeliverProposal(p, from, h, r, v, vr),
       nondet h = oneOf(Heights)
       nondet r = oneOf(Rounds)
       nondet v = oneOf(VoteValues)
@@ -759,11 +818,22 @@ module CrosslinkHeightedRound {
       )
     )
 
+  val CorrectProposalValidRoundSound =
+    Heights.forall(h =>
+      Rounds.forall(r =>
+        msgsPropose.get(h).get(r).forall(m =>
+          not(Corr.contains(m.src)) or
+          ValidRoundJustified(h, r, m.proposal, m.validRound)
+        )
+      )
+    )
+
   val Safety =
     PerHeightAgreement and
     HeightCursorSequential and
     FutureHeightsRemainPristine and
-    DecisionsHaveLocalCommitQuorum
+    DecisionsHaveLocalCommitQuorum and
+    CorrectProposalValidRoundSound
 }
 
 module CrosslinkHeightedRoundTest {
@@ -831,6 +901,70 @@ module CrosslinkHeightedRoundTest {
     }
   }
 
+  action SeedProposalAt(
+    from: Proc_t,
+    h: Height_t,
+    r: Round_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool = {
+    val msg = { src: from, height: h, round: r, proposal: v, validRound: vr }
+    all {
+      from.in(Corr.union(Faulty)),
+      h.in(Heights),
+      r.in(Rounds),
+      IsSnapshot(v),
+      vr.in(ProposalValidRounds),
+      msgsPropose' =
+        msgsPropose.setBy(h, byRound =>
+          byRound.setBy(r, old => old.union(Set(msg)))
+        ),
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      seenPropose' =
+        Corr.mapBy(dst =>
+          seenPropose.get(dst).setBy(h, byRound =>
+            byRound.setBy(r, old => old.union(Set(msg)))
+          )
+        ),
+      seenPrevote' = seenPrevote,
+      seenPrecommit' = seenPrecommit,
+      KeepValidatorState,
+      firedAction' = "SeedProposalAt",
+    }
+  }
+
+  action SeedPrevoteCertificateAt(
+    h: Height_t,
+    r: Round_t,
+    v: Snapshot_t,
+    signers: Set[Proc_t],
+  ): bool = {
+    val votes = signers.map(s => { src: s, height: h, round: r, id: v })
+    all {
+      h.in(Heights),
+      r.in(Rounds),
+      VoteValues.contains(v),
+      signers.forall(s => Corr.union(Faulty).contains(s)),
+      msgsPropose' = msgsPropose,
+      msgsPrevote' =
+        msgsPrevote.setBy(h, byRound =>
+          byRound.setBy(r, old => old.union(votes))
+        ),
+      msgsPrecommit' = msgsPrecommit,
+      seenPropose' = seenPropose,
+      seenPrevote' =
+        Corr.mapBy(dst =>
+          seenPrevote.get(dst).setBy(h, byRound =>
+            byRound.setBy(r, old => old.union(votes))
+          )
+        ),
+      seenPrecommit' = seenPrecommit,
+      KeepValidatorState,
+      firedAction' = "SeedPrevoteCertificateAt",
+    }
+  }
+
   run nilResamplingDoesNotClearOtherHeightStateTest = {
     Init
       .then(SeedValueLockAt("p1", 1, 0, "h1r0"))
@@ -881,6 +1015,46 @@ module CrosslinkHeightedRoundTest {
       })
   }
 
+  run unjustifiedHeightedValidRoundProposalPrevotesNilTest = {
+    Init
+      .then(SeedValueLockAt("p1", 1, 0, "h1r0"))
+      .then(TimeoutProposePrevoteNil("p1"))
+      .then(TimeoutPrevotePrecommitNil("p1"))
+      .then(TimeoutPrecommitStartNextRound("p1"))
+      .then(SeedProposalAt("p2", 1, 1, "h1r1", 0))
+      .then(Prevote("p1", "h1r1"))
+      .then(all {
+        assert(not(LocalValidRoundJustified("p1", 1, 1, "h1r1", 0))),
+        assert(msgsPrevote.get(1).get(1).exists(m =>
+          m.src == "p1" and m.id == NilSnapshot
+        )),
+        assert(not(msgsPrevote.get(1).get(1).exists(m =>
+          m.src == "p1" and m.id == "h1r1"
+        ))),
+        unchangedAll,
+      })
+  }
+
+  run justifiedHeightedValidRoundUnlocksOlderLockTest = {
+    Init
+      .then(SeedValueLockAt("p1", 1, 0, "h1r0"))
+      .then(TimeoutProposePrevoteNil("p1"))
+      .then(TimeoutPrevotePrecommitNil("p1"))
+      .then(TimeoutPrecommitStartNextRound("p1"))
+      .then(SeedPrevoteCertificateAt(1, 0, "h1r1", Set("p2", "p3", "p4")))
+      .then(SeedProposalAt("p2", 1, 1, "h1r1", 0))
+      .then(Prevote("p1", "h1r1"))
+      .then(all {
+        assert(LocalValidRoundJustified("p1", 1, 1, "h1r1", 0)),
+        assert(lockedValue.get("p1").get(1) == "h1r0"),
+        assert(lockedRound.get("p1").get(1) == 0),
+        assert(msgsPrevote.get(1).get(1).exists(m =>
+          m.src == "p1" and m.id == "h1r1"
+        )),
+        unchangedAll,
+      })
+  }
+
   run cannotDecideSecondHeightBeforeFirstHeightTest = {
     Init
       .then(SeedValueLockAt("p1", 2, 0, "h2r0"))
@@ -891,9 +1065,9 @@ module CrosslinkHeightedRoundTest {
   run oneHeightDecisionAdvancesOnlyDecidingValidatorTest = {
     Init
       .then(InsertProposal("p1"))
-      .then(DeliverProposal("p1", "p1", 1, 0, "h1r0"))
-      .then(DeliverProposal("p2", "p1", 1, 0, "h1r0"))
-      .then(DeliverProposal("p3", "p1", 1, 0, "h1r0"))
+      .then(DeliverProposal("p1", "p1", 1, 0, "h1r0", NilRound))
+      .then(DeliverProposal("p2", "p1", 1, 0, "h1r0", NilRound))
+      .then(DeliverProposal("p3", "p1", 1, 0, "h1r0", NilRound))
       .then(Prevote("p1", "h1r0"))
       .then(Prevote("p2", "h1r0"))
       .then(Prevote("p3", "h1r0"))

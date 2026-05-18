@@ -19,8 +19,8 @@ the Zebra Crosslink working branch:
   same branch.
 - `spec/CrosslinkHeightedRound.qnt` adds a first height-indexed,
   receive-reactive Tenderlink round-machine slice, including per-height locks,
-  decisions, local delivery, timeout transitions, and nil-precommit
-  resampling.
+  valid-round/POL checks, decisions, local delivery, timeout transitions, and
+  nil-precommit resampling.
 - `spec/CrosslinkHeightedFinality.qnt` composes the height-indexed round
   machine with a Crosslink finality cursor so finalized BFT heights must come
   from local heighted decisions and extend the finalized PoW prefix.

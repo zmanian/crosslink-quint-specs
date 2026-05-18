@@ -14,6 +14,7 @@ implementation that each rule has a clear code counterpart.
 | `UponStreamChangePrecommitNil` | Tenderlink stale validation path that broadcasts `Precommit(ValueId::NIL)` | This is the Crosslink-specific moving-stream hook. |
 | `StaticProposalValidity` | Crosslink proposal/block validation before freshness checks | Abstract split for structural validity, PoW-chain validity, and finality-candidate validity. |
 | `ValidRoundJustified` / `AcceptableProposalFor` / `CorrectProposalValidRoundSound` | Proposal receive checks for `validRound`/POLRound evidence | A non-`-1` valid round must be backed by a prevote quorum for the proposal value before it can unlock an older value lock. |
+| Heighted `ValidRoundJustified` / `AcceptableProposalFor` | Per-BFT-height proposal receive checks for `validRound`/POLRound evidence | The heighted slice scopes the POL evidence to the same BFT height as the proposal and rejects unjustified cross-value unlocks. |
 | `StartNextRoundAfterPrecommitQuorum` | Tenderlink local precommit-quorum processing and round start | In the resampling branch, a locally delivered nil quorum clears same-round state before moving on. |
 | `AdvanceAfterPrecommitQuorum` in `CrosslinkHeightedRound.qnt` | Height-indexed Tenderlink round advancement | The heighted slice scopes nil-precommit clearing to the validator's active BFT height and current round; a mixed precommit quorum does not clear the heighted lock/cache state. |
 | `ApplyLateNilPrecommitCertificate` | Tenderlink late locally delivered nil-certificate recovery path | Late certs clear abandoned-round state without rewinding the validator. |
@@ -59,7 +60,7 @@ implementation that each rule has a clear code counterpart.
 - Connect the abstract message-authentication, evidence, and standalone gossip
   models to concrete signature verification, serialized message bytes, and
   production gossip.
-- Compose the height-indexed finality slice with the richer one-height
-  valid-round, message-authentication, and evidence-gossip models.
+- Compose the height-indexed finality slice with the richer
+  message-authentication and evidence-gossip models.
 - Add implementation-linked test vectors once the Tenderlink message format and
   Crosslink BFT block encoding stabilize.

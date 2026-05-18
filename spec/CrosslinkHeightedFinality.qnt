@@ -111,11 +111,13 @@ module CrosslinkHeightedFinality {
     h: Height_t,
     r: Round_t,
     v: Snapshot_t,
+    vr: Round_t,
   ): bool = {
-    val msg = { src: from, height: h, round: r, proposal: v }
+    val msg = { src: from, height: h, round: r, proposal: v, validRound: vr }
     all {
       h.in(Heights),
       r.in(Rounds),
+      vr.in(ProposalValidRounds),
       msgsPropose.get(h).get(r).contains(msg),
       seenPropose' =
         Corr.mapBy(dst =>
@@ -324,7 +326,7 @@ module CrosslinkHeightedFinalityTest {
   run resamplingAtHeightFinalizesFreshCandidateTest = {
     ComposedInit
       .then(Propose("p1"))
-      .then(DeliverProposalToAll("p1", 1, 0, "a1"))
+      .then(DeliverProposalToAll("p1", 1, 0, "a1", NilRound))
       .then(PrevoteValue("p1", "a1"))
       .then(PrevoteValue("p2", "a1"))
       .then(PrevoteValue("p3", "a1"))
@@ -337,7 +339,7 @@ module CrosslinkHeightedFinalityTest {
       .then(AdvanceRound("p2"))
       .then(AdvanceRound("p3"))
       .then(Propose("p2"))
-      .then(DeliverProposalToAll("p2", 1, 1, "a2"))
+      .then(DeliverProposalToAll("p2", 1, 1, "a2", NilRound))
       .then(PrevoteValue("p1", "a2"))
       .then(PrevoteValue("p2", "a2"))
       .then(PrevoteValue("p3", "a2"))
@@ -366,7 +368,7 @@ module CrosslinkHeightedFinalityTest {
   run rejectsForkFinalityAfterPriorHeightTest = {
     ComposedInit
       .then(Propose("p1"))
-      .then(DeliverProposalToAll("p1", 1, 0, "a1"))
+      .then(DeliverProposalToAll("p1", 1, 0, "a1", NilRound))
       .then(PrevoteValue("p1", "a1"))
       .then(PrevoteValue("p2", "a1"))
       .then(PrevoteValue("p3", "a1"))
@@ -380,7 +382,7 @@ module CrosslinkHeightedFinalityTest {
       .then(DecideValue("p3", "a1"))
       .then(FinalizeNextDecided("p1", "a1", "a2"))
       .then(Propose("p1"))
-      .then(DeliverProposalToAll("p1", 2, 0, "b2"))
+      .then(DeliverProposalToAll("p1", 2, 0, "b2", NilRound))
       .then(PrevoteValue("p1", "b2"))
       .then(PrevoteValue("p2", "b2"))
       .then(PrevoteValue("p3", "b2"))

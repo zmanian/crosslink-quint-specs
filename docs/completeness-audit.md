@@ -22,23 +22,23 @@ Status terms:
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
 | Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound` | covered | Needs production `head - sigma` data vectors. |
 | Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `test:proposal-validity` | covered | Needs concrete Crosslink block/header validity wiring. |
-| Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; per-height lock/valid state in `CrosslinkHeightedRound.qnt` | partial | Needs composition between the richer one-height valid-round rules and the heighted round machine. |
-| Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round` | covered | Needs production proposal evidence encoding. |
+| Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
+| Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
 | Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
 | Local receive/delivery semantics | `seenPropose`, `seenPrevote`, `seenPrecommit`, `Deliver*`; `test:local-delivery` | covered | Needs network scheduling/fairness assumptions. |
 | Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout`; `precommitTimeoutDoesNotClearHeightedLockTest` | partial | Needs fuller timeout scheduling and temporal properties. |
-| Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `test:heighted-round`; `verify:heighted-round-safety` | partial | First receive-reactive heighted slice; not yet composed with valid-round/auth/evidence rules. |
+| Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `test:heighted-round`; `verify:heighted-round-safety` | partial | First receive-reactive heighted slice; not yet composed with auth/evidence rules. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Dynamic validator sets and production signer-set formats remain open. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
 | Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `test:evidence-gossip`; `verify:evidence-gossip-safety` | partial | Standalone model; not yet wired into production gossip or the main round model. |
 | Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `test:message-auth`; `verify:message-auth-safety` | partial | Abstract signature metadata; not yet linked to concrete serialization or crypto. |
 | Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
-| Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; richer valid-round/auth/evidence slices are not yet integrated. |
-| Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:composed`; `test:heighted-finality`; `verify:composed-safety`; `verify:heighted-finality-safety` | partial | Heighted composition exists, but without all richer one-height rules. |
+| Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; richer auth/evidence slices are not yet integrated. |
+| Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:composed`; `test:heighted-finality`; `verify:composed-safety`; `verify:heighted-finality-safety` | partial | Heighted composition exists, but without auth/evidence integration. |
 | Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel` | partial | Scripted bounded witnesses only; no general temporal liveness proof yet. |
 | CI for checks | `package.json` scripts and `.github/workflows/quint.yml` | covered | Latest pushed commit may still be running until GitHub Actions completes. |
 | Documentation mapping to Tendermint | `docs/tendermint-crosslink-map.md`, `docs/implementation-correspondence.md`, `docs/spec-roadmap.md` | covered | Should keep updated as models become less abstract. |
@@ -78,8 +78,8 @@ CrosslinkMessageAuthModel
 
 The goal is not complete yet. The strongest remaining gaps are:
 
-- compose the height-indexed finality slice with valid-round,
-  message-authentication, and evidence-gossip models;
+- compose the height-indexed finality slice with message-authentication and
+  evidence-gossip models;
 - replace scripted liveness witnesses with temporal or scheduler-parametric
   liveness checks under post-GST stream stability;
 - link abstract proposal validity to concrete Crosslink block/header data;
