@@ -15,6 +15,7 @@ implementation that each rule has a clear code counterpart.
 | `StaticProposalValidity` | Crosslink proposal/block validation before freshness checks | Abstract split for structural validity, PoW-chain validity, and finality-candidate validity. |
 | `ValidRoundJustified` / `AcceptableProposalFor` / `CorrectProposalValidRoundSound` | Proposal receive checks for `validRound`/POLRound evidence | A non-`-1` valid round must be backed by a prevote quorum for the proposal value before it can unlock an older value lock. |
 | `StartNextRoundAfterPrecommitQuorum` | Tenderlink local precommit-quorum processing and round start | In the resampling branch, a locally delivered nil quorum clears same-round state before moving on. |
+| `AdvanceAfterPrecommitQuorum` in `CrosslinkHeightedRound.qnt` | Height-indexed Tenderlink round advancement | The heighted slice scopes nil-precommit clearing to the validator's active BFT height and current round; a mixed precommit quorum does not clear the heighted lock/cache state. |
 | `ApplyLateNilPrecommitCertificate` | Tenderlink late locally delivered nil-certificate recovery path | Late certs clear abandoned-round state without rewinding the validator. |
 | `MixedPrecommitQuorumWithoutNilCert` | Negative guard test in Tenderlink | Mixed precommits can end waiting, but cannot unlock. |
 | `TimeoutProposePrevoteNil` | Propose-timeout handler | Local timeout emits nil prevote without touching lock or valid state. |
@@ -30,6 +31,7 @@ implementation that each rule has a clear code counterpart.
 | `ValidFinalityCandidate` | Crosslink BFT block/finality candidate validation | Should check branch extension, sigma/tail confirmation, and declared candidate height. |
 | `FinalizeCandidate` | Push/accept decided Crosslink BFT block | The model allows skipped PoW heights on the same branch. |
 | `DecideAt` / `DecisionCursorIsSequential` | BFT-height progression and duplicate-decision rejection | The first multi-height model requires sequential BFT heights while permitting skipped PoW heights inside a valid candidate. |
+| `height` / `HeightCursorSequential` / `FutureHeightsRemainPristine` | Validator-local BFT-height cursor and per-height round state | The heighted round-machine slice checks that future heights stay untouched until reached and that a validator cannot decide height `h + 1` before height `h`. |
 | `FinalizedPrefixLinear` | Crosslink finalized-prefix safety | Finalized snapshots must remain on one PoW branch. |
 
 ## Evidence and Accountability
@@ -55,8 +57,8 @@ implementation that each rule has a clear code counterpart.
 - Connect the abstract message-authentication, evidence, and standalone gossip
   models to concrete signature verification, serialized message bytes, and
   production gossip.
-- Instantiate the local receive/timeout round machine per BFT height. The
-  current multi-height model covers cross-height finality, but not per-height
-  Tenderlink state instances yet.
+- Compose the first height-indexed receive-reactive round-machine slice with
+  the richer one-height timeout, valid-round, finality, message-authentication,
+  and evidence-gossip models.
 - Add implementation-linked test vectors once the Tenderlink message format and
   Crosslink BFT block encoding stabilize.

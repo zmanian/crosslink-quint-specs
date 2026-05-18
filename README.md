@@ -17,6 +17,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkMultiHeight.qnt` lifts the finality obligations to sequential
   BFT heights, while still allowing a BFT decision to skip PoW heights on the
   same branch.
+- `spec/CrosslinkHeightedRound.qnt` adds a first height-indexed,
+  receive-reactive Tenderlink round-machine slice, including per-height locks,
+  decisions, local delivery, and nil-precommit resampling.
 - `spec/CrosslinkEvidenceGossip.qnt` separates evidence gossip from
   observer-local accepted evidence for accountability checks.
 - `spec/CrosslinkMessageAuth.qnt` models canonical payload bytes and signature
@@ -73,6 +76,7 @@ quint typecheck spec/CrosslinkResampling.qnt
 quint typecheck spec/CrosslinkForkFinality.qnt
 quint typecheck spec/CrosslinkComposed.qnt
 quint typecheck spec/CrosslinkMultiHeight.qnt
+quint typecheck spec/CrosslinkHeightedRound.qnt
 quint typecheck spec/CrosslinkEvidenceGossip.qnt
 quint typecheck spec/CrosslinkMessageAuth.qnt
 
@@ -90,6 +94,7 @@ quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --ma
 quint test spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkComposed.qnt --main=CrosslinkComposedLivenessModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkHeightedRound.qnt --main=CrosslinkHeightedRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --max-samples=100 --backend=rust
 
@@ -98,6 +103,7 @@ quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink
 quint verify spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --init=ComposedInit --step=ComposedNext --invariants=ComposedSafety --max-steps=3
 quint verify spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkHeightedRound.qnt --main=CrosslinkHeightedRoundModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 ```

@@ -6,6 +6,7 @@ stream churn without weakening Tendermint-style accountability.
 The notation below still says `2f + 1` because that is the familiar
 Tendermint shorthand. In the Quint model, quorum predicates are computed over
 summed validator voting power via `VotingPowerOf(...) >= QuorumVotingPower`.
+The height-indexed model scopes the same rule to `(height h, round r)`.
 
 ## Evidence Types
 
@@ -70,6 +71,14 @@ If LocalNilPrecommitCert(p, r):
   allow the next round to resample the PoW stream
 ```
 
+In `CrosslinkHeightedRound.qnt`, the same rule is height-scoped:
+
+```text
+If LocalNilPrecommitCert(p, h, r):
+  clear only active-height state whose round is r
+  preserve state for other BFT heights
+```
+
 The important non-rule is:
 
 ```text
@@ -81,6 +90,7 @@ The model checks this with:
 
 ```text
 mixedPrecommitQuorumDoesNotUnlockTest
+mixedPrecommitQuorumDoesNotClearHeightedLockTest
 precommitTimeoutDoesNotUnlockWithoutNilCertificateTest
 ```
 

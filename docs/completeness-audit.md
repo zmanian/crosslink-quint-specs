@@ -17,26 +17,27 @@ Status terms:
 | Requirement | Current evidence | Status | Gap |
 | --- | --- | --- | --- |
 | Standalone GitHub repo | `zmanian/crosslink-quint-specs`, `main` branch | covered | None. |
-| Baseline Crosslink spec | `BaselineCrosslink` in `spec/CrosslinkResampling.qnt`; `test:baseline`; `verify:baseline-safety` | covered | Still one BFT height in the round machine. |
-| Nil-precommit resampling spec | `NilPrecommitResamplingCrosslink`; `test:resampling`; `verify:resampling-safety` | covered | Still one BFT height in the round machine. |
+| Baseline Crosslink spec | `BaselineCrosslink` in `spec/CrosslinkResampling.qnt`; `test:baseline`; `verify:baseline-safety` | covered | Heighted round-machine coverage is currently a separate model. |
+| Nil-precommit resampling spec | `NilPrecommitResamplingCrosslink`; `test:resampling`; `verify:resampling-safety`; `CrosslinkHeightedRound.qnt` | covered | Heighted round-machine coverage is currently a separate model. |
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
 | Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound` | covered | Needs production `head - sigma` data vectors. |
 | Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `test:proposal-validity` | covered | Needs concrete Crosslink block/header validity wiring. |
-| Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock` | partial | Needs full per-height Tendermint state instances. |
+| Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; per-height lock/valid state in `CrosslinkHeightedRound.qnt` | partial | Needs composition between the richer one-height valid-round rules and the heighted round machine. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
-| Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest` | covered | Needs per-height composition. |
+| Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
 | Local receive/delivery semantics | `seenPropose`, `seenPrevote`, `seenPrecommit`, `Deliver*`; `test:local-delivery` | covered | Needs network scheduling/fairness assumptions. |
 | Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout` | partial | Needs fuller timeout scheduling and temporal properties. |
+| Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `test:heighted-round`; `verify:heighted-round-safety` | partial | First receive-reactive heighted slice; not yet composed with all richer one-height rules or finality. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Dynamic validator sets and production signer-set formats remain open. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
 | Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `test:evidence-gossip`; `verify:evidence-gossip-safety` | partial | Standalone model; not yet wired into production gossip or the main round model. |
 | Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `test:message-auth`; `verify:message-auth-safety` | partial | Abstract signature metadata; not yet linked to concrete serialization or crypto. |
 | Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
-| Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `test:multi-height`; `verify:multi-height-safety` | partial | Round machine is not yet instantiated per BFT height. |
+| Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `test:multi-height`; `test:heighted-round`; `verify:multi-height-safety`; `verify:heighted-round-safety` | partial | Finality and the heighted round machine are still separate slices. |
 | Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `test:composed`; `verify:composed-safety` | partial | Composes one round-machine height with finality, not arbitrary heights. |
 | Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel` | partial | Scripted bounded witnesses only; no general temporal liveness proof yet. |
 | CI for checks | `package.json` scripts and `.github/workflows/quint.yml` | covered | Latest pushed commit may still be running until GitHub Actions completes. |
@@ -55,8 +56,8 @@ npm run verify
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
 message evidence, local delivery, timeout, liveness witnesses, proposal
 validity, valid-round evidence, fork finality, composed resampling/finality,
-composed liveness, multi-height finality, evidence gossip, and message
-authentication.
+composed liveness, multi-height finality, height-indexed round-machine
+behavior, evidence gossip, and message authentication.
 
 `npm run verify` currently runs bounded Apalache safety checks at depth 3 for:
 
@@ -66,6 +67,7 @@ NilPrecommitResamplingCrosslink
 CrosslinkForkFinalityModel
 CrosslinkComposedResamplingModel
 CrosslinkMultiHeightModel
+CrosslinkHeightedRoundModel
 CrosslinkEvidenceGossipModel
 CrosslinkMessageAuthModel
 ```
@@ -74,7 +76,8 @@ CrosslinkMessageAuthModel
 
 The goal is not complete yet. The strongest remaining gaps are:
 
-- instantiate the local receive/timeout Tenderlink round machine per BFT height;
+- compose the first height-indexed round-machine slice with finality, timeout,
+  valid-round, message-authentication, and evidence-gossip models;
 - replace scripted liveness witnesses with temporal or scheduler-parametric
   liveness checks under post-GST stream stability;
 - link abstract proposal validity to concrete Crosslink block/header data;

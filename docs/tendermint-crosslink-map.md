@@ -20,7 +20,7 @@ finality semantics.
 
 | Tendermint concept | Crosslink model location | Notes |
 | --- | --- | --- |
-| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt`; `nextBftHeight`, `decision`, and `Next` in `CrosslinkMultiHeight.qnt` | The round machine is still one-height, but the finality layer now has sequential BFT heights. |
+| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt`; `nextBftHeight`, `decision`, and `Next` in `CrosslinkMultiHeight.qnt`; `height`, per-height `round`/`step`, and `Next` in `CrosslinkHeightedRound.qnt` | The first height-indexed round-machine slice now exists, but it is not yet composed with every richer one-height rule. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
 | Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value. |
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
@@ -28,7 +28,7 @@ finality semantics.
 | Precommit quorum | `LocalPrecommitQuorum`, `LocalNilPrecommitCert`, `LocalAnyPrecommitQuorum` | Used for decision, nil-certificate recovery, and round advancement over delivered precommits. |
 | Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | Main round receive guards now use local delivery state rather than global broadcast state. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
-| Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix` | Current round-machine agreement is one-height; the multi-height layer prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix across BFT heights. |
+| Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix`, `PerHeightAgreement`, `HeightCursorSequential` | The finality model prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix; the heighted round model checks per-height agreement and sequential validator cursors. |
 | Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, `CrosslinkEvidenceGossip.qnt`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, fat-pointer signer validation, and an explicit gossip-to-observer evidence pipeline. |
 
 ## Crosslink-Specific Concepts
@@ -39,7 +39,7 @@ finality semantics.
 | Static proposal validity | `StaticProposalValidity` | Splits validity into structural validity, PoW-chain validity, and finality-candidate validity. |
 | Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
-| Nil-precommit resampling | `NilPrecommitResamplingCrosslink` | A `2f + 1 PRECOMMIT nil` cert clears only same-round cached/lock/valid state. |
+| Nil-precommit resampling | `NilPrecommitResamplingCrosslink`, `CrosslinkHeightedRound.qnt` | A `2f + 1 PRECOMMIT nil` cert clears only same-height/same-round cached/lock/valid state. Mixed precommit quorums can advance waiting, but do not unlock. |
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
 | Round recovery plus finality | `CrosslinkComposed.qnt` | Wires a resampled BFT decision into Crosslink finality. |
 | Evidence gossip | `CrosslinkEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence. |
@@ -148,10 +148,16 @@ decided again, and every later decision must extend earlier decisions. A BFT
 height may still finalize a later PoW snapshot such as `a2` directly from
 genesis when the candidate is tail-confirmed by `a3`.
 
+`CrosslinkHeightedRound.qnt` adds the corresponding BFT-height dimension around
+a compact Tenderlink round machine: each validator has a height cursor, each
+height has its own round/step/lock/valid/cache state, and nil-precommit
+resampling only clears state for the active height and abandoned round.
+
 ## Remaining Work To Match Upstream Quality
 
-- Instantiate the local receive/timeout round machine per BFT height, building
-  on the standalone multi-height finality model.
+- Compose the first height-indexed round machine with the richer one-height
+  timeout, valid-round, finality, message-authentication, and evidence-gossip
+  slices.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

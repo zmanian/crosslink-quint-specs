@@ -164,6 +164,14 @@ For Crosslink, matching that quality means adding:
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
   decisions, and keeps the finalized PoW prefix linear across BFT heights.
-  The remaining multi-height work is to instantiate the Tenderlink round
-  machine per BFT height instead of modeling the cross-height finality layer
-  alone.
+- `CrosslinkHeightedRound.qnt` adds the first height-indexed
+  receive-reactive round-machine slice. Each validator has a sequential BFT
+  height cursor, per-height round/step/lock/valid/cache state, per-height
+  local delivery, and per-height decisions. It checks that nil-precommit
+  resampling clears only the same height and same round, that mixed
+  precommit quorums do not unlock heighted lock state, and that a validator
+  cannot decide height `h + 1` before height `h`.
+- The remaining multi-height work is to compose that height-indexed round
+  machine with the richer one-height timeout/valid-round rules and the
+  finalized-prefix model, rather than keeping round recovery and finality as
+  separate slices.
