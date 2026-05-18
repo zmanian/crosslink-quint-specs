@@ -32,6 +32,7 @@ implementation that each rule has a clear code counterpart.
 | `FinalizeCandidate` | Push/accept decided Crosslink BFT block | The model allows skipped PoW heights on the same branch. |
 | `DecideAt` / `DecisionCursorIsSequential` | BFT-height progression and duplicate-decision rejection | The first multi-height model requires sequential BFT heights while permitting skipped PoW heights inside a valid candidate. |
 | `height` / `HeightCursorSequential` / `FutureHeightsRemainPristine` | Validator-local BFT-height cursor and per-height round state | The heighted round-machine slice checks that future heights stay untouched until reached and that a validator cannot decide height `h + 1` before height `h`. |
+| `FinalizeNextDecided` / `FinalityCursorSequential` | Finality application for locally decided BFT heights | The heighted-finality slice requires a local heighted decision before finality advances, and still rejects a decided PoW fork that does not extend the current finalized prefix. |
 | `FinalizedPrefixLinear` | Crosslink finalized-prefix safety | Finalized snapshots must remain on one PoW branch. |
 
 ## Evidence and Accountability
@@ -57,8 +58,7 @@ implementation that each rule has a clear code counterpart.
 - Connect the abstract message-authentication, evidence, and standalone gossip
   models to concrete signature verification, serialized message bytes, and
   production gossip.
-- Compose the first height-indexed receive-reactive round-machine slice with
-  the richer one-height timeout, valid-round, finality, message-authentication,
-  and evidence-gossip models.
+- Compose the height-indexed finality slice with the richer one-height timeout,
+  valid-round, message-authentication, and evidence-gossip models.
 - Add implementation-linked test vectors once the Tenderlink message format and
   Crosslink BFT block encoding stabilize.

@@ -171,7 +171,12 @@ For Crosslink, matching that quality means adding:
   resampling clears only the same height and same round, that mixed
   precommit quorums do not unlock heighted lock state, and that a validator
   cannot decide height `h + 1` before height `h`.
-- The remaining multi-height work is to compose that height-indexed round
-  machine with the richer one-height timeout/valid-round rules and the
-  finalized-prefix model, rather than keeping round recovery and finality as
-  separate slices.
+- `CrosslinkHeightedFinality.qnt` composes that height-indexed round machine
+  with a finality cursor. A BFT height only advances finality after a local
+  heighted decision, and the decided snapshot must extend the finalized PoW
+  prefix. The witnesses cover nil-precommit resampling followed by finality,
+  rejection of undecided-height finality, and rejection of a later fork after
+  an earlier BFT height is final.
+- The remaining multi-height work is to compose the height-indexed model with
+  the richer one-height timeout/valid-round, message-authentication, and
+  evidence-gossip slices.

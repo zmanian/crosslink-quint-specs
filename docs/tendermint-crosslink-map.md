@@ -28,7 +28,7 @@ finality semantics.
 | Precommit quorum | `LocalPrecommitQuorum`, `LocalNilPrecommitCert`, `LocalAnyPrecommitQuorum` | Used for decision, nil-certificate recovery, and round advancement over delivered precommits. |
 | Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | Main round receive guards now use local delivery state rather than global broadcast state. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
-| Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix`, `PerHeightAgreement`, `HeightCursorSequential` | The finality model prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix; the heighted round model checks per-height agreement and sequential validator cursors. |
+| Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix`, `PerHeightAgreement`, `HeightCursorSequential`, `FinalityCursorSequential` | The finality model prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix; the heighted round model checks per-height agreement and sequential validator cursors; the heighted-finality model requires finality to follow local heighted decisions. |
 | Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, `CrosslinkEvidenceGossip.qnt`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, fat-pointer signer validation, and an explicit gossip-to-observer evidence pipeline. |
 
 ## Crosslink-Specific Concepts
@@ -40,8 +40,8 @@ finality semantics.
 | Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink`, `CrosslinkHeightedRound.qnt` | A `2f + 1 PRECOMMIT nil` cert clears only same-height/same-round cached/lock/valid state. Mixed precommit quorums can advance waiting, but do not unlock. |
-| Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
-| Round recovery plus finality | `CrosslinkComposed.qnt` | Wires a resampled BFT decision into Crosslink finality. |
+| Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
+| Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt` | Wires a resampled BFT decision into Crosslink finality, including a first height-indexed composition. |
 | Evidence gossip | `CrosslinkEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence. |
 | Message authentication | `CrosslinkMessageAuth.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted. |
 
@@ -153,11 +153,16 @@ a compact Tenderlink round machine: each validator has a height cursor, each
 height has its own round/step/lock/valid/cache state, and nil-precommit
 resampling only clears state for the active height and abandoned round.
 
+`CrosslinkHeightedFinality.qnt` then requires the finality cursor to consume
+local heighted decisions in BFT-height order. This catches the Crosslink
+composition obligation that a later heighted decision on an incompatible PoW
+fork is not finalizable after an earlier BFT height has finalized a different
+branch.
+
 ## Remaining Work To Match Upstream Quality
 
-- Compose the first height-indexed round machine with the richer one-height
-  timeout, valid-round, finality, message-authentication, and evidence-gossip
-  slices.
+- Compose the height-indexed finality model with the richer one-height timeout,
+  valid-round, message-authentication, and evidence-gossip slices.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
