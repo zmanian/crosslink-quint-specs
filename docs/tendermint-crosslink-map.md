@@ -22,7 +22,7 @@ finality semantics.
 | --- | --- | --- |
 | Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt` | Current model is still one-height, but now includes proposal, vote, precommit, and timeout transitions. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
-| Proposal with `validRound` | `Propose_t.validRound`, `InsertProposal` | Present, but valid-round rules are not yet as complete as upstream Tendermint. |
+| Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value. |
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
 | Prevote quorum | `PrevoteQuorum` | Used for value precommit transition and computed over summed voting power. |
 | Precommit quorum | `PrecommitQuorum` | Used for decision and nil-certificate recovery and computed over summed voting power. |
@@ -43,6 +43,25 @@ finality semantics.
 | Round recovery plus finality | `CrosslinkComposed.qnt` | Wires a resampled BFT decision into Crosslink finality. |
 
 ## Deliberate Deviations From Tendermint
+
+### Valid-Round Evidence
+
+Tendermint's `validRound` field is only useful when it is backed by a prevote
+quorum for the proposal value. The Crosslink model now makes that justification
+explicit:
+
+```text
+validRound = -1
+  or
+validRound < proposal.round and 2f + 1 PREVOTE value at validRound
+```
+
+`InsertProposal` prevents a correct proposer from broadcasting an unjustified
+non-`-1` valid round, `CorrectProposalValidRoundSound` makes that a safety
+obligation over reachable correct proposal messages, and `UponProposalPrevote`
+only lets an older lock vote for a different value when the proposal carries
+justified valid-round evidence. `CrosslinkValidRoundModel` has executable
+witnesses for both the nil-prevote rejection path and the justified unlock path.
 
 ### Moving Values
 

@@ -180,6 +180,32 @@ module CrosslinkResampling {
       m.src == Proposer.get(r) and m.round == r and m.proposal == v
     )
 
+  def ValidRoundJustified(r: Round_t, v: Snapshot_t, vr: Round_t): bool =
+    vr == NilRound or (
+      vr.in(Rounds) and
+      vr < r and
+      PrevoteQuorum(vr, v)
+    )
+
+  def ProposalUnlocksCurrentLock(
+    p: Proc_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool =
+    lockedRound.get(p) == NilRound or
+    lockedValue.get(p) == v or
+    lockedRound.get(p) <= vr
+
+  def AcceptableProposalFor(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
+    msgsPropose.get(r).exists(m =>
+      m.src == Proposer.get(r) and
+      m.round == r and
+      m.proposal == v and
+      ValidProposalForRound(r, v) and
+      ValidRoundJustified(r, v, m.validRound) and
+      ProposalUnlocksCurrentLock(p, v, m.validRound)
+    )
+
   def StickyOrStreamProposal(p: Proc_t): Snapshot_t =
     if (validValue.get(p) == NilSnapshot) {
       if (cachedProposal.get(p) == NilSnapshot) {
@@ -286,6 +312,7 @@ module CrosslinkResampling {
       p == Proposer.get(r),
       step.get(p) == "propose",
       msgsPropose.get(r).forall(m => m.src != p),
+      ValidRoundJustified(r, proposal, validRound.get(p)),
       BroadcastProposal(p, r, proposal, validRound.get(p)),
       firedAction' = "InsertProposal",
       round' = round,
@@ -307,10 +334,7 @@ module CrosslinkResampling {
 
   action UponProposalPrevote(p: Proc_t, v: Snapshot_t): bool = {
     val r = round.get(p)
-    val vote = if (
-      ValidProposalForRound(r, v) and
-      (lockedRound.get(p) == NilRound or lockedValue.get(p) == v)
-    ) {
+    val vote = if (AcceptableProposalFor(p, r, v)) {
       v
     } else {
       NilSnapshot
@@ -627,6 +651,57 @@ module CrosslinkResampling {
   action SeedAbandonedRoundState(p: Proc_t): bool =
     SeedAbandonedRoundStateAt(p, 0)
 
+  action SeedProposalAt(
+    p: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+    vr: Round_t,
+  ): bool =
+    all {
+      p == Proposer.get(r),
+      r.in(Rounds),
+      IsValidSnapshot(v),
+      BroadcastProposal(p, r, v, vr),
+      firedAction' = "SeedProposal",
+      round' = round,
+      step' = step,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePrevote' = evidencePrevote,
+      evidencePrecommit' = evidencePrecommit,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+
+  action SeedPrevote(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
+    all {
+      p.in(Corr.union(Faulty)),
+      r.in(Rounds),
+      IsValidSnapshot(v),
+      BroadcastPrevote(p, r, v),
+      firedAction' = "SeedPrevote",
+      round' = round,
+      step' = step,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrecommit' = evidencePrecommit,
+      evidenceFatPointer' = evidenceFatPointer,
+    }
+
   action SeedValidNilPrecommitStateAt(p: Proc_t, r: Round_t): bool = {
     val stale = Stream.get(r)
     all {
@@ -640,13 +715,12 @@ module CrosslinkResampling {
       validRound' = validRound.set(p, r),
       cachedProposal' = cachedProposal.set(p, stale),
       cachedProposalRound' = cachedProposalRound.set(p, r),
+      BroadcastPrevote(p, r, stale),
       BroadcastPrecommit(p, r, NilSnapshot),
       firedAction' = "SeedValidNilPrecommitState",
       decision' = decision,
       msgsPropose' = msgsPropose,
-      msgsPrevote' = msgsPrevote,
       evidencePropose' = evidencePropose,
-      evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
     }
   }
@@ -667,13 +741,12 @@ module CrosslinkResampling {
       validRound' = validRound.set(p, r),
       cachedProposal' = cachedProposal,
       cachedProposalRound' = cachedProposalRound,
+      BroadcastPrevote(p, r, locked),
       BroadcastPrecommit(p, r, locked),
       firedAction' = "SeedSameRoundValueLock",
       decision' = decision,
       msgsPropose' = msgsPropose,
-      msgsPrevote' = msgsPrevote,
       evidencePropose' = evidencePropose,
-      evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
     }
   }
@@ -681,32 +754,37 @@ module CrosslinkResampling {
   action SeedSameRoundValueLock(p: Proc_t): bool =
     SeedSameRoundValueLockAt(p, 0)
 
-  action SeedTimedOutSameRoundValueLock(p: Proc_t): bool = {
-    val r = 0
-    val nextRound = 1
-    val locked = Stream.get(r)
+  action SeedTimedOutValueLockAt(
+    p: Proc_t,
+    activeRound: Round_t,
+    lockRound: Round_t,
+  ): bool = {
+    val locked = Stream.get(lockRound)
     all {
-      r.in(Rounds),
-      nextRound.in(Rounds),
+      activeRound.in(Rounds),
+      lockRound.in(Rounds),
+      lockRound < activeRound,
       p.in(Corr),
-      round' = round.set(p, nextRound),
+      round' = round.set(p, activeRound),
       step' = step.set(p, "propose"),
       lockedValue' = lockedValue.set(p, locked),
-      lockedRound' = lockedRound.set(p, r),
+      lockedRound' = lockedRound.set(p, lockRound),
       validValue' = validValue.set(p, locked),
-      validRound' = validRound.set(p, r),
+      validRound' = validRound.set(p, lockRound),
       cachedProposal' = cachedProposal,
       cachedProposalRound' = cachedProposalRound,
-      BroadcastPrecommit(p, r, locked),
+      BroadcastPrevote(p, lockRound, locked),
+      BroadcastPrecommit(p, lockRound, locked),
       firedAction' = "SeedTimedOutSameRoundValueLock",
       decision' = decision,
       msgsPropose' = msgsPropose,
-      msgsPrevote' = msgsPrevote,
       evidencePropose' = evidencePropose,
-      evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
     }
   }
+
+  action SeedTimedOutSameRoundValueLock(p: Proc_t): bool =
+    SeedTimedOutValueLockAt(p, 1, 0)
 
   action SeedFaultyNilPrecommitAt(p: Proc_t, r: Round_t): bool = {
     all {
@@ -750,6 +828,11 @@ module CrosslinkResampling {
       validRound' = validRound.set(p, lockRound),
       cachedProposal' = cachedProposal,
       cachedProposalRound' = cachedProposalRound,
+      msgsPrevote' = msgsPrevote.setBy(lockRound, old => old.union(Set({
+        src: p,
+        round: lockRound,
+        id: locked,
+      }))),
       msgsPrecommit' = msgsPrecommit
         .setBy(lockRound, old => old.union(Set({
           src: p,
@@ -761,6 +844,11 @@ module CrosslinkResampling {
           round: activeRound,
           id: NilSnapshot,
         }))),
+      evidencePrevote' = evidencePrevote.setBy(lockRound, old => old.union(Set({
+        src: p,
+        round: lockRound,
+        id: locked,
+      }))),
       evidencePrecommit' = evidencePrecommit
         .setBy(lockRound, old => old.union(Set({
           src: p,
@@ -775,9 +863,7 @@ module CrosslinkResampling {
       firedAction' = "SeedOlderLockWithNilPrecommit",
       decision' = decision,
       msgsPropose' = msgsPropose,
-      msgsPrevote' = msgsPrevote,
       evidencePropose' = evidencePropose,
-      evidencePrevote' = evidencePrevote,
       evidenceFatPointer' = evidenceFatPointer,
     }
   }
@@ -906,8 +992,21 @@ module CrosslinkResampling {
   val FatPointerEvidenceSound =
     evidenceFatPointer.forall(fp => ValidFatPointer(fp))
 
+  val CorrectProposalValidRoundSound =
+    Rounds.forall(r =>
+      msgsPropose.get(r).forall(m =>
+        not(Corr.contains(m.src)) or (
+          m.round == r and
+          m.src == Proposer.get(r) and
+          ValidRoundJustified(r, m.proposal, m.validRound)
+        )
+      )
+    )
+
   val MessageEvidenceSoundness =
-    ProtocolMessagesAreObserved and FatPointerEvidenceSound
+    ProtocolMessagesAreObserved and
+    FatPointerEvidenceSound and
+    CorrectProposalValidRoundSound
 
   val SameRoundNilAndValueCommitExcluded =
     Rounds.forall(r =>
@@ -1739,6 +1838,74 @@ module CrosslinkProposalValidityModel {
         )),
         unchangedAll,
       })
+  }
+}
+
+module CrosslinkValidRoundModel {
+  import CrosslinkResamplingTest(
+    Corr = Set("p1", "p2", "p3"),
+    Faulty = Set("p4"),
+    N = 4,
+    T = 1,
+    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
+    TotalVotingPower = 4,
+    FaultyVotingPowerBound = 1,
+    QuorumVotingPower = 3,
+    MaxRound = 2,
+    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3"),
+    Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s1"),
+    Snapshots = Set("s0", "s1"),
+    StructurallyValid = Map("s0" -> true, "s1" -> true),
+    PowChainValid = Map("s0" -> true, "s1" -> true),
+    FinalityCandidateValid = Map("s0" -> true, "s1" -> true),
+    ResampleOnNilPrecommit = true,
+    ExpectedRound1Proposal = "s1",
+  ).*
+
+  run unjustifiedValidRoundProposalPrevotesNilTest = {
+    Init
+      .then(SeedTimedOutValueLockAt("p1", 2, 0))
+      .then(SeedProposalAt("p3", 2, "s1", 1))
+      .then(UponProposalPrevote("p1", "s1"))
+      .then(all {
+        assert(not(PrevoteQuorum(1, "s1"))),
+        assert(not(ValidRoundJustified(2, "s1", 1))),
+        assert(msgsPrevote.get(2).exists(m =>
+          m.src == "p1" and m.id == NilSnapshot
+        )),
+        assert(not(msgsPrevote.get(2).exists(m =>
+          m.src == "p1" and m.id == "s1"
+        ))),
+        unchangedAll,
+      })
+  }
+
+  run justifiedValidRoundUnlocksOlderLockTest = {
+    Init
+      .then(SeedTimedOutValueLockAt("p1", 2, 0))
+      .then(SeedPrevote("p1", 1, "s1"))
+      .then(SeedPrevote("p2", 1, "s1"))
+      .then(SeedPrevote("p3", 1, "s1"))
+      .then(SeedProposalAt("p3", 2, "s1", 1))
+      .then(UponProposalPrevote("p1", "s1"))
+      .then(all {
+        assert(PrevoteQuorum(1, "s1")),
+        assert(ValidRoundJustified(2, "s1", 1)),
+        assert(lockedRound.get("p1") == 0),
+        assert(lockedValue.get("p1") == "s0"),
+        assert(msgsPrevote.get(2).exists(m =>
+          m.src == "p1" and m.id == "s1"
+        )),
+        unchangedAll,
+      })
+  }
+
+  run correctProposerCannotBroadcastUnjustifiedValidRoundTest = {
+    Init
+      .then(SeedValidNilPrecommitStateAt("p3", 1))
+      .then(TimeoutPrecommitStartNextRound("p3"))
+      .then(InsertProposal("p3"))
+      .fail()
   }
 }
 

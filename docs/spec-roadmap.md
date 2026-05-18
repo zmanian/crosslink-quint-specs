@@ -125,6 +125,13 @@ For Crosslink, matching that quality means adding:
   propose timeout broadcasts a nil prevote, prevote timeout broadcasts a nil
   precommit, and precommit timeout advances the round without clearing
   lock/valid/cache state unless a nil-precommit certificate exists.
+- Valid-round handling now has a first Tendermint-style rule: a proposal with a
+  non-`-1` `validRound` must be justified by a prevote quorum for that value in
+  the referenced round, `CorrectProposalValidRoundSound` makes this a safety
+  obligation for correct proposal messages, and an older lock only votes across
+  values when that evidence is present. `CrosslinkValidRoundModel` covers
+  unjustified rejection, justified unlock, and correct-proposer rejection for
+  unjustified valid-round state.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 

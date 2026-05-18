@@ -13,6 +13,7 @@ implementation that each rule has a clear code counterpart.
 | `UponValuePrevoteQuorum` | Tenderlink `bft_update` handling of `2f + 1` prevotes for the proposal id | The implementation freshly validates the proposal before precommitting a value. |
 | `UponStreamChangePrecommitNil` | Tenderlink stale validation path that broadcasts `Precommit(ValueId::NIL)` | This is the Crosslink-specific moving-stream hook. |
 | `StaticProposalValidity` | Crosslink proposal/block validation before freshness checks | Abstract split for structural validity, PoW-chain validity, and finality-candidate validity. |
+| `ValidRoundJustified` / `AcceptableProposalFor` / `CorrectProposalValidRoundSound` | Proposal receive checks for `validRound`/POLRound evidence | A non-`-1` valid round must be backed by a prevote quorum for the proposal value before it can unlock an older value lock. |
 | `StartNextRoundAfterPrecommitQuorum` | Tenderlink precommit-quorum processing and round start | In the resampling branch, nil quorum clears same-round state before moving on. |
 | `ApplyLateNilPrecommitCertificate` | Tenderlink late nil-certificate recovery path | Late certs clear abandoned-round state without rewinding the validator. |
 | `MixedPrecommitQuorumWithoutNilCert` | Negative guard test in Tenderlink | Mixed precommits can end waiting, but cannot unlock. |
