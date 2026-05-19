@@ -187,6 +187,12 @@ For Crosslink, matching that quality means adding:
   five-entry larger-validator-set payloads. The witnesses also reject
   status-flag compact consensus packets, wrong packet types, malformed ack/tag
   fields, missing proposal signatures, and trailing vote bytes.
+- `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt` pins the first
+  concrete slashing-evidence envelope for the nil-precommit accountability
+  story: nil/value precommit equivocation by one validator at the same height
+  and round, encoded as a 51-byte typed header plus two canonical `PacketVotes`
+  payloads. Witnesses reject prevote evidence, wrong height/round, wrong length,
+  same-value packets, wrong-signer claims, and wrong envelope bytes.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport
   replay boundary around compact consensus packets. It pins little-endian outer
   nonce prefixes, requires successful abstract Noise decryption before the

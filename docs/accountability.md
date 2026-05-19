@@ -188,6 +188,14 @@ oldHeightFatPointerUsesOldAuthorizedSetTest
 generatedFixtureWireConstantsAreCoherentTest
 generatedFixtureWireObservedAfterGossipTest
 generatedFixtureWireRejectedBeforeGossipTest
+acceptsNilValuePrecommitEvidenceTest
+rejectsPrevoteEvidenceTest
+rejectsRoundMismatchEvidenceTest
+rejectsHeightMismatchEvidenceTest
+rejectsWrongLengthEvidenceTest
+rejectsSameValueEvidenceTest
+rejectsWrongSignerEvidenceTest
+rejectsWrongHexEvidenceTest
 ```
 
 ## Current Limitations
@@ -220,7 +228,14 @@ transport model adds the first transport boundary for the checked-in generated
 fixture: the matching precommit and fat-pointer wire must arrive through
 canonical Crosslink-topic envelopes, wrong topic/sign-bytes/kind/length
 envelopes are rejected, and a fixture precommit cannot enter gossip unless its
-matching transport envelope was seen. This is still partial: the model now
-covers the authentication boundary, wire shape, gossip-before-observe rule,
-fixture-level transport gate, and fixture-manifest Ed25519 verification, but
-does not yet call a full production gossip transport implementation.
+matching transport envelope was seen. `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt`
+adds the first concrete slashing-evidence envelope for the nil-precommit rule:
+nil/value precommit equivocation by one validator at the same height and round,
+encoded as typed header fields plus two canonical `PacketVotes` payloads. It
+rejects prevote evidence, wrong-height/round evidence, wrong byte lengths,
+same-value packets, wrong-signer claims, and non-canonical envelope bytes. This
+is still partial: the model now covers the authentication boundary, wire shape,
+gossip-before-observe rule, fixture-level transport gate, fixture-manifest
+Ed25519 verification, and nil/value equivocation evidence envelope, but does
+not yet call a full production gossip transport implementation or cover every
+future slashing evidence encoding.
