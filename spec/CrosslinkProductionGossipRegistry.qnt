@@ -14,6 +14,9 @@ module CrosslinkProductionGossipRegistry {
    semantics.
    */
 
+  import CrosslinkProductionFixtureVectorsGenerated.* from
+    "./CrosslinkProductionFixtureVectorsGenerated"
+
   type Protocol_t = str
   type Channel_t = str
   type Topic_t = str
@@ -132,6 +135,17 @@ module CrosslinkProductionGossipRegistry {
     "bft-block-v0-h2-finality0-len4619-total4761-headers3-offset150-154-158"
   pure val ProductionFatPointerWireFixtureBytes =
     "fat-pointer-wire-h1-r0-len142"
+
+  pure val ProductionBftBlockProposalFixtureVersion = 0
+  pure val ProductionBftBlockProposalFixtureHeight = 2
+  pure val ProductionBftBlockProposalFixtureFinalityCandidateHeight = 0
+  pure val ProductionBftBlockProposalFixtureFinalityOffset = 150
+  pure val ProductionBftBlockProposalFixtureHeaderCountOffset = 154
+  pure val ProductionBftBlockProposalFixtureHeadersStartOffset = 158
+  pure val ProductionBftBlockProposalFixturePayloadByteLen = 4619
+  pure val ProductionBftBlockProposalFixtureBlockAndFatPointerByteLen = 4761
+  pure val ProductionBftBlockProposalFixtureHeaderCount = 3
+  pure val ProductionFatPointerWireFixtureByteLen = 142
 
   pure val WrongBytes = "wrong-production-gossip-bytes"
 
@@ -286,9 +300,42 @@ module CrosslinkProductionGossipRegistry {
     env.kind == DynamicSigmaConsensusParamKind and
     DynamicSigmaConsensusParamBytes.contains(env.bytes)
 
+  def ProductionBftBlockProposalFixtureMetadataCoherent: bool =
+    GeneratedAllBftBlockVersionsZero and
+    GeneratedAllFinalizationCandidateHeightsZero and
+    FixtureLaterBftBlockVersion ==
+      ProductionBftBlockProposalFixtureVersion and
+    FixtureLaterBftHeight == ProductionBftBlockProposalFixtureHeight and
+    FixtureLaterFinalizationCandidateHeight ==
+      ProductionBftBlockProposalFixtureFinalityCandidateHeight and
+    FixtureLaterFinalizationCandidateHeightOffset ==
+      ProductionBftBlockProposalFixtureFinalityOffset and
+    FixtureLaterHeaderCountOffset ==
+      ProductionBftBlockProposalFixtureHeaderCountOffset and
+    FixtureLaterHeadersStartOffset ==
+      ProductionBftBlockProposalFixtureHeadersStartOffset and
+    FixtureLaterBftBlockByteLen ==
+      ProductionBftBlockProposalFixturePayloadByteLen and
+    FixtureLaterBftBlockAndFatPointerByteLen ==
+      ProductionBftBlockProposalFixtureBlockAndFatPointerByteLen and
+    FixtureHeaderCount == ProductionBftBlockProposalFixtureHeaderCount and
+    CheckedInFixtureTrailingFatPointerOffset ==
+      FixtureLaterBftBlockByteLen and
+    FixtureLaterHeader2EndOffset == FixtureLaterBftBlockByteLen
+
+  def ProductionFatPointerWireFixtureMetadataCoherent: bool =
+    GeneratedAllTrailingFatPointerSignatureCountsOne and
+    FixtureTrailingFatPointerSignatureCount == 1 and
+    ProductionFatPointerWireFixtureByteLen ==
+      FixtureLaterBftBlockAndFatPointerByteLen -
+        FixtureLaterBftBlockByteLen and
+    CheckedInFixtureTrailingFatPointerOffset ==
+      FixtureLaterBftBlockByteLen
+
   def ProductionBftBlockProposalRouteValid(
     env: ProductionEnvelope_t,
   ): bool =
+    ProductionBftBlockProposalFixtureMetadataCoherent and
     env.protocol == ProductionFinalityProtocol and
     env.channel == ProductionBftBlockProposalChannel and
     env.topic == CrosslinkConsensusTopic and
@@ -296,6 +343,7 @@ module CrosslinkProductionGossipRegistry {
     env.bytes == ProductionBftBlockProposalFixtureBytes
 
   def ProductionFatPointerWireRouteValid(env: ProductionEnvelope_t): bool =
+    ProductionFatPointerWireFixtureMetadataCoherent and
     env.protocol == ProductionFinalityProtocol and
     env.channel == ProductionFatPointerWireChannel and
     env.topic == CrosslinkConsensusTopic and
@@ -677,6 +725,15 @@ module CrosslinkProductionGossipRegistryTest {
           "bft-block-v0-h2-finality0-len4619-total4761-headers3-offset150-154-158"),
         assert(ProductionFatPointerWireFixtureBytes ==
           "fat-pointer-wire-h1-r0-len142"),
+        assert(ProductionBftBlockProposalFixtureMetadataCoherent),
+        assert(ProductionFatPointerWireFixtureMetadataCoherent),
+        assert(
+          ProductionBftBlockProposalFixturePayloadByteLen == 4619
+        ),
+        assert(
+          ProductionBftBlockProposalFixtureBlockAndFatPointerByteLen == 4761
+        ),
+        assert(ProductionFatPointerWireFixtureByteLen == 142),
         assert(RegistrySafety),
         registryUnchangedAll,
       })

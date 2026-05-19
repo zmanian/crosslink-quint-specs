@@ -320,8 +320,8 @@ For Crosslink, matching that quality means adding:
   Tenderlink/Malachite lane, or finality proposal bytes on unrelated lanes.
   The dynamic-sigma lane pins the exact raised/recovered consensus-param hex
   vectors from the production-shaped format model, while the finality lanes
-  use compact byte labels tied to the generated fixture metadata validated by
-  the production-finality projection.
+  use compact byte labels whose route validity directly checks the generated
+  fixture metadata also validated by the production-finality projection.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to

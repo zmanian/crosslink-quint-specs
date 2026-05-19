@@ -472,8 +472,8 @@ The current spec surface has three first-class Crosslink variants:
   Malachite liveness traffic. The dynamic-sigma lane uses the same exact
   production-shaped hex vectors pinned by the consensus-param format model for
   raised and recovered sigma updates, while the finality lanes use compact byte
-  labels tied to the generated fixture metadata validated by
-  `CrosslinkProductionFinalityProjectionContractModel`.
+  labels whose route validity directly checks the generated fixture metadata
+  also validated by `CrosslinkProductionFinalityProjectionContractModel`.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
