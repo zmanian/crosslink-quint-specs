@@ -12,6 +12,12 @@ module CrosslinkHeadSigmaSampling {
   type Height_t = int
   type Round_t = int
 
+  type Proposal_t = {
+    tip: Snapshot_t,
+    candidate: Snapshot_t,
+    declaredHeight: Height_t,
+  }
+
   const Snapshots: Set[Snapshot_t]
   const MaxHeight: Height_t
   const MaxRound: Round_t
@@ -97,6 +103,20 @@ module CrosslinkHeadSigmaSampling {
     Extends(candidate, InitialFinalized) and
     TailConfirms(tip, candidate)
   }
+
+  def ProposalValidAgainstFinalized(
+    proposal: Proposal_t,
+    finalizedPrefix: Snapshot_t,
+  ): bool =
+    IsSnapshot(proposal.tip) and
+    IsSnapshot(proposal.candidate) and
+    proposal.declaredHeight == Height(proposal.candidate) and
+    proposal.candidate == HeadSigmaCandidate(proposal.tip) and
+    Extends(proposal.candidate, finalizedPrefix) and
+    TailConfirms(proposal.tip, proposal.candidate)
+
+  def ProposalValid(proposal: Proposal_t): bool =
+    ProposalValidAgainstFinalized(proposal, InitialFinalized)
 
   action Init = all {
     nextRound' = 0,
@@ -208,6 +228,54 @@ module CrosslinkHeadSigmaSamplingTest {
         assert(sampled.get(3) == "b2"),
         assert(not(SampleChangedAfter(2))),
         assert(Safety),
+        unchangedAll,
+      })
+  }
+
+  run acceptsValidHeadSigmaProposalTest = {
+    Init
+      .then(all {
+        assert(ProposalValid({
+          tip: "a3",
+          candidate: "a2",
+          declaredHeight: 2,
+        })),
+        unchangedAll,
+      })
+  }
+
+  run rejectsWrongCandidateForHeadTest = {
+    Init
+      .then(all {
+        assert(not(ProposalValid({
+          tip: "a3",
+          candidate: "a1",
+          declaredHeight: 1,
+        }))),
+        unchangedAll,
+      })
+  }
+
+  run rejectsWrongDeclaredHeightTest = {
+    Init
+      .then(all {
+        assert(not(ProposalValid({
+          tip: "a3",
+          candidate: "a2",
+          declaredHeight: 3,
+        }))),
+        unchangedAll,
+      })
+  }
+
+  run rejectsCandidateNotExtendingFinalizedPrefixTest = {
+    Init
+      .then(all {
+        assert(not(ProposalValidAgainstFinalized({
+          tip: "b3",
+          candidate: "b2",
+          declaredHeight: 2,
+        }, "a1"))),
         unchangedAll,
       })
   }
