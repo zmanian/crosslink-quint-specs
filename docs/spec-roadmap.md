@@ -142,6 +142,16 @@ For Crosslink, matching that quality means adding:
   state from `CrosslinkSchedulerLiveness.qnt`, keeps only progress transitions
   before decision, and TLC checks eventual entry into the stable decision
   phase over the complete finite state graph.
+- `CrosslinkStreamChurnRisk.qnt` adds a bounded integer-risk model for the
+  validator-set-size intuition behind nil-precommit resampling. It relates
+  linear/quadratic GST growth, the prevote-to-precommit vulnerability window,
+  normal PoW head arrivals, sigma's long-reorg-tail mitigation, and the number
+  of rounds resampling burns before a stable stream window appears.
+- `CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree witness for
+  that risk. A long reorg between prevote and precommit changes the sampled
+  `head - sigma` candidate, and an ordinary same-branch block arrival can do
+  the same; the resampling path burns those rounds and decides only after a
+  stable head-sigma window.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
@@ -233,11 +243,13 @@ For Crosslink, matching that quality means adding:
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
-  the newest head-sigma, BFT-block-shape, BFT-block validation-gap,
-  fat-pointer-format, fat-pointer production-vector, heighted
-  validator-evidence, and heighted authenticated-evidence models. It keeps
-  default CI at bounded depth while giving reviewers a depth-5 Apalache check
-  for the models most likely to hide cross-component state-space mistakes.
+  the newest stream-churn-risk, PoW-reorg-stress, head-sigma,
+  BFT-block-shape, BFT-block validation-gap, fat-pointer-format,
+  fat-pointer production-vector, heighted validator-evidence, and heighted
+  authenticated-evidence models. It keeps default CI at bounded depth while
+  giving reviewers depth-5 Apalache checks, plus a depth-8 PoW-reorg stress
+  check, for the models most likely to hide cross-component state-space
+  mistakes.
 
 - Milestone 5 has an initial stream-stability witness:
   `NilPrecommitResamplingStableWindowLiveness` shows two stream-change aborts
@@ -260,6 +272,14 @@ For Crosslink, matching that quality means adding:
   nondeterministic/adversarial rather than probabilistic: it checks bounded
   fork switches and stable-head windows, but it does not yet quantify PoW
   block-arrival rates, propagation races, or long-tail reorg probabilities.
+- `CrosslinkStreamChurnRiskModel` now adds the first parameterized bridge from
+  those adversarial stream changes to liveness risk: validator count increases
+  the vulnerable window through GST, global distribution can add quadratic
+  delay, sigma lowers only long-reorg-tail exposure, and resampling converts a
+  finite number of churn windows into round increments before decision.
+- `CrosslinkPowReorgStressModel` adds the corresponding concrete fork-tree
+  stress trace: a long reorg and a same-branch PoW block arrival both burn
+  nil-precommit rounds before a stable head-sigma window decides.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
@@ -284,6 +304,8 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and gossip transport, and to lift the
   scheduler temporal contract into a full composed protocol temporal proof.
-  A separate stochastic/parameterized PoW analysis should relate sigma, round
-  duration, GST/validator-set size, and reorg-depth tails to the probability
-  that `head - sigma` changes during prevote/precommit.
+  The current stream-churn and PoW-reorg stress models are parameterized but
+  not calibrated; a later stochastic analysis should replace their integer
+  risk numerators and finite fork witnesses with measured or assumed
+  distributions for PoW arrivals, propagation races, GST/validator-set
+  scaling, and reorg-depth tails.

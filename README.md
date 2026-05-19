@@ -50,6 +50,16 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkSchedulerProgressContract.qnt` extracts the scheduler envelope
   into a verifier-friendly temporal contract. TLC checks that the progress-only
   scheduler envelope eventually reaches the stable decision phase.
+- `spec/CrosslinkStreamChurnRisk.qnt` adds a parameterized integer-risk model
+  for the liveness intuition behind resampling: GST grows with validator-set
+  size, global distribution can add quadratic delay, normal PoW head arrivals
+  create prevote-to-precommit churn exposure, larger sigma only mitigates
+  long-tail reorg churn, and nil-precommit resampling burns rounds until a
+  stable stream window appears.
+- `spec/CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree stress
+  witness for that risk: a long reorg and a same-branch block arrival both
+  change `head - sigma` between prevote and precommit, causing nil-precommit
+  resampling to burn rounds until a stable head-sigma window decides.
 - `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
   explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
   locally observed PoW head, including same-branch progress, fork switches, and
@@ -132,10 +142,11 @@ npm run verify:temporal
 ```
 
 `npm run verify:extended` is intentionally separate from the default CI gate.
-It runs deeper bounded Apalache checks at depth 5 for the newer head-sigma,
-BFT-block-shape, BFT-block validation-gap, fat-pointer-format, fat-pointer
-production-vector, fat-pointer authenticated-evidence, validator-evidence, and
-authenticated evidence composition models.
+It runs deeper bounded Apalache checks for the newer stream-churn risk,
+PoW-reorg stress, head-sigma, BFT-block-shape, BFT-block validation-gap,
+fat-pointer-format, fat-pointer production-vector, fat-pointer
+authenticated-evidence, validator-evidence, and authenticated evidence
+composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
 small scheduler progress contract, because TLC has mature temporal property
@@ -159,6 +170,8 @@ quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkHeightedAuthenticatedEvidence.qnt
 quint typecheck spec/CrosslinkSchedulerLiveness.qnt
 quint typecheck spec/CrosslinkSchedulerProgressContract.qnt
+quint typecheck spec/CrosslinkStreamChurnRisk.qnt
+quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
@@ -177,6 +190,8 @@ quint test spec/CrosslinkResampling.qnt --main=CrosslinkTimeoutModel --max-sampl
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingStableWindowLiveness --max-samples=100 --backend=rust
 quint test spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkSchedulerProgressContractModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
@@ -216,6 +231,8 @@ quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeighte
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3
 quint verify spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkSchedulerProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -224,6 +241,8 @@ quint verify spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormat
 quint verify spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
 
+quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5

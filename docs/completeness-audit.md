@@ -25,7 +25,7 @@ Status terms:
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; `ProposalFor` reuses only real `validValue`/`validRound` state; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
-| Stochastic PoW production and long reorgs | `CrosslinkHeadSigmaSampling.qnt`, `CrosslinkForkFinality.qnt`, and `CrosslinkHeightedHeadSigmaRound.qnt` model nondeterministic fork switches, stable-head windows, and finalized-prefix rejection | partial | Safety is modeled against adversarial bounded fork-tree evolution, but the specs do not yet quantify PoW block-arrival distributions, propagation races, long-tail reorg depth, or the probability that `head - sigma` changes between prevote and precommit as GST/validator-set size grows. |
+| Stochastic PoW production and long reorgs | `CrosslinkHeadSigmaSampling.qnt`, `CrosslinkPowReorgStress.qnt`, `CrosslinkStreamChurnRisk.qnt`, `CrosslinkForkFinality.qnt`, and `CrosslinkHeightedHeadSigmaRound.qnt`; `test:pow-reorg-stress`; `test:stream-churn-risk`; `verify:pow-reorg-stress-safety`; `verify:stream-churn-risk-safety` | partial | Safety is modeled against adversarial bounded fork-tree evolution. The new stress models cover long reorg and same-branch block-arrival churn, plus validator-set size, linear/quadratic GST, sigma, and reorg-depth tails with bounded integer risk numerators. They are not yet calibrated to measured PoW block-arrival, propagation-race, GST, or reorg distributions. |
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
 | Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
@@ -59,10 +59,10 @@ npm run verify:temporal
 
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
 message evidence, local delivery, timeout, liveness witnesses, scheduler
-liveness, scheduler progress contract, head-sigma sampling, heighted
-head-sigma rounds, BFT-block header shape checks, BFT-block validation-gap
-checks, fat-pointer signer-vector format checks, fat-pointer production-vector
-checks, fat-pointer
+liveness, scheduler progress contract, stream-churn risk, PoW-reorg stress,
+head-sigma sampling, heighted head-sigma rounds, BFT-block header shape checks,
+BFT-block validation-gap checks, fat-pointer signer-vector format checks,
+fat-pointer production-vector checks, fat-pointer
 authenticated-evidence checks, proposal validity, valid-round evidence, fork
 finality, composed resampling/finality, composed liveness, multi-height finality,
 height-indexed round-machine behavior, heighted finality composition, evidence
@@ -90,6 +90,8 @@ CrosslinkHeightedValidatorEvidenceModel
 CrosslinkHeightedAuthenticatedEvidenceModel
 CrosslinkSchedulerLivenessModel
 CrosslinkSchedulerProgressContractModel
+CrosslinkStreamChurnRiskModel
+CrosslinkPowReorgStressModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
 CrosslinkBftBlockShapeModel
@@ -99,12 +101,16 @@ CrosslinkFatPointerProductionVectorsModel
 CrosslinkFatPointerAuthenticatedEvidenceModel
 ```
 
-`npm run verify:extended` is a non-default deeper gate for the newest moving
-stream, BFT-block-shape, BFT-block validation-gap, fat-pointer-format,
-fat-pointer production-vector, and evidence-composition models.
-It currently runs depth-5 Apalache checks for:
+`npm run verify:extended` is a non-default deeper gate for the newest
+stream-churn, PoW-reorg stress, head-sigma stream, BFT-block-shape,
+BFT-block validation-gap, fat-pointer-format, fat-pointer production-vector,
+and evidence-composition models.
+It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
+also checked at depth 8, for:
 
 ```text
+CrosslinkStreamChurnRiskModel
+CrosslinkPowReorgStressModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
 CrosslinkBftBlockShapeModel
@@ -131,9 +137,9 @@ The goal is not complete yet. The strongest remaining gaps are:
 
 - lift the TLC-checked scheduler progress contract into a general temporal
   liveness proof over the composed protocol under post-GST stream stability;
-- add a stochastic or parameterized PoW/reorg analysis layer that relates
-  sigma, round duration, GST/validator-set size, and long-tail reorg depth to
-  the probability of stream churn during a round;
+- calibrate the current parameterized stream-churn and PoW-reorg stress layers
+  against measured or assumed distributions for PoW block arrivals,
+  propagation races, GST/validator-set scaling, and long-tail reorg depth;
 - expand the BFT-block header-shape and validation-gap models into captured
   production data vectors and production code coverage for version,
   header-order, and PoW-solution checks;

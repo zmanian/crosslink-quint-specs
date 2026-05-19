@@ -176,4 +176,6 @@ branch.
   and signature verification.
 - Expand bounded verification beyond `Safety` at depth 3.
 - Lift the bounded fair-scheduler liveness model into temporal liveness checks
-  parameterized by stream stability after GST.
+  parameterized by stream stability after GST, and calibrate the
+  `CrosslinkStreamChurnRisk.qnt` / `CrosslinkPowReorgStress.qnt` layers with
+  production or analysis-backed distributions.
