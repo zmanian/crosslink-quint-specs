@@ -125,6 +125,13 @@ the Zebra Crosslink working branch:
   models validator-set/GST growth as the vulnerable window, uses the
   one-block Poisson/union-bound numerator for normal block-arrival exposure,
   and keeps long-reorg tails as an explicit geometric-decay profile by sigma.
+- `spec/CrosslinkPowForkSchedule.qnt` derives rollback depth from a bounded
+  sequence of PoW best-tip changes, making the fork-switch signal that feeds
+  the stress and dynamic-sigma models explicit.
+- `spec/CrosslinkPowBranchCompetition.qnt` backs that best-tip schedule with a
+  bounded branch-competition fixture: published tips compete by honest plus
+  adversarial work, hidden adversarial work cannot win until published, and the
+  selected best tip determines the rollback-depth signal.
 - `spec/CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree stress
   witness for that risk: a long reorg and a same-branch block arrival both
   change `head - sigma` between prevote and precommit, causing nil-precommit
@@ -328,8 +335,8 @@ npm run verify:temporal
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
-PoW-reorg stress, dynamic-sigma, dynamic-sigma telemetry,
-dynamic-sigma consensus-params,
+PoW fork-schedule, PoW branch-competition, PoW-reorg stress, dynamic-sigma,
+dynamic-sigma telemetry, dynamic-sigma consensus-params,
 dynamic-sigma consensus-param-format, dynamic-sigma consensus-param-transport,
 dynamic-sigma head-sampling, dynamic-sigma heighted-round,
 dynamic-sigma heighted-finality,
@@ -389,8 +396,11 @@ quint typecheck spec/CrosslinkFinalityProgressContract.qnt
 quint typecheck spec/CrosslinkComposedProgressContract.qnt
 quint typecheck spec/CrosslinkStreamChurnRisk.qnt
 quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
+quint typecheck spec/CrosslinkPowForkSchedule.qnt
+quint typecheck spec/CrosslinkPowBranchCompetition.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
+quint typecheck spec/CrosslinkDynamicSigmaTelemetry.qnt
 quint typecheck spec/CrosslinkDynamicSigmaConsensusParams.qnt
 quint typecheck spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt
 quint typecheck spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt
@@ -425,8 +435,11 @@ quint test spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityPr
 quint test spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --max-samples=100 --backend=rust
@@ -514,8 +527,11 @@ quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinality
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --init=ProductionParamInit --step=ProductionParamNext --invariants=ProductionConsensusParamFormatSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --init=ParamTransportInit --step=ParamTransportNext --invariants=ParamTransportSafety --max-steps=5
@@ -539,8 +555,11 @@ quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinality
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleModel --init=Init --step=Next --invariants=Safety --max-steps=8
+quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --init=ProductionParamInit --step=ProductionParamNext --invariants=ProductionConsensusParamFormatSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --init=ParamTransportInit --step=ParamTransportNext --invariants=ParamTransportSafety --max-steps=8

@@ -312,6 +312,13 @@ For Crosslink, matching that quality means adding:
   post-Blossom 75-second PoW target spacing, models prevote/precommit window
   growth as the one-block Poisson/union-bound arrival-risk numerator, and
   keeps the long-reorg tail as an explicit geometric-decay profile by sigma.
+- `CrosslinkPowForkSchedule.qnt` derives rollback depth from a bounded
+  sequence of PoW best-tip changes. It makes the fork-switch signal explicit
+  before it is consumed by stress or dynamic-sigma models.
+- `CrosslinkPowBranchCompetition.qnt` backs those best-tip changes with a
+  generated branch-competition fixture. Published tips compete by honest plus
+  adversarial work, hidden adversarial work cannot win until it is published,
+  and the selected best tip determines the rollback-depth signal.
 - `CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree witness for
   that risk. A long reorg between prevote and precommit changes the sampled
   `head - sigma` candidate, and an ordinary same-branch block arrival can do
@@ -518,8 +525,9 @@ For Crosslink, matching that quality means adding:
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
-  PoW stochastic-assumption, PoW-reorg-stress, dynamic-sigma,
-  dynamic-sigma telemetry, dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
+  PoW stochastic-assumption, PoW fork-schedule, PoW branch-competition,
+  PoW-reorg-stress, dynamic-sigma, dynamic-sigma telemetry,
+  dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
   dynamic-sigma consensus-param-transport, dynamic-sigma head-sampling,
   dynamic-sigma heighted-round,
   dynamic-sigma heighted-finality,
@@ -572,6 +580,12 @@ For Crosslink, matching that quality means adding:
   spacing as the denominator for normal PoW-arrival exposure, checks that
   global validator distribution raises the vulnerable window, and isolates
   sigma's effect to an explicit long-reorg-tail numerator table.
+- `CrosslinkPowForkScheduleModel` derives the observed rollback-depth signal
+  from a bounded sequence of best-tip transitions and checks that sigma can be
+  compared against that derived rollback rather than a hand-labelled failure.
+- `CrosslinkPowBranchCompetitionModel` generates the same rollback signal from
+  published-tip work competition, including the case where hidden adversarial
+  work is harmless until it is released and outworks the honest tip.
 - `CrosslinkPowReorgStressModel` adds the corresponding concrete fork-tree
   stress trace: a long reorg and a same-branch PoW block arrival both burn
   nil-precommit rounds before a stable head-sigma window decides.
@@ -678,7 +692,7 @@ For Crosslink, matching that quality means adding:
   blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC path, so
   this likely needs either a TLC-oriented imported-state refactor or improved
   backend support.
-  The current stream-churn and PoW-reorg stress models now have an executable
-  analytic assumption profile, but the arrival, propagation-race, GST-scaling,
-  and long-reorg numerators still need to be calibrated against measured
-  distributions.
+  The current stream-churn, fork-schedule, branch-competition, and PoW-reorg
+  stress models now have an executable analytic assumption profile, but the
+  arrival, propagation-race, GST-scaling, branch-competition, and long-reorg
+  numerators still need to be calibrated against measured distributions.

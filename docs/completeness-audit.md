@@ -25,7 +25,7 @@ Status terms:
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; `ProposalFor` reuses only real `validValue`/`validRound` state; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader production finality/auth/evidence integration. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
-| Stochastic PoW production and long reorgs | `CrosslinkHeadSigmaSampling.qnt`, `CrosslinkPowStochasticAssumptions.qnt`, `CrosslinkPowReorgStress.qnt`, `CrosslinkStreamChurnRisk.qnt`, `CrosslinkForkFinality.qnt`, and `CrosslinkHeightedHeadSigmaRound.qnt`; `test:pow-stochastic-assumptions`; `test:pow-reorg-stress`; `test:stream-churn-risk`; `verify:pow-stochastic-assumptions-safety`; `verify:pow-reorg-stress-safety`; `verify:stream-churn-risk-safety` | partial | Safety is modeled against adversarial bounded fork-tree evolution. The stress models cover long reorg and same-branch block-arrival churn, plus validator-set size, linear/quadratic GST, sigma, and reorg-depth tails with bounded integer risk numerators. `CrosslinkPowStochasticAssumptions.qnt` now pins Zebra's 75-second post-Blossom target spacing, makes normal block-arrival exposure an explicit Poisson/union-bound numerator, and constrains the long-reorg tail to a geometric sigma-decay profile; the numeric calibration is still assumed rather than measured. |
+| Stochastic PoW production and long reorgs | `CrosslinkHeadSigmaSampling.qnt`, `CrosslinkPowStochasticAssumptions.qnt`, `CrosslinkPowForkSchedule.qnt`, `CrosslinkPowBranchCompetition.qnt`, `CrosslinkPowReorgStress.qnt`, `CrosslinkStreamChurnRisk.qnt`, `CrosslinkForkFinality.qnt`, and `CrosslinkHeightedHeadSigmaRound.qnt`; `test:pow-stochastic-assumptions`; `test:pow-fork-schedule`; `test:pow-branch-competition`; `test:pow-reorg-stress`; `test:stream-churn-risk`; `verify:pow-stochastic-assumptions-safety`; `verify:pow-fork-schedule-safety`; `verify:pow-branch-competition-safety`; `verify:pow-reorg-stress-safety`; `verify:stream-churn-risk-safety` | partial | Safety is modeled against adversarial bounded fork-tree evolution. The stress models cover long reorg and same-branch block-arrival churn, plus validator-set size, linear/quadratic GST, sigma, derived best-tip rollback depth, published-tip branch competition, and reorg-depth tails with bounded integer risk numerators. `CrosslinkPowStochasticAssumptions.qnt` now pins Zebra's 75-second post-Blossom target spacing, makes normal block-arrival exposure an explicit Poisson/union-bound numerator, and constrains the long-reorg tail to a geometric sigma-decay profile; the numeric calibration is still assumed rather than measured. |
 | Dynamic-sigma Crosslink variant | `CrosslinkDynamicSigma.qnt`; `CrosslinkDynamicSigmaTelemetry.qnt`; `CrosslinkDynamicSigmaConsensusParams.qnt`; `CrosslinkDynamicSigmaConsensusParamFormat.qnt`; `CrosslinkDynamicSigmaConsensusParamTransport.qnt`; `CrosslinkDynamicSigmaHeadSampling.qnt`; `CrosslinkDynamicSigmaHeightedRound.qnt`; `CrosslinkDynamicSigmaHeightedFinality.qnt`; `CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt`; `CrosslinkDynamicSigmaAuthenticatedFinality.qnt`; `CrosslinkDynamicSigmaModel`; `CrosslinkDynamicSigmaTelemetryModel`; `CrosslinkDynamicSigmaConsensusParamsModel`; `CrosslinkDynamicSigmaConsensusParamFormatModel`; `CrosslinkDynamicSigmaConsensusParamTransportModel`; `CrosslinkDynamicSigmaHeadSamplingModel`; `CrosslinkDynamicSigmaHeightedRoundModel`; `CrosslinkDynamicSigmaHeightedFinalityModel`; `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel`; `CrosslinkDynamicSigmaAuthenticatedFinalityModel`; `test:dynamic-sigma`; `test:dynamic-sigma-telemetry`; `test:dynamic-sigma-consensus-params`; `test:dynamic-sigma-consensus-param-format`; `test:dynamic-sigma-consensus-param-transport`; `test:dynamic-sigma-head-sampling`; `test:dynamic-sigma-heighted-round`; `test:dynamic-sigma-heighted-finality`; `test:dynamic-sigma-heighted-authenticated-evidence`; `test:dynamic-sigma-authenticated-finality`; `verify:dynamic-sigma-safety`; `verify:dynamic-sigma-telemetry-safety`; `verify:dynamic-sigma-consensus-params-safety`; `verify:dynamic-sigma-consensus-param-format-safety`; `verify:dynamic-sigma-consensus-param-transport-safety`; `verify:dynamic-sigma-head-sampling-safety`; `verify:dynamic-sigma-heighted-round-safety`; `verify:dynamic-sigma-heighted-finality-safety`; `verify:dynamic-sigma-heighted-authenticated-evidence-safety`; `verify:dynamic-sigma-authenticated-finality-safety`; `verify:extended:dynamic-sigma`; `verify:extended:dynamic-sigma-telemetry`; `verify:extended:dynamic-sigma-consensus-params`; `verify:extended:dynamic-sigma-consensus-param-format`; `verify:extended:dynamic-sigma-consensus-param-transport`; `verify:extended:dynamic-sigma-head-sampling`; `verify:extended:dynamic-sigma-heighted-round`; `verify:extended:dynamic-sigma-heighted-finality`; `verify:extended:dynamic-sigma-heighted-authenticated-evidence`; `verify:extended:dynamic-sigma-authenticated-finality` | partial | First controller model treats dynamic sigma as a third Crosslink variant, keeps sigma fixed for the active BFT height, updates only at height boundaries from committed telemetry, validator/network coverage evidence, and Crosslink-participating PoW hash-power percentage, refuses to raise sigma for same-branch block-arrival failures by themselves, and applies raise/decrease hysteresis. Low participating hash power contributes to long-reorg/ambiguous-failure pressure, prevents sigma relaxation below the target, and directly raises sigma below a critical participation floor. The telemetry contract derives participation from Crosslink-participating work over total observed work, checks conservative coverage/round-failure estimates, monotone rollback-risk curves, and explicit rollback-risk plus expected-loss budgets over nine bounded windows. The consensus-param bridges check that committed next-height abstract wires and production-shaped bytes decode to the deterministic controller-selected sigma, cannot be rewritten by nil-round burns, reject malformed/stale/out-of-bounds/wrong-key/trailing-byte sigma envelopes, and include low-participation witnesses where the encoded next-height sigma rises. The format bridge pins key tag, u32 activation height, u32 telemetry height, u16 sigma layout, and exact little-endian hex vectors. The transport bridge now imports that production format bridge, requires quorum-signed canonical production param bytes on the Crosslink consensus topic before node config follows a committed next-height sigma, signs the format model's exact hex bytes, records the installed production wire beside the decoded abstract config, and rejects wrong-topic, wrong-kind, wrong-byte, wrong-signature, malformed production envelopes, no-quorum, quorum-signed stale activation, and nondeterministic-sigma updates. The head-sampling, heighted-round, heighted-finality, authenticated-evidence, and authenticated-finality bridges now check `head - sigma(h)` semantics across future-height sigma changes, including proposals, value precommits, nil-round resampling, a height transition, finality validation against the active height's dynamic sigma tail, and authenticated fat-pointer evidence for the dynamic candidate. Real implementation vectors and code integration remain open. |
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
 | Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
@@ -63,7 +63,8 @@ npm run verify:temporal
 message evidence, local delivery, timeout, liveness witnesses, scheduler
 liveness, scheduler progress contract, finality progress contract, composed
 progress contract, stream-churn risk, PoW stochastic assumptions,
-PoW-reorg stress, dynamic-sigma controller, dynamic-sigma telemetry,
+PoW fork schedule, PoW branch competition, PoW-reorg stress,
+dynamic-sigma controller, dynamic-sigma telemetry,
 dynamic-sigma head-sampling, dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
 dynamic-sigma consensus-param-transport,
 dynamic-sigma heighted-round,
@@ -126,6 +127,8 @@ CrosslinkFinalityProgressContractModel
 CrosslinkComposedProgressContractModel
 CrosslinkStreamChurnRiskModel
 CrosslinkPowStochasticAssumptionsModel
+CrosslinkPowForkScheduleModel
+CrosslinkPowBranchCompetitionModel
 CrosslinkPowReorgStressModel
 CrosslinkDynamicSigmaModel
 CrosslinkDynamicSigmaConsensusParamsModel
@@ -150,7 +153,8 @@ CrosslinkFixtureGossipTransportModel
 
 `npm run verify:extended` is a non-default deeper gate for the newest
 finality-progress, composed-progress, stream-churn, PoW stochastic-assumption,
-PoW-reorg stress, dynamic-sigma controller, dynamic-sigma telemetry,
+PoW fork-schedule, PoW branch-competition, PoW-reorg stress,
+dynamic-sigma controller, dynamic-sigma telemetry,
 dynamic-sigma consensus-params, dynamic-sigma consensus-param-format, dynamic-sigma consensus-param-transport,
 dynamic-sigma head-sampling, dynamic-sigma heighted-round,
 dynamic-sigma heighted-finality,
@@ -165,14 +169,16 @@ packets, Tenderlink nonce/ack transport, Tenderlink status packets,
 Malachite proposal protobuf, Malachite proposal gossip transport, Malachite
 liveness protobuf, Malachite liveness gossip transport, Malachite sync protobuf, Malachite sync gossip transport, Malachite gossip router, Malachite gossip router safety,
 and heighted authenticated gossip transport models.
-It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
-also checked at depth 8, for:
+It currently runs depth-5 Apalache checks, with the PoW fork-schedule,
+branch-competition, and reorg-stress models also checked at depth 8, for:
 
 ```text
 CrosslinkFinalityProgressContractModel
 CrosslinkComposedProgressContractModel
 CrosslinkStreamChurnRiskModel
 CrosslinkPowStochasticAssumptionsModel
+CrosslinkPowForkScheduleModel
+CrosslinkPowBranchCompetitionModel
 CrosslinkPowReorgStressModel
 CrosslinkDynamicSigmaModel
 CrosslinkDynamicSigmaConsensusParamsModel
