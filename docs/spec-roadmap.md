@@ -197,7 +197,8 @@ For Crosslink, matching that quality means adding:
   signature, all current fixtures carry three version-4 PoW headers, and all
   include one trailing fat-pointer signature. The manifest also pins
   previous/trailing fat-pointer count bytes and first signer-entry byte probes.
-  The model still records the deserialization sigma-bypass gap.
+  A generated Quint module imports those constants into the production-vector
+  specs. The model still records the deserialization sigma-bypass gap.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
@@ -211,9 +212,9 @@ For Crosslink, matching that quality means adding:
   fat-pointer byte vectors: count bytes 44..46, exact wire lengths for 0-4
   signatures, contiguous 96-byte entry offsets, streaming
   serializer/deserializer agreement, and the current prototype
-  `try_from_bytes` reversed-count-slice gap. It now also pins checked-in
+  `try_from_bytes` reversed-count-slice gap. It now also imports generated
   `test_pos_block_*.bin` previous and trailing fat-pointer offsets, signer
-  entry offsets, and byte probes.
+  entry offsets, count bytes, and byte probes.
 - `CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
   production-shaped signer vector to the authenticated observer pipeline. A
   production fat-pointer wire can only be observed after its counted envelope

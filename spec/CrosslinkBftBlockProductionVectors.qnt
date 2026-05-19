@@ -21,6 +21,9 @@ module CrosslinkBftBlockProductionVectors {
    constructor rule.
    */
 
+  import CrosslinkProductionFixtureVectorsGenerated.* from "./CrosslinkProductionFixtureVectorsGenerated"
+  export CrosslinkProductionFixtureVectorsGenerated.*
+
   const MaxPreviousFatPointerSignatures: int
   const MaxHeaderCountVector: int
   const Sigma: int
@@ -40,15 +43,6 @@ module CrosslinkBftBlockProductionVectors {
     HeaderNonceByteLen +
     CompactCommonSolutionLenByteLen +
     CommonSolutionByteLen
-  pure val FixtureHeaderLogicalVersion = 4
-  pure val FixtureFirstPreviousFatPointerSignatureCount = 0
-  pure val FixtureLaterPreviousFatPointerSignatureCount = 1
-  pure val FixtureTrailingFatPointerSignatureCount = 1
-  pure val FixtureHeaderCount = 3
-  pure val FixtureFirstBftBlockByteLen = 4523
-  pure val FixtureFirstBftBlockAndFatPointerByteLen = 4665
-  pure val FixtureLaterBftBlockByteLen = 4619
-  pure val FixtureLaterBftBlockAndFatPointerByteLen = 4761
 
   pure val VersionOffset = 0
   pure val BftHeightOffset = VersionOffset + U32ByteLen
@@ -249,25 +243,25 @@ module CrosslinkBftBlockProductionVectors {
       0,
       FixtureHeaderLogicalVersion,
       0,
-    ) == 62 and
+    ) == FixtureFirstHeader0StartOffset and
     HeaderStartOffsetForHeaderVersion(
       FixtureFirstPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       1,
-    ) == 1549 and
+    ) == FixtureFirstHeader1StartOffset and
     HeaderStartOffsetForHeaderVersion(
       FixtureFirstPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       2,
-    ) == 3036 and
+    ) == FixtureFirstHeader2StartOffset and
     HeaderEndOffsetForHeaderVersion(
       FixtureFirstPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       2,
-    ) == FixtureFirstBftBlockByteLen
+    ) == FixtureFirstHeader2EndOffset
 
   val CheckedInLaterFixtureEnvelopePinned =
     BftBlockWireByteLenForHeaderVersion(
@@ -288,25 +282,25 @@ module CrosslinkBftBlockProductionVectors {
       0,
       FixtureHeaderLogicalVersion,
       0,
-    ) == 158 and
+    ) == FixtureLaterHeader0StartOffset and
     HeaderStartOffsetForHeaderVersion(
       FixtureLaterPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       1,
-    ) == 1645 and
+    ) == FixtureLaterHeader1StartOffset and
     HeaderStartOffsetForHeaderVersion(
       FixtureLaterPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       2,
-    ) == 3132 and
+    ) == FixtureLaterHeader2StartOffset and
     HeaderEndOffsetForHeaderVersion(
       FixtureLaterPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       2,
-    ) == FixtureLaterBftBlockByteLen
+    ) == FixtureLaterHeader2EndOffset
 
   val Safety =
     FixedPrefixOffsetsMatchCode and
@@ -396,18 +390,18 @@ module CrosslinkBftBlockProductionVectorsTest {
   run checkedInFirstBftBlockAndFatPointerFixtureEnvelopeTest = {
     Init
       .then(all {
-        assert(BftBlockWireByteLenForHeaderVersion(0, 3, 0, 4) == 4523),
+        assert(BftBlockWireByteLenForHeaderVersion(0, 3, 0, 4) == FixtureFirstBftBlockByteLen),
         assert(BftBlockAndFatPointerWireByteLenForHeaderVersion(
           0,
           3,
           0,
           4,
           1,
-        ) == 4665),
-        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 0) == 62),
-        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 1) == 1549),
-        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 2) == 3036),
-        assert(HeaderEndOffsetForHeaderVersion(0, 0, 4, 2) == 4523),
+        ) == FixtureFirstBftBlockAndFatPointerByteLen),
+        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 0) == FixtureFirstHeader0StartOffset),
+        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 1) == FixtureFirstHeader1StartOffset),
+        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 2) == FixtureFirstHeader2StartOffset),
+        assert(HeaderEndOffsetForHeaderVersion(0, 0, 4, 2) == FixtureFirstHeader2EndOffset),
         unchangedAll,
       })
   }
@@ -415,18 +409,18 @@ module CrosslinkBftBlockProductionVectorsTest {
   run checkedInLaterBftBlockAndFatPointerFixtureEnvelopeTest = {
     Init
       .then(all {
-        assert(BftBlockWireByteLenForHeaderVersion(1, 3, 0, 4) == 4619),
+        assert(BftBlockWireByteLenForHeaderVersion(1, 3, 0, 4) == FixtureLaterBftBlockByteLen),
         assert(BftBlockAndFatPointerWireByteLenForHeaderVersion(
           1,
           3,
           0,
           4,
           1,
-        ) == 4761),
-        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 0) == 158),
-        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 1) == 1645),
-        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 2) == 3132),
-        assert(HeaderEndOffsetForHeaderVersion(1, 0, 4, 2) == 4619),
+        ) == FixtureLaterBftBlockAndFatPointerByteLen),
+        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 0) == FixtureLaterHeader0StartOffset),
+        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 1) == FixtureLaterHeader1StartOffset),
+        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 2) == FixtureLaterHeader2StartOffset),
+        assert(HeaderEndOffsetForHeaderVersion(1, 0, 4, 2) == FixtureLaterHeader2EndOffset),
         unchangedAll,
       })
   }

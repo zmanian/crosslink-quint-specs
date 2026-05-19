@@ -101,6 +101,9 @@ the Zebra Crosslink working branch:
   pointer signature. The manifest also pins previous/trailing fat-pointer count
   bytes and first signer-entry byte probes. It records the current
   deserialization sigma-bypass gap.
+- `spec/CrosslinkProductionFixtureVectorsGenerated.qnt` is generated from that
+  fixture manifest and is imported by the BFT-block and fat-pointer production
+  vector specs so checked-in fixture constants do not have to be copied by hand.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -206,6 +209,7 @@ quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
 quint typecheck spec/CrosslinkBftBlockValidationGap.qnt
+quint typecheck spec/CrosslinkProductionFixtureVectorsGenerated.qnt
 quint typecheck spec/CrosslinkBftBlockProductionVectors.qnt
 quint typecheck spec/CrosslinkFatPointerFormat.qnt
 quint typecheck spec/CrosslinkFatPointerProductionVectors.qnt
@@ -232,6 +236,7 @@ quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --
 quint test spec/CrosslinkBftBlockValidationGap.qnt --main=CrosslinkBftBlockValidationGapModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockProductionVectors.qnt --main=CrosslinkBftBlockProductionVectorsModel --max-samples=100 --backend=rust
 node scripts/extract-bft-block-vectors.mjs --validate
+node scripts/extract-bft-block-vectors.mjs --check-quint
 quint test spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --max-samples=100 --backend=rust

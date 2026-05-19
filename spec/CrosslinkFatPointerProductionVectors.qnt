@@ -14,6 +14,9 @@ module CrosslinkFatPointerProductionVectors {
    count position, so the protocol-shaped vector remains bytes 44..46.
    */
 
+  import CrosslinkProductionFixtureVectorsGenerated.* from "./CrosslinkProductionFixtureVectorsGenerated"
+  export CrosslinkProductionFixtureVectorsGenerated.*
+
   const MaxVectorSignatures: int
 
   pure val VotePayloadWithoutSignerByteLen = 44
@@ -36,18 +39,6 @@ module CrosslinkFatPointerProductionVectors {
   pure val PrototypeTryFromBytesCountEndExclusive = SignatureCountByteLen
 
   pure val SignatureCounts = 0.to(MaxVectorSignatures)
-  pure val CheckedInFixturePreviousFatPointerOffset = 8
-  pure val CheckedInFixtureTrailingFatPointerOffset = 4619
-  pure val CheckedInFixtureSignatureCount = 1
-  pure val CheckedInFixturePreviousPayloadFirstByte = 19
-  pure val CheckedInFixturePreviousPayloadLastByte = 128
-  pure val CheckedInFixtureTrailingPayloadFirstByte = 253
-  pure val CheckedInFixtureTrailingPayloadLastByte = 128
-  pure val CheckedInFixtureSignerPubKeyFirstByte = 240
-  pure val CheckedInFixturePreviousSignatureFirstByte = 60
-  pure val CheckedInFixturePreviousSignatureLastByte = 2
-  pure val CheckedInFixtureTrailingSignatureFirstByte = 60
-  pure val CheckedInFixtureTrailingSignatureLastByte = 15
 
   assume max_vector_signatures_covers_current_examples =
     MaxVectorSignatures >= 4
@@ -183,6 +174,10 @@ module CrosslinkFatPointerProductionVectors {
     ) == 4761
 
   val CheckedInFixtureByteProbesPinned =
+    CheckedInFixturePreviousSignatureCountByte0 == 1 and
+    CheckedInFixturePreviousSignatureCountByte1 == 0 and
+    CheckedInFixtureTrailingSignatureCountByte0 == 1 and
+    CheckedInFixtureTrailingSignatureCountByte1 == 0 and
     CheckedInFixturePreviousPayloadFirstByte == 19 and
     CheckedInFixturePreviousPayloadLastByte == 128 and
     CheckedInFixtureTrailingPayloadFirstByte == 253 and
@@ -267,6 +262,10 @@ module CrosslinkFatPointerProductionVectorsTest {
   run checkedInFixtureFatPointerByteProbesArePinnedTest = {
     Init
       .then(all {
+        assert(CheckedInFixturePreviousSignatureCountByte0 == 1),
+        assert(CheckedInFixturePreviousSignatureCountByte1 == 0),
+        assert(CheckedInFixtureTrailingSignatureCountByte0 == 1),
+        assert(CheckedInFixtureTrailingSignatureCountByte1 == 0),
         assert(CheckedInFixturePreviousPayloadFirstByte == 19),
         assert(CheckedInFixturePreviousPayloadLastByte == 128),
         assert(CheckedInFixtureTrailingPayloadFirstByte == 253),

@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url'
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const manifestPath = path.join(repoRoot, 'fixtures', 'production-bft-block-vectors.json')
+const quintModulePath = path.join(repoRoot, 'spec', 'CrosslinkProductionFixtureVectorsGenerated.qnt')
 
 const layout = {
   u32Bytes: 4,
@@ -20,8 +21,10 @@ function usage() {
   console.error(`Usage:
   node scripts/extract-bft-block-vectors.mjs --validate
   node scripts/extract-bft-block-vectors.mjs --write [--source=/path/to/zebra-crosslink]
+  node scripts/extract-bft-block-vectors.mjs --write-quint
   node scripts/extract-bft-block-vectors.mjs --print [--source=/path/to/zebra-crosslink]
   node scripts/extract-bft-block-vectors.mjs --check-source [--source=/path/to/zebra-crosslink]
+  node scripts/extract-bft-block-vectors.mjs --check-quint
 
 Default source path: ../zebra-crosslink, or $ZEBRA_CROSSLINK_REPO`)
 }
@@ -37,10 +40,14 @@ function parseArgs(argv) {
       opts.mode = 'validate'
     } else if (arg === '--write') {
       opts.mode = 'write'
+    } else if (arg === '--write-quint') {
+      opts.mode = 'write-quint'
     } else if (arg === '--print') {
       opts.mode = 'print'
     } else if (arg === '--check-source') {
       opts.mode = 'check-source'
+    } else if (arg === '--check-quint') {
+      opts.mode = 'check-quint'
     } else if (arg.startsWith('--source=')) {
       opts.source = arg.slice('--source='.length)
     } else if (arg === '--help' || arg === '-h') {
@@ -363,12 +370,86 @@ function stableJson(value) {
   return `${JSON.stringify(value, null, 2)}\n`
 }
 
+function renderGeneratedQuintModule(manifest) {
+  validateManifest(manifest)
+
+  const first = manifest.fixtures[0]
+  const later = manifest.fixtures.find(fixture => fixture.previousFatPointerSignatureCount === 1)
+  assert(later !== undefined, 'missing one-signature fixture for generated Quint constants')
+
+  const constants = [
+    ['GeneratedFixtureCount', manifest.fixtures.length],
+    ['FixtureHeaderLogicalVersion', later.headers[0].logicalVersion],
+    ['FixtureHeaderCount', later.headerCount],
+    ['FixtureFirstPreviousFatPointerSignatureCount', first.previousFatPointerSignatureCount],
+    ['FixtureLaterPreviousFatPointerSignatureCount', later.previousFatPointerSignatureCount],
+    ['FixtureTrailingFatPointerSignatureCount', later.trailingFatPointerSignatureCount],
+    ['FixtureFirstBftBlockByteLen', first.bftBlockByteLen],
+    ['FixtureFirstBftBlockAndFatPointerByteLen', first.totalByteLen],
+    ['FixtureLaterBftBlockByteLen', later.bftBlockByteLen],
+    ['FixtureLaterBftBlockAndFatPointerByteLen', later.totalByteLen],
+    ['FixtureFirstHeader0StartOffset', first.headers[0].startOffset],
+    ['FixtureFirstHeader1StartOffset', first.headers[1].startOffset],
+    ['FixtureFirstHeader2StartOffset', first.headers[2].startOffset],
+    ['FixtureFirstHeader2EndOffset', first.headers[2].endOffset],
+    ['FixtureLaterHeader0StartOffset', later.headers[0].startOffset],
+    ['FixtureLaterHeader1StartOffset', later.headers[1].startOffset],
+    ['FixtureLaterHeader2StartOffset', later.headers[2].startOffset],
+    ['FixtureLaterHeader2EndOffset', later.headers[2].endOffset],
+    ['CheckedInFixturePreviousFatPointerOffset', later.previousFatPointerProbe.offset],
+    ['CheckedInFixtureTrailingFatPointerOffset', later.trailingFatPointerProbe.offset],
+    ['CheckedInFixtureSignatureCount', later.previousFatPointerSignatureCount],
+    ['CheckedInFixturePreviousSignatureCountByte0', later.previousFatPointerProbe.signatureCountBytes[0]],
+    ['CheckedInFixturePreviousSignatureCountByte1', later.previousFatPointerProbe.signatureCountBytes[1]],
+    ['CheckedInFixtureTrailingSignatureCountByte0', later.trailingFatPointerProbe.signatureCountBytes[0]],
+    ['CheckedInFixtureTrailingSignatureCountByte1', later.trailingFatPointerProbe.signatureCountBytes[1]],
+    ['CheckedInFixturePreviousPayloadFirstByte', later.previousFatPointerProbe.payloadFirstByte],
+    ['CheckedInFixturePreviousPayloadLastByte', later.previousFatPointerProbe.payloadLastByte],
+    ['CheckedInFixtureTrailingPayloadFirstByte', later.trailingFatPointerProbe.payloadFirstByte],
+    ['CheckedInFixtureTrailingPayloadLastByte', later.trailingFatPointerProbe.payloadLastByte],
+    ['CheckedInFixtureSignerPubKeyFirstByte', later.previousFatPointerProbe.firstSignatureEntry.pubKeyFirstByte],
+    ['CheckedInFixturePreviousSignatureFirstByte', later.previousFatPointerProbe.firstSignatureEntry.voteSignatureFirstByte],
+    ['CheckedInFixturePreviousSignatureLastByte', later.previousFatPointerProbe.firstSignatureEntry.voteSignatureLastByte],
+    ['CheckedInFixtureTrailingSignatureFirstByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureFirstByte],
+    ['CheckedInFixtureTrailingSignatureLastByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureLastByte],
+  ]
+
+  const lines = [
+    'module CrosslinkProductionFixtureVectorsGenerated {',
+    '  /*',
+    '   Generated by scripts/extract-bft-block-vectors.mjs --write-quint.',
+    `   Source: ${manifest.source.repo}@${manifest.source.commit}`,
+    `   Fixtures: ${manifest.source.fixtureGlob}`,
+    '   */',
+    '',
+    ...constants.map(([name, value]) => `  pure val ${name} = ${value}`),
+    '}',
+    '',
+  ]
+
+  return lines.join('\n')
+}
+
 function main() {
   const opts = parseArgs(process.argv.slice(2))
 
   if (opts.mode === 'validate') {
     validateManifest(readManifest())
     console.log('production-bft-block-vectors manifest ok')
+    return
+  }
+
+  if (opts.mode === 'write-quint') {
+    fs.writeFileSync(quintModulePath, renderGeneratedQuintModule(readManifest()))
+    console.log(`wrote ${path.relative(repoRoot, quintModulePath)}`)
+    return
+  }
+
+  if (opts.mode === 'check-quint') {
+    const existing = fs.readFileSync(quintModulePath, 'utf8')
+    const generated = renderGeneratedQuintModule(readManifest())
+    assert(existing === generated, 'generated Quint fixture module differs; run with --write-quint')
+    console.log('generated Quint fixture module matches manifest')
     return
   }
 
