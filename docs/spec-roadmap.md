@@ -302,6 +302,10 @@ For Crosslink, matching that quality means adding:
   temporal contract that combines nil-precommit-burned rounds, stable
   proposal/vote/precommit delivery, finality-candidate validation, fork-prefix
   safety, and eventual finality of the stable candidate.
+- `CrosslinkBftHeights.qnt` adds a compact scheduled BFT-height finality
+  harness. It checks that consecutive consensus-height decisions can advance
+  the Crosslink finality cursor, while skipped BFT heights and fork decisions
+  after a finalized prefix are rejected.
 - `CrosslinkStreamChurnRisk.qnt` adds a bounded integer-risk model for the
   validator-set-size intuition behind nil-precommit resampling. It relates
   linear/quadratic GST growth, the prevote-to-precommit vulnerability window,
@@ -334,6 +338,10 @@ For Crosslink, matching that quality means adding:
   long-reorg/low-coverage/low-hash participation failures can raise sigma,
   critically low participation can raise sigma directly, and stable covered
   high-participation windows lower it slowly.
+- `CrosslinkDynamicSigmaCalibration.qnt` adds a bounded measured-window
+  calibration harness for the controller. Hash participation, round-failure
+  rate, block-interval variance, and observed reorg depth are weighted into a
+  risk score and checked against expected sigma-floor labels.
 - `CrosslinkDynamicSigmaTelemetry.qnt` gives that committed telemetry a
   production-shaped calibration contract. It derives participation from
   Crosslink-participating work over total observed PoW work, requires coverage
@@ -540,7 +548,8 @@ For Crosslink, matching that quality means adding:
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW fork-schedule, PoW branch-competition,
-  PoW-reorg-stress, dynamic-sigma, dynamic-sigma telemetry,
+  PoW-reorg-stress, dynamic-sigma, dynamic-sigma calibration,
+  dynamic-sigma telemetry,
   dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
   dynamic-sigma resampling, dynamic-sigma finality,
   dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
@@ -548,7 +557,8 @@ For Crosslink, matching that quality means adding:
   dynamic-sigma heighted-round,
   dynamic-sigma heighted-finality,
   dynamic-sigma heighted-authenticated-evidence,
-  dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
+  dynamic-sigma authenticated-finality, head-sigma, BFT-height finality,
+  BFT-block-shape,
   BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
   fat-pointer production-vector, heighted message gossip transport, heighted
   validator-evidence, heighted authenticated-evidence, and heighted
@@ -620,6 +630,8 @@ For Crosslink, matching that quality means adding:
   conservatively upper-bound those samples, that rollback-risk estimates are
   monotone across the sigma ladder, and that expected-loss budgets can raise
   sigma even when rollback probability is within the PPM target.
+- `CrosslinkDynamicSigmaCalibrationModel` checks the simpler measured-window
+  calibration harness that feeds that production-shaped telemetry contract.
 - `CrosslinkDynamicSigmaForkScheduleModel` composes the controller with a
   derived best-tip schedule, checking that rollback depth computed from a fork
   switch raises sigma before future rounds consume that value.

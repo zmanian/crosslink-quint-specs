@@ -14,6 +14,9 @@ the Zebra Crosslink working branch:
   finality.
 - `spec/CrosslinkComposed.qnt` composes the round-recovery model with the
   finality model.
+- `spec/CrosslinkBftHeights.qnt` models consecutive BFT decisions applying to
+  the Crosslink finality cursor, rejecting skipped consensus heights and fork
+  decisions after a prefix is final.
 - `spec/CrosslinkMultiHeight.qnt` lifts the finality obligations to sequential
   BFT heights, while still allowing a BFT decision to skip PoW heights on the
   same branch.
@@ -144,6 +147,11 @@ the Zebra Crosslink working branch:
   Crosslink. Participation has two thresholds: the target required before sigma
   may relax, and a lower floor where participation is itself enough to raise
   sigma.
+- `spec/CrosslinkDynamicSigmaCalibration.qnt` adds a bounded measured-window
+  calibration harness for that controller, checking that hash participation,
+  round-failure rate, block-interval variance, and observed reorg-depth
+  windows classify into the expected sigma floors under the configured weights
+  and thresholds.
 - `spec/CrosslinkDynamicSigmaTelemetry.qnt` tightens that telemetry boundary
   into a production-shaped contract: Crosslink-participating work is compared
   with total observed PoW work, round-failure and coverage estimates must
@@ -283,6 +291,8 @@ The current spec surface has three first-class Crosslink variants:
   `CrosslinkDynamicSigmaTelemetryModel` checks nine bounded production-shaped
   telemetry windows, including economic expected-loss cases where sigma must
   rise even though rollback probability alone is within the PPM target.
+  `CrosslinkDynamicSigmaCalibrationModel` checks the simpler measured-window
+  calibration harness that feeds the production-shaped telemetry contract.
   `CrosslinkDynamicSigmaForkScheduleModel` and
   `CrosslinkDynamicSigmaBranchCompetitionModel` feed derived rollback-depth
   signals from best-tip changes and published-tip work competition into the
@@ -358,14 +368,15 @@ npm run verify:temporal
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
 PoW fork-schedule, PoW branch-competition, PoW-reorg stress, dynamic-sigma,
-dynamic-sigma telemetry, dynamic-sigma fork-schedule,
+dynamic-sigma calibration, dynamic-sigma telemetry, dynamic-sigma fork-schedule,
 dynamic-sigma branch-competition, dynamic-sigma resampling,
 dynamic-sigma finality, dynamic-sigma consensus-params,
 dynamic-sigma consensus-param-format, dynamic-sigma consensus-param-transport,
 dynamic-sigma head-sampling, dynamic-sigma heighted-round,
 dynamic-sigma heighted-finality,
 dynamic-sigma heighted-authenticated-evidence,
-dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
+dynamic-sigma authenticated-finality, head-sigma, BFT-height finality,
+BFT-block-shape,
 BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
 fat-pointer production-vector, fat-pointer authenticated-evidence,
 fixture-authenticated evidence, fixture-gossip transport, heighted message
@@ -388,6 +399,7 @@ Or run the commands directly:
 quint typecheck spec/CrosslinkResampling.qnt
 quint typecheck spec/CrosslinkForkFinality.qnt
 quint typecheck spec/CrosslinkComposed.qnt
+quint typecheck spec/CrosslinkBftHeights.qnt
 quint typecheck spec/CrosslinkMultiHeight.qnt
 quint typecheck spec/CrosslinkHeightedRound.qnt
 quint typecheck spec/CrosslinkHeightedFinality.qnt
@@ -424,6 +436,7 @@ quint typecheck spec/CrosslinkPowForkSchedule.qnt
 quint typecheck spec/CrosslinkPowBranchCompetition.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
+quint typecheck spec/CrosslinkDynamicSigmaCalibration.qnt
 quint typecheck spec/CrosslinkDynamicSigmaTelemetry.qnt
 quint typecheck spec/CrosslinkDynamicSigmaForkSchedule.qnt
 quint typecheck spec/CrosslinkDynamicSigmaBranchCompetition.qnt
@@ -467,6 +480,7 @@ quint test spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleMode
 quint test spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaCalibration.qnt --main=CrosslinkDynamicSigmaCalibrationModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaForkSchedule.qnt --main=CrosslinkDynamicSigmaForkScheduleModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaBranchCompetition.qnt --main=CrosslinkDynamicSigmaBranchCompetitionModel --max-samples=100 --backend=rust
@@ -482,6 +496,7 @@ quint test spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt --main=Cr
 quint test spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt --main=CrosslinkDynamicSigmaAuthenticatedFinalityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkBftHeights.qnt --main=CrosslinkBftHeightsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockValidationGap.qnt --main=CrosslinkBftBlockValidationGapModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockProductionVectors.qnt --main=CrosslinkBftBlockProductionVectorsModel --max-samples=100 --backend=rust
@@ -528,6 +543,7 @@ quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init -
 quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkComposed.qnt --main=CrosslinkComposedResamplingModel --init=ComposedInit --step=ComposedNext --invariants=ComposedSafety --max-steps=3
+quint verify spec/CrosslinkBftHeights.qnt --main=CrosslinkBftHeightsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedRound.qnt --main=CrosslinkHeightedRoundModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedFinality.qnt --main=CrosslinkHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=ComposedSafety --max-steps=3
@@ -563,6 +579,7 @@ quint verify spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleMo
 quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaCalibration.qnt --main=CrosslinkDynamicSigmaCalibrationModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaForkSchedule.qnt --main=CrosslinkDynamicSigmaForkScheduleModel --init=DerivedInit --step=DerivedNext --invariants=DerivedSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaBranchCompetition.qnt --main=CrosslinkDynamicSigmaBranchCompetitionModel --init=BranchCompetitionDynamicInit --step=BranchCompetitionDynamicNext --invariants=BranchCompetitionDynamicSafety --max-steps=5
@@ -589,12 +606,14 @@ quint verify spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGos
 
 quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkBftHeights.qnt --main=CrosslinkBftHeightsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaCalibration.qnt --main=CrosslinkDynamicSigmaCalibrationModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaForkSchedule.qnt --main=CrosslinkDynamicSigmaForkScheduleModel --init=DerivedInit --step=DerivedNext --invariants=DerivedSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaBranchCompetition.qnt --main=CrosslinkDynamicSigmaBranchCompetitionModel --init=BranchCompetitionDynamicInit --step=BranchCompetitionDynamicNext --invariants=BranchCompetitionDynamicSafety --max-steps=8
