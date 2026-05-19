@@ -158,23 +158,24 @@ For Crosslink, matching that quality means adding:
   value prevote, and value precommit packet entries reconstruct the canonical
   76-byte vote sign payload before signature verification, including a
   two-signature weighted POL packet and a three-signature value-prevote POL
-  packet for the smallest f = 1 quorum.
+  packet for the smallest f = 1 quorum, plus a five-entry larger-validator-set
+  POL packet.
 - `CrosslinkTenderlinkProposalPolEvidence.qnt` bridges the valid-round rule to
   those production-shaped bytes: a proposal chunk with a non-`-1` valid round
   is accepted only when paired with a canonical prevote packet for the same
   height, valid round, and value id. The bounded fixture derives certified
   voting power from canonical packet entries, accepts a weighted two-signature
   quorum, rejects forged certified-power sidecars, and still checks the
-  three-signature f = 1 quorum; larger validator-set packet fixtures remain
-  future work.
+  three-signature f = 1 quorum. It now also accepts a five-entry larger
+  validator-set POL packet against a higher quorum threshold.
 - `CrosslinkTenderlinkProposalPolTransport.qnt` adds the transport bridge for
-  that rule: the non-nil proposal chunk and the weighted or f = 1 POL prevote
+  that rule: the non-nil proposal chunk and the weighted, f = 1, or larger-validator-set POL prevote
   packet must first be received as decrypted, exact compact Tenderlink
   consensus packets before the decoded POL evidence can be accepted. The bridge
-  reuses the consensus-packet fixture constants for the proposal and 112/178/244
-  byte POL prevote envelopes. Witnesses reject missing proposal transport,
-  missing POL transport, low-power POL, wrong proposal packet type, wrong POL
-  payload, and wrong packet bytes.
+  reuses the consensus-packet fixture constants for the proposal and
+  112/178/244/376-byte POL prevote envelopes. Witnesses reject missing proposal
+  transport, missing POL transport, low-power POL, wrong proposal packet type,
+  wrong POL payload, and wrong packet bytes.
 - `CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the compact Tenderlink
   consensus packet envelopes around those payloads: a 16-byte little-endian
   `PacketHeader` tag/ack prefix, including a nonzero
@@ -182,8 +183,8 @@ For Crosslink, matching that quality means adding:
   the proposer signature outside the signed payload, and complete
   prevote/precommit vote batch packet bytes. It now records the variable-length
   vote-batch envelope sizes used by POL evidence: 112-byte one-signature,
-  178-byte weighted two-signature, and 244-byte three-signature payloads. The
-  witnesses also reject
+  178-byte weighted two-signature, 244-byte three-signature, and 376-byte
+  five-entry larger-validator-set payloads. The witnesses also reject
   status-flag compact consensus packets, wrong packet types, malformed ack/tag
   fields, missing proposal signatures, and trailing vote bytes.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport

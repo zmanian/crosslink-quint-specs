@@ -48,6 +48,8 @@ module CrosslinkTenderlinkProposalPolTransport {
 
   pure val ValuePrevotePolQuorumConsensusPacketHex =
     ConsensusPacketFormat::TestQuorumPrevoteConsensusPacketHex
+  pure val ValuePrevotePolLargeConsensusPacketHex =
+    ConsensusPacketFormat::TestLargePrevoteConsensusPacketHex
 
   var transportedProposalChunks: Set[ProposalChunkWire_t]
   var transportedPolPackets: Set[VotePacket_t]
@@ -83,6 +85,8 @@ module CrosslinkTenderlinkProposalPolTransport {
       ValuePrevotePolWeightedConsensusPacketHex
     } else if (packet.hex == ValuePrevotePolQuorumPacketHex) {
       ValuePrevotePolQuorumConsensusPacketHex
+    } else if (packet.hex == ValuePrevotePolLargePacketHex) {
+      ValuePrevotePolLargeConsensusPacketHex
     } else {
       UnmodeledTransportPacketHex
     }
@@ -278,6 +282,18 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       ValuePrevotePolQuorumConsensusPacketHex,
     )
 
+  pure val largePolVoteEnvelope =
+    Env(
+      true,
+      127,
+      "7f00000000000000",
+      ConsensusPacketFormat::PacketTypePrevoteSignatures,
+      valuePrevotePolLargePacket.byteLen,
+      392,
+      valuePrevotePolLargePacket.hex,
+      ValuePrevotePolLargeConsensusPacketHex,
+    )
+
   pure val lowPowerPolVoteEnvelope =
     Env(
       true,
@@ -330,11 +346,17 @@ module CrosslinkTenderlinkProposalPolTransportTest {
   pure val TestVoteEnvelopes = Set(
     weightedPolVoteEnvelope,
     quorumPolVoteEnvelope,
+    largePolVoteEnvelope,
     lowPowerPolVoteEnvelope,
     wrongPayloadPolVoteEnvelope,
     wrongPacketHexPolVoteEnvelope,
   )
-  pure val TestEvidence = Set(weightedPolEvidence, matchingPolEvidence, lowPowerEvidence)
+  pure val TestEvidence = Set(
+    weightedPolEvidence,
+    matchingPolEvidence,
+    largePolEvidence,
+    lowPowerEvidence,
+  )
 
   action TransportNext: bool =
     any {
@@ -344,6 +366,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       nondet packet = oneOf(Set(
         valuePrevotePolWeightedPacket,
         valuePrevotePolQuorumPacket,
+        valuePrevotePolLargePacket,
         valuePrevotePolPacket,
       ))
       ReceivePolVoteTransport(voteEnv, packet),
@@ -406,6 +429,25 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       .then(AcceptTransportedProposalWithPol(matchingPolEvidence))
       .then(all {
         assert(acceptedTransportedPolEvidence.contains(matchingPolEvidence)),
+        assert(TransportSafety),
+        unchangedTransport,
+      })
+  }
+
+  run largePolTransportedEvidenceAcceptedTest = {
+    TransportInit
+      .then(ReceiveProposalChunkTransport(
+        polProposalEnvelope,
+        matchingPolProposalChunk,
+      ))
+      .then(ReceivePolVoteTransport(
+        largePolVoteEnvelope,
+        valuePrevotePolLargePacket,
+      ))
+      .then(AcceptTransportedProposalWithPol(largePolEvidence))
+      .then(all {
+        assert(acceptedTransportedPolEvidence.contains(largePolEvidence)),
+        assert(largePolEvidence.quorumVotingPower == LargeFixtureQuorumVotingPower),
         assert(TransportSafety),
         unchangedTransport,
       })

@@ -49,6 +49,7 @@ module CrosslinkTenderlinkConsensusPacketFormat {
   pure val PrevotePolBatchKind = "prevote-pol-batch"
   pure val PrevoteWeightedBatchKind = "prevote-weighted-batch"
   pure val PrevoteQuorumBatchKind = "prevote-quorum-batch"
+  pure val PrevoteLargeBatchKind = "prevote-large-batch"
   pure val PrecommitBatchKind = "precommit-batch"
   pure val ConsensusPacketKinds = Set(
     ProposalChunkKind,
@@ -57,6 +58,7 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     PrevotePolBatchKind,
     PrevoteWeightedBatchKind,
     PrevoteQuorumBatchKind,
+    PrevoteLargeBatchKind,
     PrecommitBatchKind,
   )
 
@@ -80,6 +82,7 @@ module CrosslinkTenderlinkConsensusPacketFormat {
   pure val VotePacketPayloadByteLen = 112
   pure val WeightedVotePacketPayloadByteLen = 178
   pure val QuorumVotePacketPayloadByteLen = 244
+  pure val LargeVotePacketPayloadByteLen = 376
   pure val ProposalPacketByteLen =
     PacketHeaderByteLen + ProposalChunkSignedPayloadByteLen + ProposalSignatureByteLen
   pure val VoteBatchPacketByteLen = PacketHeaderByteLen + VotePacketPayloadByteLen
@@ -87,6 +90,8 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     PacketHeaderByteLen + WeightedVotePacketPayloadByteLen
   pure val QuorumVoteBatchPacketByteLen =
     PacketHeaderByteLen + QuorumVotePacketPayloadByteLen
+  pure val LargeVoteBatchPacketByteLen =
+    PacketHeaderByteLen + LargeVotePacketPayloadByteLen
 
   pure val ProposalPacketExtraByteLen =
     PacketHeaderByteLen + 56 + ProposalSignatureByteLen
@@ -102,6 +107,8 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     ConsensusPayloadOffset + WeightedVotePacketPayloadByteLen
   pure val QuorumVoteBatchPacketEndOffset =
     ConsensusPayloadOffset + QuorumVotePacketPayloadByteLen
+  pure val LargeVoteBatchPacketEndOffset =
+    ConsensusPayloadOffset + LargeVotePacketPayloadByteLen
 
   pure val TestProposalChunkSignedPayloadHex =
     "000000000400000000000000ffffffff0100000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcafebabe"
@@ -117,6 +124,8 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     "0002010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
   pure val TestQuorumPrevotePacketPayloadHex =
     "0003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  pure val TestLargePrevotePacketPayloadHex =
+    "0005010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333030044444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444040055555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555"
   pure val TestPrecommitPacketPayloadHex =
     "0001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
 
@@ -128,6 +137,8 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     "080000000000000000000000000000000002010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
   pure val TestQuorumPrevoteConsensusPacketHex =
     "080000000000000000000000000000000003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  pure val TestLargePrevoteConsensusPacketHex =
+    "080000000000000000000000000000000005010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333030044444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444040055555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555"
 
   pure val UnmodeledPacketHeaderHex = "unmodeled-packet-header"
   pure val UnmodeledConsensusPacketHex = "unmodeled-consensus-packet"
@@ -155,6 +166,8 @@ module CrosslinkTenderlinkConsensusPacketFormat {
       WeightedVotePacketPayloadByteLen
     } else if (kind == PrevoteQuorumBatchKind) {
       QuorumVotePacketPayloadByteLen
+    } else if (kind == PrevoteLargeBatchKind) {
+      LargeVotePacketPayloadByteLen
     } else {
       VotePacketPayloadByteLen
     }
@@ -209,16 +222,19 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     VotePacketPayloadByteLen == 112 and
     WeightedVotePacketPayloadByteLen == 178 and
     QuorumVotePacketPayloadByteLen == 244 and
+    LargeVotePacketPayloadByteLen == 376 and
     ProposalPacketByteLen == 140 and
     VoteBatchPacketByteLen == 128 and
     WeightedVoteBatchPacketByteLen == 194 and
     QuorumVoteBatchPacketByteLen == 260 and
+    LargeVoteBatchPacketByteLen == 392 and
     ProposalPacketExtraByteLen == 136 and
     ProposalSignatureOffset == 76 and
     ProposalPacketEndOffset == 140 and
     VoteBatchPacketEndOffset == 128 and
     WeightedVoteBatchPacketEndOffset == 194 and
-    QuorumVoteBatchPacketEndOffset == 260
+    QuorumVoteBatchPacketEndOffset == 260 and
+    LargeVoteBatchPacketEndOffset == 392
 
   pure def ConsensusPacketFieldOffsetsContiguous: bool =
     FieldEndOffset(TagAndAckOffset, TagAndAckByteLen) == AckFieldOffset and
@@ -234,7 +250,9 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     FieldEndOffset(ConsensusPayloadOffset, WeightedVotePacketPayloadByteLen) ==
       WeightedVoteBatchPacketEndOffset and
     FieldEndOffset(ConsensusPayloadOffset, QuorumVotePacketPayloadByteLen) ==
-      QuorumVoteBatchPacketEndOffset
+      QuorumVoteBatchPacketEndOffset and
+    FieldEndOffset(ConsensusPayloadOffset, LargeVotePacketPayloadByteLen) ==
+      LargeVoteBatchPacketEndOffset
 
   pure def CanonicalPacketHeaderHex(header: PacketHeader_t): Bytes_t =
     if (header.byteLen == 16 and header.packetType == 7 and
@@ -307,6 +325,9 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     } else if (packet.kind == PrevoteQuorumBatchKind and
       ConsensusPacketFieldsValid(packet)) {
       TestQuorumPrevoteConsensusPacketHex
+    } else if (packet.kind == PrevoteLargeBatchKind and
+      ConsensusPacketFieldsValid(packet)) {
+      TestLargePrevoteConsensusPacketHex
     } else if (packet.kind == PrecommitBatchKind and
       ConsensusPacketFieldsValid(packet)) {
       "090000000000000000000000000000000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
@@ -486,6 +507,16 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       TestQuorumPrevoteConsensusPacketHex,
     )
 
+  pure val largePrevotePacket =
+    Packet(
+      PrevoteLargeBatchKind,
+      prevoteHeader,
+      376,
+      0,
+      392,
+      TestLargePrevoteConsensusPacketHex,
+    )
+
   pure val precommitPacket =
     Packet(
       PrecommitBatchKind,
@@ -586,6 +617,16 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       TestQuorumPrevoteConsensusPacketHex,
     )
 
+  pure val largePrevoteWrongLengthPacket =
+    Packet(
+      PrevoteLargeBatchKind,
+      prevoteHeader,
+      376,
+      0,
+      260,
+      TestLargePrevoteConsensusPacketHex,
+    )
+
   pure val TestConsensusPackets = Set(
     proposalPacket,
     polProposalPacket,
@@ -593,6 +634,7 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
     valuePrevotePolPacket,
     weightedPrevotePacket,
     quorumPrevotePacket,
+    largePrevotePacket,
     precommitPacket,
     ackedPrevotePacket,
     statusFlagProposalPacket,
@@ -603,6 +645,7 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
     weightedPrevoteWrongLengthPacket,
     valuePrevotePolWrongKindPacket,
     quorumPrevoteWrongKindPacket,
+    largePrevoteWrongLengthPacket,
   )
 
   action Next: bool =
@@ -627,6 +670,7 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       assert(VoteBatchPacketEndOffset == 128),
       assert(WeightedVoteBatchPacketEndOffset == 194),
       assert(QuorumVoteBatchPacketEndOffset == 260),
+      assert(LargeVoteBatchPacketEndOffset == 392),
       unchangedAll,
     })
   }
@@ -667,6 +711,8 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
         weightedPrevotePacket.hex),
       assert(CanonicalConsensusPacketHex(quorumPrevotePacket) ==
         quorumPrevotePacket.hex),
+      assert(CanonicalConsensusPacketHex(largePrevotePacket) ==
+        largePrevotePacket.hex),
       assert(CanonicalConsensusPacketHex(precommitPacket) ==
         precommitPacket.hex),
       assert(CanonicalConsensusPacketHex(ackedPrevotePacket) ==
@@ -683,6 +729,7 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       .then(AcceptConsensusPacket(valuePrevotePolPacket))
       .then(AcceptConsensusPacket(weightedPrevotePacket))
       .then(AcceptConsensusPacket(quorumPrevotePacket))
+      .then(AcceptConsensusPacket(largePrevotePacket))
       .then(AcceptConsensusPacket(precommitPacket))
       .then(AcceptConsensusPacket(ackedPrevotePacket))
       .then(all {
@@ -692,6 +739,7 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
         assert(acceptedConsensusPackets.contains(valuePrevotePolPacket)),
         assert(acceptedConsensusPackets.contains(weightedPrevotePacket)),
         assert(acceptedConsensusPackets.contains(quorumPrevotePacket)),
+        assert(acceptedConsensusPackets.contains(largePrevotePacket)),
         assert(acceptedConsensusPackets.contains(precommitPacket)),
         assert(acceptedConsensusPackets.contains(ackedPrevotePacket)),
         assert(Safety),
@@ -729,6 +777,10 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
 
   run quorumPrevoteWrongKindRejectedTest = {
     Init.then(AcceptConsensusPacket(quorumPrevoteWrongKindPacket)).fail()
+  }
+
+  run largePrevoteWrongLengthRejectedTest = {
+    Init.then(AcceptConsensusPacket(largePrevoteWrongLengthPacket)).fail()
   }
 
   run consensusPacketSafetyTest = {

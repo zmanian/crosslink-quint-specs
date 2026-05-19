@@ -51,7 +51,8 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkTenderlinkVotePacketFormat.qnt` pins the Tenderlink
   `PacketVotes` batch format and checks that each carried vote reconstructs
   the canonical vote sign bytes from packet fields and roster pubkey, including
-  two-signature weighted and three-signature value-prevote POL packet fixtures.
+  two-signature weighted, three-signature value-prevote, and five-entry larger
+  validator-set POL packet fixtures.
 - `spec/CrosslinkTenderlinkProposalPolEvidence.qnt` bridges non-nil
   `validRound` proposal chunks to production-shaped Tenderlink prevote packet
   evidence, deriving certified voting power from packet entries and requiring
@@ -65,7 +66,7 @@ the Zebra Crosslink working branch:
   Tenderlink compact consensus packet envelopes: the 16-byte `PacketHeader`
   tag/ack prefix, including nonzero `ack_latest`/`ack_field` bytes, proposal
   chunk packet bytes, and prevote/precommit vote batch packet bytes, including
-  the variable-length 112/178/244-byte vote batches used by POL evidence.
+  the variable-length 112/178/244/376-byte vote batches used by POL evidence.
 - `spec/CrosslinkTenderlinkNonceAckTransport.qnt` models the known-peer
   stateless Noise transport boundary around those packets: little-endian outer
   nonce prefixes, decrypted canonical consensus packets, `nonce_is_ok`
