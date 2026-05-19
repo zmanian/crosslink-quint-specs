@@ -190,6 +190,13 @@ For Crosslink, matching that quality means adding:
   rejection witnesses cover missing values, nil proposal rounds, short
   validator/proposer keys, wrong signed-message oneof tags, and missing
   signatures.
+- `CrosslinkMalachiteLivenessProtobufFormat.qnt` pins the first Malachite
+  liveness protobuf certificate vectors: a polka certificate, a skip-round nil
+  certificate, and a value precommit certificate under their `LivenessMessage`
+  oneof wrappers. The witnesses cover enum default omission for precommit
+  certificates, non-default skip/vote-type encoding, omitted nil value ids,
+  included value ids, required validator/signature lengths, and wrong-oneof
+  rejection.
 
 ### 2026-05-18
 
