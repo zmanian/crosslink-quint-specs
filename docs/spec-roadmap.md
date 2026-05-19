@@ -382,6 +382,10 @@ For Crosslink, matching that quality means adding:
   validator set can exceed the baseline halt-risk budget while remaining
   inside the nil-resampling round-burn budget, and ordinary head-arrival
   exposure remains unchanged by larger sigma.
+- `CrosslinkValidatorScaleProgressContract.qnt` turns that envelope into a
+  TLC-friendly progress contract: the stressed baseline path halts, but the
+  nil-precommit resampling path burns the bounded churn rounds and then reaches
+  a stable decision under weak fairness.
 - `CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs to that
   risk model into an executable assumption profile. It pins Zebra's
   post-Blossom 75-second PoW target spacing, models prevote/precommit window
@@ -638,7 +642,8 @@ For Crosslink, matching that quality means adding:
   safety requirements, and acceptance criteria for a future implementation.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
-  validator-scale liveness envelope, PoW stochastic-assumption,
+  validator-scale liveness envelope, validator-scale progress contract,
+  PoW stochastic-assumption,
   PoW fork-schedule, PoW branch-competition,
   PoW-reorg-stress, dynamic-sigma, dynamic-sigma calibration,
   dynamic-sigma telemetry,
@@ -707,6 +712,10 @@ For Crosslink, matching that quality means adding:
   the halt-risk budget, while nil-precommit resampling still reaches a stable
   decision after bounded round burns. It also records that sigma does not
   mitigate normal head-arrival exposure.
+- `CrosslinkValidatorScaleProgressContractModel` adds the matching temporal
+  check for that scale witness. TLC exhaustively checks the finite graph where
+  the baseline stress event halts, nil-precommit certificates burn the bounded
+  churn rounds, and a stable proposal/vote/precommit window eventually decides.
 - `CrosslinkPowStochasticAssumptionsModel` adds the first executable
   calibration profile for that bridge. It uses Zebra's post-Blossom target
   spacing as the denominator for normal PoW-arrival exposure, checks that
