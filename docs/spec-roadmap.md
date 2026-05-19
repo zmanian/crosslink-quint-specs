@@ -386,6 +386,10 @@ For Crosslink, matching that quality means adding:
   TLC-friendly progress contract: the stressed baseline path halts, but the
   nil-precommit resampling path burns the bounded churn rounds and then reaches
   a stable decision under weak fairness.
+- `CrosslinkBaselineChurnProgressContract.qnt` isolates the narrower protocol
+  rule behind that intuition: baseline Crosslink keeps a stale cached
+  proposal/lock value after a stream change, while nil-precommit resampling can
+  burn nil-certified rounds and decide after the stream becomes stable.
 - `CrosslinkValidatorScaleFinalityProgressContract.qnt` composes that scale
   progress path with Crosslink finality. It reuses the scale-progress machine,
   adds a linear finalized-prefix cursor, and TLC checks eventual finalization
