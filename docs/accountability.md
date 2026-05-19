@@ -210,7 +210,12 @@ proposal value at the same height. The production-vector model pins exact
 and the current prototype `try_from_bytes` reversed-slice gap. The production
 fat-pointer authenticated-evidence model then requires each active signer
 entry to have a matching gossiped precommit and each observed wire to have the
-exact counted-envelope length before observer acceptance. This is still
-abstract: it models the authentication boundary, wire shape, and
-gossip-before-observe rule but does not yet call production signature
-verification or gossip transport.
+exact counted-envelope length before observer acceptance. The fixture-gossip
+transport model adds the first transport boundary for the checked-in generated
+fixture: the matching precommit and fat-pointer wire must arrive through
+canonical Crosslink-topic envelopes, wrong topic/sign-bytes/kind/length
+envelopes are rejected, and a fixture precommit cannot enter gossip unless its
+matching transport envelope was seen. This is still partial: the model now
+covers the authentication boundary, wire shape, gossip-before-observe rule,
+fixture-level transport gate, and fixture-manifest Ed25519 verification, but
+does not yet call a full production gossip transport implementation.
