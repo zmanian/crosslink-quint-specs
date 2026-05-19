@@ -25,6 +25,7 @@ Status terms:
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; `ProposalFor` reuses only real `validValue`/`validRound` state; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
+| Stochastic PoW production and long reorgs | `CrosslinkHeadSigmaSampling.qnt`, `CrosslinkForkFinality.qnt`, and `CrosslinkHeightedHeadSigmaRound.qnt` model nondeterministic fork switches, stable-head windows, and finalized-prefix rejection | partial | Safety is modeled against adversarial bounded fork-tree evolution, but the specs do not yet quantify PoW block-arrival distributions, propagation races, long-tail reorg depth, or the probability that `head - sigma` changes between prevote and precommit as GST/validator-set size grows. |
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
 | Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
@@ -130,6 +131,9 @@ The goal is not complete yet. The strongest remaining gaps are:
 
 - lift the TLC-checked scheduler progress contract into a general temporal
   liveness proof over the composed protocol under post-GST stream stability;
+- add a stochastic or parameterized PoW/reorg analysis layer that relates
+  sigma, round duration, GST/validator-set size, and long-tail reorg depth to
+  the probability of stream churn during a round;
 - expand the BFT-block header-shape and validation-gap models into captured
   production data vectors and production code coverage for version,
   header-order, and PoW-solution checks;

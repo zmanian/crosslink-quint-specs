@@ -256,7 +256,10 @@ For Crosslink, matching that quality means adding:
   precommits before finalizing the fresh candidate.
 - `CrosslinkHeadSigmaSamplingModel` closes the first part of the
   `head - sigma` sampling gap by replacing arbitrary stream values with a
-  concrete fork-tree-derived stream witness.
+  concrete fork-tree-derived stream witness. This is deliberately
+  nondeterministic/adversarial rather than probabilistic: it checks bounded
+  fork switches and stable-head windows, but it does not yet quantify PoW
+  block-arrival rates, propagation races, or long-tail reorg probabilities.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
@@ -281,3 +284,6 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and gossip transport, and to lift the
   scheduler temporal contract into a full composed protocol temporal proof.
+  A separate stochastic/parameterized PoW analysis should relate sigma, round
+  duration, GST/validator-set size, and reorg-depth tails to the probability
+  that `head - sigma` changes during prevote/precommit.
