@@ -121,7 +121,8 @@ finality-progress, composed-progress, stream-churn, PoW stochastic-assumption,
 PoW-reorg stress, dynamic-sigma controller, dynamic-sigma head-sampling,
 head-sigma stream, BFT-block-shape, BFT-block
 validation-gap, BFT-block production-vector, fat-pointer-format, fat-pointer
-production-vector, and evidence-composition models.
+production-vector, evidence-composition, fixture-authenticated evidence, and
+fixture-gossip transport models.
 It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
 also checked at depth 8, for:
 
@@ -179,9 +180,9 @@ The goal is not complete yet. The strongest remaining gaps are:
   block format stabilizes, and add production code coverage for version,
   header-order, and PoW-solution checks;
 - link message-authentication and evidence-gossip models to production
-  serialization, signatures, and gossip transport;
-- extend the script-level Ed25519 fixture verification into production
-  gossip/transport integration;
+  serialization, signatures, and full production gossip transport;
+- extend the script-level Ed25519 fixture verification and fixture-gossip
+  transport bridge into full production gossip/transport integration;
 - continue expanding bounded verification depth and targeted counterexample
   searches beyond the current depth-5 extended gate for the new standalone
   models.
