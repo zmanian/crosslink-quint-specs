@@ -77,6 +77,7 @@ function parseFatPointer(buffer, offset) {
     throw new Error(`fat pointer at ${offset} runs past end of buffer`)
   }
 
+  const payload = buffer.subarray(offset, offset + layout.fatPointerVotePayloadBytes)
   const signatureCountOffset = offset + layout.fatPointerVotePayloadBytes
   const signatureCount = buffer.readUInt16LE(offset + layout.fatPointerVotePayloadBytes)
   const byteLen = fatPointerByteLen(signatureCount)
@@ -85,14 +86,22 @@ function parseFatPointer(buffer, offset) {
   }
 
   const entriesOffset = signatureCountOffset + layout.fatPointerCountBytes
-  const firstSignatureEntry = signatureCount === 0 ? null : {
-    pubKeyOffset: entriesOffset,
-    pubKeyFirstByte: buffer.readUInt8(entriesOffset),
-    voteSignatureOffset: entriesOffset + 32,
-    voteSignatureFirstByte: buffer.readUInt8(entriesOffset + 32),
-    voteSignatureLastByte: buffer.readUInt8(entriesOffset + 32 + 63),
-    endOffset: entriesOffset + layout.fatPointerSignatureEntryBytes,
-  }
+  const firstSignatureEntry = signatureCount === 0 ? null : (() => {
+    const pubKey = buffer.subarray(entriesOffset, entriesOffset + 32)
+    const voteSignature = buffer.subarray(entriesOffset + 32, entriesOffset + 32 + 64)
+
+    return {
+      pubKeyOffset: entriesOffset,
+      pubKeyFirstByte: buffer.readUInt8(entriesOffset),
+      pubKeyHex: pubKey.toString('hex'),
+      voteSignatureOffset: entriesOffset + 32,
+      voteSignatureFirstByte: buffer.readUInt8(entriesOffset + 32),
+      voteSignatureLastByte: buffer.readUInt8(entriesOffset + 32 + 63),
+      voteSignatureHex: voteSignature.toString('hex'),
+      voteSignDataHex: Buffer.concat([pubKey, payload]).toString('hex'),
+      endOffset: entriesOffset + layout.fatPointerSignatureEntryBytes,
+    }
+  })()
 
   return {
     signatureCount,
@@ -101,6 +110,8 @@ function parseFatPointer(buffer, offset) {
       offset,
       payloadFirstByte: buffer.readUInt8(offset),
       payloadLastByte: buffer.readUInt8(offset + layout.fatPointerVotePayloadBytes - 1),
+      payloadHex: payload.toString('hex'),
+      blockHashHex: payload.subarray(0, 32).toString('hex'),
       signatureCountOffset,
       signatureCountBytes: [
         buffer.readUInt8(signatureCountOffset),
@@ -229,6 +240,13 @@ function assert(condition, message) {
 function validateFatPointerProbe(prefix, probe, offset, signatureCount, byteLen) {
   assert(probe && typeof probe === 'object', `${prefix}fat-pointer probe missing`)
   assert(probe.offset === offset, `${prefix}fat-pointer probe offset mismatch`)
+  assert(typeof probe.payloadHex === 'string', `${prefix}payload hex missing`)
+  assert(
+    probe.payloadHex.length === layout.fatPointerVotePayloadBytes * 2,
+    `${prefix}payload hex length mismatch`,
+  )
+  assert(typeof probe.blockHashHex === 'string', `${prefix}block hash hex missing`)
+  assert(probe.blockHashHex.length === 64, `${prefix}block hash hex length mismatch`)
   assert(
     probe.signatureCountOffset === offset + layout.fatPointerVotePayloadBytes,
     `${prefix}count offset mismatch`,
@@ -256,8 +274,23 @@ function validateFatPointerProbe(prefix, probe, offset, signatureCount, byteLen)
     assert(probe.firstSignatureEntry !== null, `${prefix}first signature entry missing`)
     assert(probe.firstSignatureEntry.pubKeyOffset === probe.entriesOffset, `${prefix}pubkey offset mismatch`)
     assert(
+      typeof probe.firstSignatureEntry.pubKeyHex === 'string' &&
+        probe.firstSignatureEntry.pubKeyHex.length === 64,
+      `${prefix}pubkey hex mismatch`,
+    )
+    assert(
       probe.firstSignatureEntry.voteSignatureOffset === probe.entriesOffset + 32,
       `${prefix}vote signature offset mismatch`,
+    )
+    assert(
+      typeof probe.firstSignatureEntry.voteSignatureHex === 'string' &&
+        probe.firstSignatureEntry.voteSignatureHex.length === 128,
+      `${prefix}vote signature hex mismatch`,
+    )
+    assert(
+      typeof probe.firstSignatureEntry.voteSignDataHex === 'string' &&
+        probe.firstSignatureEntry.voteSignDataHex.length === 152,
+      `${prefix}vote sign-data hex mismatch`,
     )
     assert(
       probe.firstSignatureEntry.endOffset === probe.entriesOffset + layout.fatPointerSignatureEntryBytes,
@@ -370,6 +403,10 @@ function stableJson(value) {
   return `${JSON.stringify(value, null, 2)}\n`
 }
 
+function quintValue(value) {
+  return typeof value === 'string' ? JSON.stringify(value) : value
+}
+
 function renderGeneratedQuintModule(manifest) {
   validateManifest(manifest)
 
@@ -412,6 +449,16 @@ function renderGeneratedQuintModule(manifest) {
     ['CheckedInFixturePreviousSignatureLastByte', later.previousFatPointerProbe.firstSignatureEntry.voteSignatureLastByte],
     ['CheckedInFixtureTrailingSignatureFirstByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureFirstByte],
     ['CheckedInFixtureTrailingSignatureLastByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureLastByte],
+    ['CheckedInFixturePreviousPayloadHex', later.previousFatPointerProbe.payloadHex],
+    ['CheckedInFixturePreviousBlockHashHex', later.previousFatPointerProbe.blockHashHex],
+    ['CheckedInFixturePreviousPubKeyHex', later.previousFatPointerProbe.firstSignatureEntry.pubKeyHex],
+    ['CheckedInFixturePreviousVoteSignatureHex', later.previousFatPointerProbe.firstSignatureEntry.voteSignatureHex],
+    ['CheckedInFixturePreviousVoteSignDataHex', later.previousFatPointerProbe.firstSignatureEntry.voteSignDataHex],
+    ['CheckedInFixtureTrailingPayloadHex', later.trailingFatPointerProbe.payloadHex],
+    ['CheckedInFixtureTrailingBlockHashHex', later.trailingFatPointerProbe.blockHashHex],
+    ['CheckedInFixtureTrailingPubKeyHex', later.trailingFatPointerProbe.firstSignatureEntry.pubKeyHex],
+    ['CheckedInFixtureTrailingVoteSignatureHex', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureHex],
+    ['CheckedInFixtureTrailingVoteSignDataHex', later.trailingFatPointerProbe.firstSignatureEntry.voteSignDataHex],
   ]
 
   const lines = [
@@ -422,7 +469,7 @@ function renderGeneratedQuintModule(manifest) {
     `   Fixtures: ${manifest.source.fixtureGlob}`,
     '   */',
     '',
-    ...constants.map(([name, value]) => `  pure val ${name} = ${value}`),
+    ...constants.map(([name, value]) => `  pure val ${name} = ${quintValue(value)}`),
     '}',
     '',
   ]

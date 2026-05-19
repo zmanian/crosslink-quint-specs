@@ -24,6 +24,8 @@
         "offset": 8,
         "payloadFirstByte": 0,
         "payloadLastByte": 0,
+        "payloadHex": "0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000",
+        "blockHashHex": "0000000000000000000000000000000000000000000000000000000000000000",
         "signatureCountOffset": 52,
         "signatureCountBytes": [
           0,
@@ -68,6 +70,8 @@
         "offset": 4523,
         "payloadFirstByte": 19,
         "payloadLastByte": 128,
+        "payloadHex": "13d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d3010000000000000006000080",
+        "blockHashHex": "13d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d3",
         "signatureCountOffset": 4567,
         "signatureCountBytes": [
           1,
@@ -77,9 +81,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 4569,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 4601,
           "voteSignatureFirstByte": 60,
           "voteSignatureLastByte": 2,
+          "voteSignatureHex": "3cf2630c9f454936efbabbc9b25ca5c78461dcd83707f89f7e5e3101745fb7086017f825ef38065d33e0802a20e1c0f17d9d263cd8897ae91fcb27cbde347102",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c313d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d3010000000000000006000080",
           "endOffset": 4665
         }
       }
@@ -95,6 +102,8 @@
         "offset": 8,
         "payloadFirstByte": 19,
         "payloadLastByte": 128,
+        "payloadHex": "13d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d3010000000000000006000080",
+        "blockHashHex": "13d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d3",
         "signatureCountOffset": 52,
         "signatureCountBytes": [
           1,
@@ -104,9 +113,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 54,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 86,
           "voteSignatureFirstByte": 60,
           "voteSignatureLastByte": 2,
+          "voteSignatureHex": "3cf2630c9f454936efbabbc9b25ca5c78461dcd83707f89f7e5e3101745fb7086017f825ef38065d33e0802a20e1c0f17d9d263cd8897ae91fcb27cbde347102",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c313d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d3010000000000000006000080",
           "endOffset": 150
         }
       },
@@ -146,6 +158,8 @@
         "offset": 4619,
         "payloadFirstByte": 253,
         "payloadLastByte": 128,
+        "payloadHex": "fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac020000000000000001000080",
+        "blockHashHex": "fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac",
         "signatureCountOffset": 4663,
         "signatureCountBytes": [
           1,
@@ -155,9 +169,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 4665,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 4697,
           "voteSignatureFirstByte": 60,
           "voteSignatureLastByte": 15,
+          "voteSignatureHex": "3c471f514fb11e5b66c07b6c562fa3ebaffa344d0f076b222f58c52a7cb0252560e667309100597a1061740e40462c08dfea08becf30dc792adca9eeedefda0f",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac020000000000000001000080",
           "endOffset": 4761
         }
       }
@@ -173,6 +190,8 @@
         "offset": 8,
         "payloadFirstByte": 253,
         "payloadLastByte": 128,
+        "payloadHex": "fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac020000000000000001000080",
+        "blockHashHex": "fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac",
         "signatureCountOffset": 52,
         "signatureCountBytes": [
           1,
@@ -182,9 +201,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 54,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 86,
           "voteSignatureFirstByte": 60,
           "voteSignatureLastByte": 15,
+          "voteSignatureHex": "3c471f514fb11e5b66c07b6c562fa3ebaffa344d0f076b222f58c52a7cb0252560e667309100597a1061740e40462c08dfea08becf30dc792adca9eeedefda0f",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac020000000000000001000080",
           "endOffset": 150
         }
       },
@@ -224,6 +246,8 @@
         "offset": 4619,
         "payloadFirstByte": 175,
         "payloadLastByte": 128,
+        "payloadHex": "aff2a61c73ed9c61eecb4e21a6c8a8f15440729fe5ef5fb289114b19859c7254030000000000000001000080",
+        "blockHashHex": "aff2a61c73ed9c61eecb4e21a6c8a8f15440729fe5ef5fb289114b19859c7254",
         "signatureCountOffset": 4663,
         "signatureCountBytes": [
           1,
@@ -233,9 +257,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 4665,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 4697,
           "voteSignatureFirstByte": 228,
           "voteSignatureLastByte": 2,
+          "voteSignatureHex": "e4296fccfb97f0aab40b3e98e17a46e34ed3236faf4412313c90485cda557162c3a28c9396c489bcb50c92eddb8d4ce9ae87dc30c39f0eb83c009b28838b0302",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3aff2a61c73ed9c61eecb4e21a6c8a8f15440729fe5ef5fb289114b19859c7254030000000000000001000080",
           "endOffset": 4761
         }
       }
@@ -251,6 +278,8 @@
         "offset": 8,
         "payloadFirstByte": 175,
         "payloadLastByte": 128,
+        "payloadHex": "aff2a61c73ed9c61eecb4e21a6c8a8f15440729fe5ef5fb289114b19859c7254030000000000000001000080",
+        "blockHashHex": "aff2a61c73ed9c61eecb4e21a6c8a8f15440729fe5ef5fb289114b19859c7254",
         "signatureCountOffset": 52,
         "signatureCountBytes": [
           1,
@@ -260,9 +289,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 54,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 86,
           "voteSignatureFirstByte": 228,
           "voteSignatureLastByte": 2,
+          "voteSignatureHex": "e4296fccfb97f0aab40b3e98e17a46e34ed3236faf4412313c90485cda557162c3a28c9396c489bcb50c92eddb8d4ce9ae87dc30c39f0eb83c009b28838b0302",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3aff2a61c73ed9c61eecb4e21a6c8a8f15440729fe5ef5fb289114b19859c7254030000000000000001000080",
           "endOffset": 150
         }
       },
@@ -302,6 +334,8 @@
         "offset": 4619,
         "payloadFirstByte": 44,
         "payloadLastByte": 128,
+        "payloadHex": "2ca2db9c7104fe6723e01c0496c1af377421c2be72589586a7733d8161046a77040000000000000003000080",
+        "blockHashHex": "2ca2db9c7104fe6723e01c0496c1af377421c2be72589586a7733d8161046a77",
         "signatureCountOffset": 4663,
         "signatureCountBytes": [
           1,
@@ -311,9 +345,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 4665,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 4697,
           "voteSignatureFirstByte": 186,
           "voteSignatureLastByte": 0,
+          "voteSignatureHex": "ba7566b0d0b44812cea4e8f99ff872e4639b890f70c7c9f51f8c6e5d403e632ba77e8e8fdb0839151a4ad4374f190464007d98805826c895c4a5307caa5c7500",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c32ca2db9c7104fe6723e01c0496c1af377421c2be72589586a7733d8161046a77040000000000000003000080",
           "endOffset": 4761
         }
       }
@@ -329,6 +366,8 @@
         "offset": 8,
         "payloadFirstByte": 44,
         "payloadLastByte": 128,
+        "payloadHex": "2ca2db9c7104fe6723e01c0496c1af377421c2be72589586a7733d8161046a77040000000000000003000080",
+        "blockHashHex": "2ca2db9c7104fe6723e01c0496c1af377421c2be72589586a7733d8161046a77",
         "signatureCountOffset": 52,
         "signatureCountBytes": [
           1,
@@ -338,9 +377,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 54,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 86,
           "voteSignatureFirstByte": 186,
           "voteSignatureLastByte": 0,
+          "voteSignatureHex": "ba7566b0d0b44812cea4e8f99ff872e4639b890f70c7c9f51f8c6e5d403e632ba77e8e8fdb0839151a4ad4374f190464007d98805826c895c4a5307caa5c7500",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c32ca2db9c7104fe6723e01c0496c1af377421c2be72589586a7733d8161046a77040000000000000003000080",
           "endOffset": 150
         }
       },
@@ -380,6 +422,8 @@
         "offset": 4619,
         "payloadFirstByte": 94,
         "payloadLastByte": 128,
+        "payloadHex": "5eea251a360e186f3e997f9269a1c4853f6eb2ae8a2f30c0e5f411c0d46ea7fc050000000000000002000080",
+        "blockHashHex": "5eea251a360e186f3e997f9269a1c4853f6eb2ae8a2f30c0e5f411c0d46ea7fc",
         "signatureCountOffset": 4663,
         "signatureCountBytes": [
           1,
@@ -389,9 +433,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 4665,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 4697,
           "voteSignatureFirstByte": 176,
           "voteSignatureLastByte": 0,
+          "voteSignatureHex": "b048b3c6a30db169b6f09c798c34b295b77e08d29cbe03617b60378c08ea7f7779d2efed24b9f94244c07c017b1a2f07aaf9333d9b327f0b19b3abeb0f47e000",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c35eea251a360e186f3e997f9269a1c4853f6eb2ae8a2f30c0e5f411c0d46ea7fc050000000000000002000080",
           "endOffset": 4761
         }
       }
@@ -407,6 +454,8 @@
         "offset": 8,
         "payloadFirstByte": 94,
         "payloadLastByte": 128,
+        "payloadHex": "5eea251a360e186f3e997f9269a1c4853f6eb2ae8a2f30c0e5f411c0d46ea7fc050000000000000002000080",
+        "blockHashHex": "5eea251a360e186f3e997f9269a1c4853f6eb2ae8a2f30c0e5f411c0d46ea7fc",
         "signatureCountOffset": 52,
         "signatureCountBytes": [
           1,
@@ -416,9 +465,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 54,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 86,
           "voteSignatureFirstByte": 176,
           "voteSignatureLastByte": 0,
+          "voteSignatureHex": "b048b3c6a30db169b6f09c798c34b295b77e08d29cbe03617b60378c08ea7f7779d2efed24b9f94244c07c017b1a2f07aaf9333d9b327f0b19b3abeb0f47e000",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c35eea251a360e186f3e997f9269a1c4853f6eb2ae8a2f30c0e5f411c0d46ea7fc050000000000000002000080",
           "endOffset": 150
         }
       },
@@ -458,6 +510,8 @@
         "offset": 4619,
         "payloadFirstByte": 129,
         "payloadLastByte": 128,
+        "payloadHex": "81a936b965f47ade2c42a98e4679b11025a1e9bae5096d7823d3b9c475ebc860060000000000000002000080",
+        "blockHashHex": "81a936b965f47ade2c42a98e4679b11025a1e9bae5096d7823d3b9c475ebc860",
         "signatureCountOffset": 4663,
         "signatureCountBytes": [
           1,
@@ -467,9 +521,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 4665,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 4697,
           "voteSignatureFirstByte": 254,
           "voteSignatureLastByte": 8,
+          "voteSignatureHex": "fea1159a7817e74b104e45ed0ea662c4a935568825ecc31e965ff7c475f85b803f654358424ee008361687cb47108d2ea30bc6a86c960617ef7271d9e7b1a308",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c381a936b965f47ade2c42a98e4679b11025a1e9bae5096d7823d3b9c475ebc860060000000000000002000080",
           "endOffset": 4761
         }
       }
@@ -485,6 +542,8 @@
         "offset": 8,
         "payloadFirstByte": 129,
         "payloadLastByte": 128,
+        "payloadHex": "81a936b965f47ade2c42a98e4679b11025a1e9bae5096d7823d3b9c475ebc860060000000000000002000080",
+        "blockHashHex": "81a936b965f47ade2c42a98e4679b11025a1e9bae5096d7823d3b9c475ebc860",
         "signatureCountOffset": 52,
         "signatureCountBytes": [
           1,
@@ -494,9 +553,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 54,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 86,
           "voteSignatureFirstByte": 254,
           "voteSignatureLastByte": 8,
+          "voteSignatureHex": "fea1159a7817e74b104e45ed0ea662c4a935568825ecc31e965ff7c475f85b803f654358424ee008361687cb47108d2ea30bc6a86c960617ef7271d9e7b1a308",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c381a936b965f47ade2c42a98e4679b11025a1e9bae5096d7823d3b9c475ebc860060000000000000002000080",
           "endOffset": 150
         }
       },
@@ -536,6 +598,8 @@
         "offset": 4619,
         "payloadFirstByte": 99,
         "payloadLastByte": 128,
+        "payloadHex": "63d08781e025c94ea713d86b47270f8021cc11945d63f9abccbce852145c493d070000000000000003000080",
+        "blockHashHex": "63d08781e025c94ea713d86b47270f8021cc11945d63f9abccbce852145c493d",
         "signatureCountOffset": 4663,
         "signatureCountBytes": [
           1,
@@ -545,9 +609,12 @@
         "firstSignatureEntry": {
           "pubKeyOffset": 4665,
           "pubKeyFirstByte": 240,
+          "pubKeyHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c3",
           "voteSignatureOffset": 4697,
           "voteSignatureFirstByte": 87,
           "voteSignatureLastByte": 13,
+          "voteSignatureHex": "577ee107104a1a0b737adb2cf31ce28abf9cfef9cf1f04c5fcd4ba0a14328f6f42a697ce616953ec31ae1d22af75ebd16242fb35f53a01d96359afb4cfd0fb0d",
+          "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c363d08781e025c94ea713d86b47270f8021cc11945d63f9abccbce852145c493d070000000000000003000080",
           "endOffset": 4761
         }
       }

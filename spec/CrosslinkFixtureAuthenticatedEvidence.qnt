@@ -5,8 +5,9 @@ module CrosslinkFixtureAuthenticatedEvidence {
    This model takes the one-signature checked-in production fixture constants
    generated from crosslink-test-data/test_pos_block_*.bin and routes the
    corresponding fat-pointer wire through the authenticated observer rules.
-   Signatures remain abstract, but the wire length and signature count now come
-   from the generated production fixture module.
+   Signatures remain abstract, but the manifest also records the real fixture
+   pubkey, vote payload, vote signature, and sign-data byte strings for
+   implementation-level verification.
    */
 
   import CrosslinkFatPointerAuthenticatedEvidence.* from "./CrosslinkFatPointerAuthenticatedEvidence"
@@ -56,6 +57,11 @@ module CrosslinkFixtureAuthenticatedEvidence {
     CheckedInFixtureSignatureCount == 1 and
     CheckedInFixtureTrailingSignatureCountByte0 == 1 and
     CheckedInFixtureTrailingSignatureCountByte1 == 0 and
+    CheckedInFixtureTrailingPayloadFirstByte == 253 and
+    CheckedInFixtureTrailingPayloadLastByte == 128 and
+    CheckedInFixtureSignerPubKeyFirstByte == 240 and
+    CheckedInFixtureTrailingSignatureFirstByte == 60 and
+    CheckedInFixtureTrailingSignatureLastByte == 15 and
     FixtureTrailingFatPointerWireByteLen == 142 and
     FatPointerWireByteLen(FixtureFatPointer) == FixtureTrailingFatPointerWireByteLen
 

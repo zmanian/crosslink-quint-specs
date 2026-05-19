@@ -105,6 +105,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkProductionFixtureVectorsGenerated.qnt` is generated from that
   fixture manifest and is imported by the BFT-block and fat-pointer production
   vector specs so checked-in fixture constants do not have to be copied by hand.
+  The manifest/module also pin the fixture payload, pubkey, vote signature, and
+  `pubkey || payload` sign-data hex strings for implementation-level crypto
+  checks.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -125,7 +128,8 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkFixtureAuthenticatedEvidence.qnt` bridges the generated
   production fixture constants into that authenticated observer pipeline: the
   one-signature checked-in fixture wire is accepted only after its matching
-  abstract precommit is gossiped.
+  abstract precommit is gossiped. The executable model keeps signature tokens
+  compact while the generated fixture artifacts pin the real byte strings.
 
 The round-recovery model has two first-class instantiations:
 

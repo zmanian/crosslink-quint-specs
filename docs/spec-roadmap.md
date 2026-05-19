@@ -198,7 +198,9 @@ For Crosslink, matching that quality means adding:
   include one trailing fat-pointer signature. The manifest also pins
   previous/trailing fat-pointer count bytes and first signer-entry byte probes.
   A generated Quint module imports those constants into the production-vector
-  specs. The model still records the deserialization sigma-bypass gap.
+  specs, and the generated artifacts pin the full payload, pubkey, vote
+  signature, and `pubkey || payload` sign-data hex strings. The model still
+  records the deserialization sigma-bypass gap.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
@@ -225,7 +227,8 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkFixtureAuthenticatedEvidence.qnt` bridges generated checked-in
   fixture constants into that authenticated observer pipeline. The
   one-signature fixture wire is accepted only after its matching abstract
-  precommit is gossiped, and is rejected before gossip.
+  precommit is gossiped, and is rejected before gossip. The generated artifacts
+  also carry the real fixture byte strings for later crypto verification.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
