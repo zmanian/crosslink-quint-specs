@@ -199,11 +199,14 @@ The current spec surface has three first-class Crosslink variants:
   heights, and out-of-range sigma values.
   `CrosslinkDynamicSigmaConsensusParamFormatModel` pins a compact production
   byte layout for those wires and routes accepted bytes through the same
-  controller.
+  controller, including exact little-endian hex vectors for accepted and
+  malformed envelopes.
   `CrosslinkDynamicSigmaConsensusParamTransportModel` requires quorum-signed
   canonical production param bytes on the Crosslink gossip topic before the
   node config follows a committed next-height sigma, and stores both the exact
-  production wire and its decoded consensus-param wire.
+  production wire and its decoded consensus-param wire. It rejects malformed
+  production envelopes and quorum-signed stale activation at the transport
+  boundary.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality

@@ -226,14 +226,16 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkDynamicSigmaConsensusParamFormat.qnt` pins a compact
   production-shaped byte envelope for those wires: one-byte key tag, u32
   activation height, u32 telemetry source height, and u16 sigma. It routes
-  accepted bytes through the abstract consensus-param model and rejects
-  wrong-key, stale-activation, trailing-byte, and out-of-range-sigma envelopes.
+  accepted bytes through the abstract consensus-param model, pins exact
+  little-endian hex vectors, and rejects wrong-key, stale-activation,
+  trailing-byte, and out-of-range-sigma envelopes.
 - `CrosslinkDynamicSigmaConsensusParamTransport.qnt` adds the authenticated
   gossip/config-application boundary for those params. It requires quorum-signed
   canonical production param bytes on the Crosslink consensus topic before node
   config follows a committed next-height sigma after format decoding, while
-  rejecting wrong-topic, wrong-kind, wrong-byte, wrong-signature, wrong-key
-  production envelopes, no-quorum, and nondeterministic sigma updates.
+  rejecting wrong-topic, wrong-kind, wrong-byte, wrong-signature, malformed
+  production envelopes, no-quorum, quorum-signed stale activation, and
+  nondeterministic sigma updates.
 - `CrosslinkDynamicSigmaHeadSampling.qnt` connects that controller to concrete
   proposal-stream sampling. It imports the dynamic-sigma schedule, samples
   `head - sigma(h)` for the active BFT height, checks that nil-precommit round
@@ -470,16 +472,16 @@ For Crosslink, matching that quality means adding:
   activation heights, or out-of-range sigma values.
 - `CrosslinkDynamicSigmaConsensusParamFormatModel` adds a production-shaped byte
   layout for those params. It verifies fixed field offsets, exact envelope
-  length, raised/lowered/low-participation sigma commits through production
-  bytes, nil-round byte stability, and rejection of wrong-key, stale,
-  trailing-byte, and out-of-range envelopes.
+  length, exact little-endian hex vectors, raised/lowered/low-participation
+  sigma commits through production bytes, nil-round byte stability, and
+  rejection of wrong-key, stale, trailing-byte, and out-of-range envelopes.
 - `CrosslinkDynamicSigmaConsensusParamTransportModel` adds a signed gossip and
   node-config application boundary over the production byte format. It verifies
   quorum-gossiped low-participation sigma raises, recovered-participation
   lowering, nil-round config stability, exact production-wire config storage
   beside decoded consensus params, and rejection of wrong-topic, wrong-kind,
-  wrong-byte, wrong-signature, wrong-key production envelopes, no-quorum, and
-  nondeterministic-sigma updates.
+  wrong-byte, wrong-signature, malformed production envelopes, no-quorum,
+  quorum-signed stale activation, and nondeterministic-sigma updates.
 - `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel` composes the
   dynamic-sigma candidate boundary with the heighted authenticated-evidence
   pipeline. It verifies accepted height-1 and telemetry-raised height-2

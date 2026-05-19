@@ -282,10 +282,34 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     telemetryHeight: 0,
     bcConfirmationDepthSigma: 3,
   }
+  pure val H1TrailingBytesWire = {
+    byteLen: 12,
+    keyTag: 1,
+    activationHeight: 1,
+    telemetryHeight: 0,
+    bcConfirmationDepthSigma: 3,
+  }
+  pure val H1OutOfBoundsSigmaWire = {
+    byteLen: 11,
+    keyTag: 1,
+    activationHeight: 1,
+    telemetryHeight: 0,
+    bcConfirmationDepthSigma: 99,
+  }
+  pure val H0StaleActivationWire = {
+    byteLen: 11,
+    keyTag: 1,
+    activationHeight: 0,
+    telemetryHeight: 0,
+    bcConfirmationDepthSigma: 3,
+  }
 
   pure val H1ParamBytes = "param-bytes-h1-sigma-3"
   pure val H1WrongSigmaParamBytes = "param-bytes-h1-sigma-2"
   pure val H1WrongKeyParamBytes = "param-bytes-h1-wrong-key"
+  pure val H1TrailingBytesParamBytes = "param-bytes-h1-trailing"
+  pure val H1OutOfBoundsSigmaParamBytes = "param-bytes-h1-sigma-99"
+  pure val H0StaleActivationParamBytes = "param-bytes-h0-stale-sigma-3"
   pure val H2ParamBytes = "param-bytes-h2-sigma-2"
   pure val WrongParamBytes = "wrong-param-bytes"
 
@@ -418,6 +442,46 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
       "sig-alice-h1-wrong-key",
     )
 
+  pure val TrailingBytesProductionEnvelope =
+    Env(
+      CrosslinkConsensusParamTopic,
+      ConsensusParamEnvelopeKind,
+      Alice,
+      H1TrailingBytesWire,
+      H1TrailingBytesParamBytes,
+      "sig-alice-h1-trailing",
+    )
+
+  pure val OutOfBoundsSigmaProductionEnvelope =
+    Env(
+      CrosslinkConsensusParamTopic,
+      ConsensusParamEnvelopeKind,
+      Alice,
+      H1OutOfBoundsSigmaWire,
+      H1OutOfBoundsSigmaParamBytes,
+      "sig-alice-h1-sigma-99",
+    )
+
+  pure val H0StaleActivationAliceEnvelope =
+    Env(
+      CrosslinkConsensusParamTopic,
+      ConsensusParamEnvelopeKind,
+      Alice,
+      H0StaleActivationWire,
+      H0StaleActivationParamBytes,
+      "sig-alice-h0-stale",
+    )
+
+  pure val H0StaleActivationBobEnvelope =
+    Env(
+      CrosslinkConsensusParamTopic,
+      ConsensusParamEnvelopeKind,
+      Bob,
+      H0StaleActivationWire,
+      H0StaleActivationParamBytes,
+      "sig-bob-h0-stale",
+    )
+
   pure val TestParamTransportEnvelopes = Set(
     H1AliceEnvelope,
     H1BobEnvelope,
@@ -430,6 +494,10 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     WrongBytesEnvelope,
     WrongSignatureEnvelope,
     WrongKeyProductionEnvelope,
+    TrailingBytesProductionEnvelope,
+    OutOfBoundsSigmaProductionEnvelope,
+    H0StaleActivationAliceEnvelope,
+    H0StaleActivationBobEnvelope,
   )
 
   pure val ModelParamTransportEnvelopes = Set(
@@ -554,6 +622,26 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
       .fail()
   }
 
+  run trailingBytesProductionParamEnvelopeRejectedTest = {
+    ParamTransportInit
+      .then(GossipConsensusParamEnvelope(TrailingBytesProductionEnvelope))
+      .fail()
+  }
+
+  run outOfBoundsSigmaProductionParamEnvelopeRejectedTest = {
+    ParamTransportInit
+      .then(GossipConsensusParamEnvelope(OutOfBoundsSigmaProductionEnvelope))
+      .fail()
+  }
+
+  run quorumSignedStaleActivationProductionParamRejectedAtCommitTest = {
+    ParamTransportInit
+      .then(GossipConsensusParamEnvelope(H0StaleActivationAliceEnvelope))
+      .then(GossipConsensusParamEnvelope(H0StaleActivationBobEnvelope))
+      .then(CommitHeightFromGossipedConsensusParam(H0StaleActivationWire))
+      .fail()
+  }
+
   run quorumForNondeterministicSigmaStillRejectedTest = {
     ParamTransportInit
       .then(GossipConsensusParamEnvelope(H1WrongSigmaAliceEnvelope))
@@ -642,6 +730,12 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       },
       {
         paramKey: "bc_confirmation_depth_sigma",
+        activationHeight: 0,
+        telemetryHeight: 0,
+        bcConfirmationDepthSigma: 3,
+      },
+      {
+        paramKey: "bc_confirmation_depth_sigma",
         activationHeight: 2,
         telemetryHeight: 1,
         bcConfirmationDepthSigma: 2,
@@ -670,6 +764,27 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
         bcConfirmationDepthSigma: 2,
       },
       {
+        byteLen: 12,
+        keyTag: 1,
+        activationHeight: 1,
+        telemetryHeight: 0,
+        bcConfirmationDepthSigma: 3,
+      },
+      {
+        byteLen: 11,
+        keyTag: 1,
+        activationHeight: 1,
+        telemetryHeight: 0,
+        bcConfirmationDepthSigma: 99,
+      },
+      {
+        byteLen: 11,
+        keyTag: 1,
+        activationHeight: 0,
+        telemetryHeight: 0,
+        bcConfirmationDepthSigma: 3,
+      },
+      {
         byteLen: 11,
         keyTag: 1,
         activationHeight: 2,
@@ -688,6 +803,9 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "param-bytes-h1-sigma-3",
       "param-bytes-h1-sigma-2",
       "param-bytes-h1-wrong-key",
+      "param-bytes-h1-trailing",
+      "param-bytes-h1-sigma-99",
+      "param-bytes-h0-stale-sigma-3",
       "param-bytes-h2-sigma-2",
       "wrong-param-bytes",
     ),
@@ -699,6 +817,10 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "sig-alice-h1-wrong-sigma",
       "sig-bob-h1-wrong-sigma",
       "sig-alice-h1-wrong-key",
+      "sig-alice-h1-trailing",
+      "sig-alice-h1-sigma-99",
+      "sig-alice-h0-stale",
+      "sig-bob-h0-stale",
       "sig-alice-wrong-bytes",
     ),
     ParamSignatureOwner = Map(
@@ -709,6 +831,10 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "sig-alice-h1-wrong-sigma" -> "alice",
       "sig-bob-h1-wrong-sigma" -> "bob",
       "sig-alice-h1-wrong-key" -> "alice",
+      "sig-alice-h1-trailing" -> "alice",
+      "sig-alice-h1-sigma-99" -> "alice",
+      "sig-alice-h0-stale" -> "alice",
+      "sig-bob-h0-stale" -> "bob",
       "sig-alice-wrong-bytes" -> "alice",
     ),
     ParamSignatureBytes = Map(
@@ -719,20 +845,35 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "sig-alice-h1-wrong-sigma" -> "param-bytes-h1-sigma-2",
       "sig-bob-h1-wrong-sigma" -> "param-bytes-h1-sigma-2",
       "sig-alice-h1-wrong-key" -> "param-bytes-h1-wrong-key",
+      "sig-alice-h1-trailing" -> "param-bytes-h1-trailing",
+      "sig-alice-h1-sigma-99" -> "param-bytes-h1-sigma-99",
+      "sig-alice-h0-stale" -> "param-bytes-h0-stale-sigma-3",
+      "sig-bob-h0-stale" -> "param-bytes-h0-stale-sigma-3",
       "sig-alice-wrong-bytes" -> "wrong-param-bytes",
     ),
     ProductionConsensusParamPayload = Map(
+      12 -> Map(
+        1 -> Map(
+          1 -> Map(
+            0 -> Map(
+              3 -> "param-bytes-h1-trailing",
+            ),
+          ),
+        ),
+      ),
       11 -> Map(
         1 -> Map(
           0 -> Map(
             0 -> Map(
               2 -> "param-bytes-h0-sigma-2",
+              3 -> "param-bytes-h0-stale-sigma-3",
             ),
           ),
           1 -> Map(
             0 -> Map(
               2 -> "param-bytes-h1-sigma-2",
               3 -> "param-bytes-h1-sigma-3",
+              99 -> "param-bytes-h1-sigma-99",
             ),
           ),
           2 -> Map(
