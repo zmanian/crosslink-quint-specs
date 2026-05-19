@@ -87,6 +87,14 @@ the Zebra Crosslink working branch:
   activation height, and telemetry source height; nil-precommit round burns
   cannot rewrite params; malformed, stale, or out-of-range param wires are
   rejected.
+- `spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt` pins the first
+  production-shaped byte envelope for those params: key tag, activation height,
+  telemetry height, and sigma at fixed offsets, with trailing-byte, wrong-key,
+  stale-activation, and out-of-range-sigma rejection.
+- `spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt` adds the
+  authenticated gossip and node-config boundary for those bytes: a node only
+  installs a next-height sigma param after quorum-signed canonical param bytes
+  are gossiped on the Crosslink consensus topic.
 - `spec/CrosslinkDynamicSigmaHeadSampling.qnt` composes that third variant with
   concrete `head - sigma(h)` sampling: already-sampled same-height candidates
   survive nil-precommit round burns, while committed telemetry changes the
@@ -188,6 +196,12 @@ The current spec surface has three first-class Crosslink variants:
   installed through canonical `bc_confirmation_depth_sigma` consensus-param
   wires at height boundaries and rejects malformed keys, stale activation
   heights, and out-of-range sigma values.
+  `CrosslinkDynamicSigmaConsensusParamFormatModel` pins a compact production
+  byte layout for those wires and routes accepted bytes through the same
+  controller.
+  `CrosslinkDynamicSigmaConsensusParamTransportModel` requires quorum-signed
+  canonical param bytes on the Crosslink gossip topic before the node config
+  follows a committed next-height sigma.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
@@ -239,6 +253,7 @@ npm run verify:temporal
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
 PoW-reorg stress, dynamic-sigma, dynamic-sigma consensus-params,
+dynamic-sigma consensus-param-format, dynamic-sigma consensus-param-transport,
 dynamic-sigma head-sampling, dynamic-sigma heighted-round,
 dynamic-sigma heighted-finality,
 dynamic-sigma heighted-authenticated-evidence,
@@ -279,6 +294,8 @@ quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
 quint typecheck spec/CrosslinkDynamicSigmaConsensusParams.qnt
+quint typecheck spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt
+quint typecheck spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeadSampling.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeightedRound.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeightedFinality.qnt
@@ -313,6 +330,8 @@ quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochas
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --max-samples=100 --backend=rust
@@ -369,6 +388,8 @@ quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStoch
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --init=ProductionParamInit --step=ProductionParamNext --invariants=ProductionConsensusParamFormatSafety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --init=ParamTransportInit --step=ParamTransportNext --invariants=ParamTransportSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=DynamicHeightedFinalitySafety --max-steps=3
@@ -392,6 +413,8 @@ quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStoch
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --init=ProductionParamInit --step=ProductionParamNext --invariants=ProductionConsensusParamFormatSafety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --init=ParamTransportInit --step=ParamTransportNext --invariants=ParamTransportSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=DynamicHeightedFinalitySafety --max-steps=5

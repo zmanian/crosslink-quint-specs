@@ -223,6 +223,17 @@ For Crosslink, matching that quality means adding:
   activation height, and telemetry source height, that nil-precommit round
   burns cannot rewrite params, and that malformed, stale, or out-of-range
   next-height sigma wires are rejected.
+- `CrosslinkDynamicSigmaConsensusParamFormat.qnt` pins a compact
+  production-shaped byte envelope for those wires: one-byte key tag, u32
+  activation height, u32 telemetry source height, and u16 sigma. It routes
+  accepted bytes through the abstract consensus-param model and rejects
+  wrong-key, stale-activation, trailing-byte, and out-of-range-sigma envelopes.
+- `CrosslinkDynamicSigmaConsensusParamTransport.qnt` adds the authenticated
+  gossip/config-application boundary for those params. It requires quorum-signed
+  canonical param bytes on the Crosslink consensus topic before node config
+  follows a committed next-height sigma, while rejecting wrong-topic,
+  wrong-kind, wrong-byte, wrong-signature, no-quorum, and nondeterministic sigma
+  updates.
 - `CrosslinkDynamicSigmaHeadSampling.qnt` connects that controller to concrete
   proposal-stream sampling. It imports the dynamic-sigma schedule, samples
   `head - sigma(h)` for the active BFT height, checks that nil-precommit round
@@ -371,8 +382,10 @@ For Crosslink, matching that quality means adding:
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW-reorg-stress, dynamic-sigma,
-  dynamic-sigma consensus-params, dynamic-sigma head-sampling,
-  dynamic-sigma heighted-round, dynamic-sigma heighted-finality,
+  dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
+  dynamic-sigma consensus-param-transport, dynamic-sigma head-sampling,
+  dynamic-sigma heighted-round,
+  dynamic-sigma heighted-finality,
   dynamic-sigma heighted-authenticated-evidence,
   dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
   BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
@@ -455,6 +468,16 @@ For Crosslink, matching that quality means adding:
   params, nil-round param stability, raised and lowered sigma param commits,
   a low-participation sigma raise, and rejection of malformed keys, stale
   activation heights, or out-of-range sigma values.
+- `CrosslinkDynamicSigmaConsensusParamFormatModel` adds a production-shaped byte
+  layout for those params. It verifies fixed field offsets, exact envelope
+  length, raised/lowered/low-participation sigma commits through production
+  bytes, nil-round byte stability, and rejection of wrong-key, stale,
+  trailing-byte, and out-of-range envelopes.
+- `CrosslinkDynamicSigmaConsensusParamTransportModel` adds a signed gossip and
+  node-config application boundary. It verifies quorum-gossiped low-participation
+  sigma raises, recovered-participation lowering, nil-round config stability,
+  and rejection of wrong-topic, wrong-kind, wrong-byte, wrong-signature,
+  no-quorum, and nondeterministic-sigma updates.
 - `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel` composes the
   dynamic-sigma candidate boundary with the heighted authenticated-evidence
   pipeline. It verifies accepted height-1 and telemetry-raised height-2
@@ -489,11 +512,11 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
-  and the dynamic-sigma consensus-param/heighted-round/finality/authenticated
-  evidence bridges cover parameter commits, proposals, precommits,
-  fat-pointer evidence, and finality over `head - sigma(h)`, but not the
-  broader production message transport or concrete production byte format for
-  dynamic-sigma consensus params.
+  and the dynamic-sigma consensus-param/format/transport/heighted-round/
+  finality/authenticated evidence bridges cover parameter bytes, signed gossip,
+  node-config application, proposals, precommits, fat-pointer evidence, and
+  finality over `head - sigma(h)`, but not the broader production message
+  transport or real implementation vectors for dynamic-sigma consensus params.
   The remaining work is also to lift the current TLC-friendly progress contracts
   into a full imported-protocol
   temporal proof. A direct TLC run over the current imported composed model is
