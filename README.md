@@ -49,6 +49,9 @@ the Zebra Crosslink working branch:
   `head - sigma` stream back into the height-indexed round machine, checking
   that fresh proposals and value precommits line up with the current
   fork-tree-derived candidate for the BFT height and round.
+- `spec/CrosslinkBftBlockShape.qnt` models the production BFT-block header
+  vector shape from `FindBlockHeaders(candidate)`, separating the declared
+  `head - sigma` candidate from the descendant headers carried in the proposal.
 
 The round-recovery model has two first-class instantiations:
 
@@ -111,6 +114,7 @@ quint typecheck spec/CrosslinkValidatorSetChange.qnt
 quint typecheck spec/CrosslinkSchedulerLiveness.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
+quint typecheck spec/CrosslinkBftBlockShape.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -123,6 +127,7 @@ quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingStableWindo
 quint test spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkProposalValidityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkValidRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --max-samples=100 --backend=rust
@@ -152,6 +157,7 @@ quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetCh
 quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
+quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 ```
 
 ## Source

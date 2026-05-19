@@ -137,6 +137,11 @@ For Crosslink, matching that quality means adding:
   target that current candidate, and a nil-precommit certificate clears the
   cached round-0 candidate so the next round can resample the new head-sigma
   value.
+- `CrosslinkBftBlockShape.qnt` adds the first implementation-shaped proposal
+  payload model. It captures the fact that Zebra's `FindBlockHeaders` response
+  starts after the known candidate hash, so a locally produced proposal can
+  carry exactly sigma descendant headers while the finality candidate remains
+  the declared `head - sigma` ancestor.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -213,6 +218,6 @@ For Crosslink, matching that quality means adding:
   rejection of undecided-height finality, and rejection of a later fork after
   an earlier BFT height is final.
 - The remaining multi-height work is to connect the heighted auth, evidence,
-  and validator-set models to production serialization, signatures, signer-set
-  formats, and gossip transport, and to replace the scripted liveness witnesses
-  with temporal properties.
+  validator-set, and BFT-block-shape models to production serialization,
+  signatures, signer-set formats, header validity checks, and gossip transport,
+  and to replace the scripted liveness witnesses with temporal properties.

@@ -20,8 +20,8 @@ Status terms:
 | Baseline Crosslink spec | `BaselineCrosslink` in `spec/CrosslinkResampling.qnt`; `test:baseline`; `verify:baseline-safety` | covered | Heighted round-machine coverage is currently a separate model. |
 | Nil-precommit resampling spec | `NilPrecommitResamplingCrosslink`; `test:resampling`; `verify:resampling-safety`; `CrosslinkHeightedRound.qnt` | covered | Heighted round-machine coverage is currently a separate model. |
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
-| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`; `test:head-sigma`; `test:heighted-head-sigma`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety` | partial | Abstract and heighted `head - sigma` fork-tree models exist; need production data vectors. |
-| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `test:proposal-validity` | covered | Needs concrete Crosslink block/header validity wiring. |
+| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`, `CrosslinkBftBlockShapeModel`; `test:head-sigma`; `test:heighted-head-sigma`; `test:bft-block-shape`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety`; `verify:bft-block-shape-safety` | partial | Abstract, heighted, and first production-shape `head - sigma` models exist; need captured production data vectors. |
+| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `test:proposal-validity`; `test:bft-block-shape` | partial | Abstract validity split exists; the first concrete BFT-block header-vector shape is modeled, but full header validity and PoW checks remain open. |
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
@@ -56,8 +56,8 @@ npm run verify
 
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
 message evidence, local delivery, timeout, liveness witnesses, scheduler
-liveness, head-sigma sampling, heighted head-sigma rounds, proposal validity,
-valid-round evidence, fork
+liveness, head-sigma sampling, heighted head-sigma rounds, BFT-block header
+shape checks, proposal validity, valid-round evidence, fork
 finality, composed resampling/finality, composed liveness, multi-height finality,
 height-indexed round-machine behavior, heighted finality composition, evidence
 gossip, heighted evidence gossip, message authentication, heighted message
@@ -81,6 +81,7 @@ CrosslinkValidatorSetChangeModel
 CrosslinkSchedulerLivenessModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
+CrosslinkBftBlockShapeModel
 ```
 
 ## Remaining Work
@@ -89,8 +90,8 @@ The goal is not complete yet. The strongest remaining gaps are:
 
 - replace bounded scheduler-parametric liveness checks with a general temporal
   liveness proof under post-GST stream stability;
-- link the abstract and heighted `head - sigma` proposal-validity models to
-  concrete Crosslink block/header data;
+- expand the BFT-block header-shape model into captured production data vectors
+  and full header validity checks;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
 - link dynamic validator-set changes to production signer-set formats;

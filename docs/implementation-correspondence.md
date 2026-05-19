@@ -34,6 +34,7 @@ implementation that each rule has a clear code counterpart.
 | `ValidFinalityCandidate` | Crosslink BFT block/finality candidate validation | Should check branch extension, sigma/tail confirmation, and declared candidate height. |
 | `CrosslinkHeadSigmaSampling.qnt` / `HeadSigmaCandidate` | `zebra-crosslink/src/lib.rs::propose_new_bft_block`; `zebra-crosslink/src/chain.rs::BftBlock::try_from` | The model derives the proposal stream as the ancestor at `headHeight - sigma`. The prototype computes `finality_candidate_height = tip_height - bc_confirmation_depth_sigma`, fetches that candidate header, then builds a `BftBlock`; `BftBlock::try_from` currently enforces that the proposal carries exactly `bc_confirmation_depth_sigma` headers. |
 | `CrosslinkHeightedHeadSigmaRound.qnt` / `HeadSigmaSafety` | Heighted Tenderlink proposal, prevote, and precommit handling over the Crosslink proposal stream | The model ties each BFT-height/round `Stream(h, r)` value to the current `head - sigma` candidate, then checks that fresh correct proposals and value precommits use that candidate while nil-precommit certificates clear cached same-round state before the next round resamples. |
+| `CrosslinkBftBlockShape.qnt` / `FindHeadersAfter` | `zebra-state::Request::FindBlockHeaders`; `zebra-crosslink/src/lib.rs::propose_new_bft_block`; `validate_bft_block_from_malachite_already_locked` | Zebra's Find protocol returns headers after the known intersection. With `known_blocks = [candidate_hash]`, the modeled proposal carries the sigma descendant headers after the declared `head - sigma` candidate; the model records that a validator check treating `headers.first()` as the candidate rejects that locally produced shape. |
 | `SampleChangedAfter` / stale-stream checks | `zebra-crosslink/src/lib.rs::validate_bft_block_from_malachite_already_locked`; `proposal_status_against_current_stream` | During voting, the prototype recomputes the current candidate from the latest tip and returns `TMStatus::Stale` when the proposal candidate differs from the current `head - sigma` candidate. |
 | `FinalizeCandidate` | Push/accept decided Crosslink BFT block | The model allows skipped PoW heights on the same branch. |
 | `DecideAt` / `DecisionCursorIsSequential` | BFT-height progression and duplicate-decision rejection | The first multi-height model requires sequential BFT heights while permitting skipped PoW heights inside a valid candidate. |
@@ -70,4 +71,6 @@ implementation that each rule has a clear code counterpart.
   concrete signature verification, serialized message bytes, and production
   gossip.
 - Add implementation-linked test vectors once the Tenderlink message format,
-  Crosslink BFT block encoding, and PoW head/candidate sampling data stabilize.
+  Crosslink BFT block encoding, and PoW head/candidate sampling data stabilize;
+  in particular, pin whether candidate validation should use the declared
+  `head - sigma` height/hash or a header-vector position.
