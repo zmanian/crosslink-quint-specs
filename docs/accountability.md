@@ -151,6 +151,11 @@ acceptsCanonicalHeightedProposalSignatureTest
 rejectsCrossHeightPrecommitReplayTest
 rejectsForgedHeightedPrevoteSignatureTest
 acceptsHeightedFatPointerSignatureQuorumTest
+acceptsCurrentRosterFatPointerTest
+rejectsDuplicatePubKeyQuorumInflationTest
+rejectsRemovedValidatorAtNewHeightTest
+rejectsCrossHeightSignatureReplayTest
+rejectsLowPowerFatPointerTest
 ```
 
 ## Current Limitations
@@ -162,6 +167,9 @@ not accepted until its signer precommits have been observed locally. This is
 paired with standalone message-authentication models that check canonical
 payload bytes and validator signatures before messages are accepted. The
 heighted authentication slice binds BFT height into proposal, vote, and
-fat-pointer sign bytes, including cross-height replay rejection. This is still
-abstract: it models the authentication boundary but does not yet call
+fat-pointer sign bytes, including cross-height replay rejection. The
+fat-pointer-format model now also captures the production-shaped signer vector,
+including its counted wire layout, duplicate-pubkey rejection, canonical
+per-signer vote bytes, and height-scoped authorization. This is still abstract:
+it models the authentication boundary and wire shape but does not yet call
 production signature verification, serialization code, or gossip transport.

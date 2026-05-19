@@ -159,6 +159,12 @@ For Crosslink, matching that quality means adding:
   the declared `head - sigma` ancestor. It also models the stateless validation
   guards documented on `BftBlock::try_from`: expected version, sigma header
   count, consecutive header order, and valid PoW solutions.
+- `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
+  signer-vector model. It captures the 44-byte vote payload suffix,
+  little-endian u16 count, and 96-byte pubkey/signature entries; rejects
+  duplicate pubkeys that could inflate quorum power; scopes signer
+  authorization to the evidence BFT height; and checks canonical signed bytes
+  before a fat pointer can be accepted.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -206,10 +212,10 @@ For Crosslink, matching that quality means adding:
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
-  the newest head-sigma, BFT-block-shape, heighted validator-evidence, and
-  heighted authenticated-evidence models. It keeps default CI at depth 3 while
-  giving reviewers a depth-5 Apalache check for the models most likely to hide
-  cross-component state-space mistakes.
+  the newest head-sigma, BFT-block-shape, fat-pointer-format, heighted
+  validator-evidence, and heighted authenticated-evidence models. It keeps
+  default CI at bounded depth while giving reviewers a depth-5 Apalache check
+  for the models most likely to hide cross-component state-space mistakes.
 
 - Milestone 5 has an initial stream-stability witness:
   `NilPrecommitResamplingStableWindowLiveness` shows two stream-change aborts
@@ -249,7 +255,7 @@ For Crosslink, matching that quality means adding:
   rejection of undecided-height finality, and rejection of a later fork after
   an earlier BFT height is final.
 - The remaining multi-height work is to connect the heighted auth, evidence,
-  validator-set, and BFT-block-shape models to production serialization,
-  signatures, signer-set formats, header validity checks, and gossip transport,
-  and to lift the scheduler temporal contract into a full composed protocol
-  temporal proof.
+  validator-set, BFT-block-shape, and fat-pointer-format models to production
+  serialization vectors, signatures, header validity checks, and gossip
+  transport, and to lift the scheduler temporal contract into a full composed
+  protocol temporal proof.

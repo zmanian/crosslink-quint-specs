@@ -44,28 +44,29 @@ implementation that each rule has a clear code counterpart.
 
 ## Evidence and Accountability
 
-| Quint predicate | Implementation evidence |
-| --- | --- |
-| `LocalPrecommitQuorum(p, r, v)` | Receiver-local Tenderlink precommit quorum used by the protocol state machine. |
-| `LocalNilPrecommitCert(p, r)` | Receiver-local `2f + 1` nil-precommit quorum used to clear same-round state. |
-| `PrecommitQuorum(r, v)` / `NilPrecommitCert(r)` | Broadcast-level helpers used by safety witnesses and invariants. |
-| `ObservedPrecommitQuorum(r, v)` | Observer/bookkeeping evidence for a fat pointer or precommit certificate for value `v`. |
-| `ObservedNilPrecommitCert(r)` | Observer/bookkeeping evidence for `2f + 1` signed nil precommits for round `r`. |
-| `ObservedFatPointerQuorum(r, v)` | Decided/fat-pointer evidence whose signer set has quorum voting power and matching observed precommits. |
-| `MessageEvidenceSoundness` | Invariant that live protocol messages are mirrored into observer evidence and fat-pointer evidence validates against observed signatures. |
+| Quint predicate | Implementation counterpart | Notes |
+| --- | --- | --- |
+| `LocalPrecommitQuorum(p, r, v)` | Receiver-local Tenderlink precommit quorum | Used by the protocol state machine. |
+| `LocalNilPrecommitCert(p, r)` | Receiver-local `2f + 1` nil-precommit quorum | Used to clear same-round state. |
+| `PrecommitQuorum(r, v)` / `NilPrecommitCert(r)` | Broadcast-level quorum helpers | Used by safety witnesses and invariants. |
+| `ObservedPrecommitQuorum(r, v)` | Observer/bookkeeping precommit evidence | Evidence for a fat pointer or precommit certificate for value `v`. |
+| `ObservedNilPrecommitCert(r)` | Observer/bookkeeping nil-precommit evidence | Evidence for `2f + 1` signed nil precommits for round `r`. |
+| `ObservedFatPointerQuorum(r, v)` | Decided/fat-pointer evidence | Signer set has quorum voting power and matching observed precommits. |
+| `MessageEvidenceSoundness` | Protocol-message observer mirror | Invariant that live protocol messages are mirrored into observer evidence and fat-pointer evidence validates against observed signatures. |
 | `CrosslinkEvidenceGossip.qnt` / `ObservedMessagesWereGossiped` | Evidence gossip and observer ingestion pipeline | Observer-local evidence is only accepted after the corresponding signed message or fat pointer appears in gossip. |
 | `CrosslinkHeightedEvidenceGossip.qnt` / `ObservedMessagesWereGossiped` | Height-indexed evidence gossip and observer ingestion pipeline | Observer-local evidence is only accepted after same-height gossip, and heighted fat pointers require same-height observed signer precommits. |
 | `CrosslinkMessageAuth.qnt` / `ProposalAuthentic` / `VoteAuthentic` | Signature verification and canonical sign bytes | Signed messages are accepted only when their bytes match the claimed proposal/vote/fat-pointer payload and verify for the claimed validator. |
 | `CrosslinkHeightedMessageAuth.qnt` / `ProposalAuthentic` / `VoteAuthentic` | Height-indexed signature verification and canonical sign bytes | The heighted authentication slice binds BFT height into proposal, vote, and fat-pointer sign bytes, including a cross-height replay rejection witness. |
 | `CrosslinkHeightedValidatorEvidence.qnt` / `AuthorizedAtHeight` | Validator-set-aware evidence validation | Observed precommits and fat pointers are checked against the validator set active at the evidence BFT height, so removed validators remain valid for old-height evidence but cannot sign next-height evidence after rotation. |
 | `CrosslinkHeightedAuthenticatedEvidence.qnt` / `PrecommitAuthentic` / `ObservedFatPointerValid` | Authenticated evidence pipeline | Precommit evidence must pass canonical sign-byte verification before gossip and observation, observer evidence must come from prior gossip, and fat pointers require quorum signer precommits plus authenticated fat-pointer signatures from validators authorized at that BFT height. |
-| `CorrectNilValueEquivocationEvidence` | Same validator signs both nil and value precommit in the same round. |
-| `CorrectValueSwitchWithoutUnlock` | Validator signs a later conflicting value without a nil certificate for the earlier lock round. |
+| `CrosslinkFatPointerFormat.qnt` / `FatPointerFormatValid` / `SignaturePubKeysUnique` / `SignatureAuthorizedAtHeight` | `zebra-crosslink/src/lib.rs::FatPointerToBftBlock2`, `FatPointerSignature2`, `to_bytes`, `validate_signatures`; `zebra-chain/src/block/header.rs::FatPointerToBftBlock`, `FatPointerSignature`, `to_bytes`, `from_bytes`, `try_from_bytes`; `forks/tenderlink/src/lib.rs::FatPointerToBftBlock3`, `FatPointerSignature3`, `round_data_to_fat_pointer`, `make_vote_sign_datas`, `TMSig::verify` | The model mirrors the current production count-plus-vector format: a 44-byte vote payload suffix without the finalizer pubkey, little-endian u16 signature count, and one 32-byte pubkey plus 64-byte vote signature per entry. It makes duplicate-pubkey rejection, height-scoped signer authorization, canonical signed bytes, signature verification, and quorum power explicit. |
+| `CorrectNilValueEquivocationEvidence` | Nil/value precommit evidence | Same validator signs both nil and value precommit in the same round. |
+| `CorrectValueSwitchWithoutUnlock` | Conflicting value-switch evidence | Validator signs a later conflicting value without a nil certificate for the earlier lock round. |
 
 ## Gaps To Close
 
-- Connect weighted signer sets to the concrete Tenderlink validator-set and
-  signature formats, including the dynamic validator-set rotation slice.
+- Connect the fat-pointer signer-vector model to production serialization test
+  vectors and the full Tenderlink validator-set rotation path.
 - Connect the abstract message-authentication, evidence, and standalone gossip
   models to concrete signature verification, serialized message bytes, and
   production gossip.
