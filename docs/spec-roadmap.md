@@ -175,6 +175,11 @@ For Crosslink, matching that quality means adding:
   `BftBlock::try_from` only rejects an incorrect sigma header count. The
   shape model also records that deserialization has only a 2048-header
   envelope cap and bypasses `try_from`.
+- `CrosslinkBftBlockProductionVectors.qnt` pins the production BFT-block wire
+  prefix from `BftBlock::zcash_serialize`: u32 version, u32 BFT height,
+  counted previous-block fat pointer, u32 finalization-candidate height, u32
+  header count, and contiguous serialized PoW headers. The witnesses also pin
+  the deserialization sigma-bypass gap.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
@@ -244,9 +249,10 @@ For Crosslink, matching that quality means adding:
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest stream-churn-risk, PoW-reorg-stress, head-sigma,
-  BFT-block-shape, BFT-block validation-gap, fat-pointer-format,
-  fat-pointer production-vector, heighted validator-evidence, and heighted
-  authenticated-evidence models. It keeps default CI at bounded depth while
+  BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
+  fat-pointer-format, fat-pointer production-vector, heighted
+  validator-evidence, and heighted authenticated-evidence models. It keeps
+  default CI at bounded depth while
   giving reviewers depth-5 Apalache checks, plus a depth-8 PoW-reorg stress
   check, for the models most likely to hide cross-component state-space
   mistakes.

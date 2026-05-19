@@ -20,8 +20,8 @@ Status terms:
 | Baseline Crosslink spec | `BaselineCrosslink` in `spec/CrosslinkResampling.qnt`; `test:baseline`; `verify:baseline-safety` | covered | Heighted round-machine coverage is currently a separate model. |
 | Nil-precommit resampling spec | `NilPrecommitResamplingCrosslink`; `test:resampling`; `verify:resampling-safety`; `CrosslinkHeightedRound.qnt` | covered | Heighted round-machine coverage is currently a separate model. |
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
-| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`, `CrosslinkBftBlockShapeModel`, `CrosslinkBftBlockValidationGapModel`; `test:head-sigma`; `test:heighted-head-sigma`; `test:bft-block-shape`; `test:bft-block-validation-gap`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety`; `verify:bft-block-shape-safety`; `verify:bft-block-validation-gap-safety` | partial | Abstract, heighted, production-shape `head - sigma`, and first constructor-gap models exist; need captured production data vectors. |
-| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `CrosslinkBftBlockValidationGap.qnt`; `test:proposal-validity`; `test:bft-block-shape`; `test:bft-block-validation-gap` | partial | Abstract validity split exists, and the spec now records that current `BftBlock::try_from` only enforces header count while documented version/order/PoW checks remain unimplemented. |
+| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`, `CrosslinkBftBlockShapeModel`, `CrosslinkBftBlockValidationGapModel`, `CrosslinkBftBlockProductionVectorsModel`; `test:head-sigma`; `test:heighted-head-sigma`; `test:bft-block-shape`; `test:bft-block-validation-gap`; `test:bft-block-production-vectors`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety`; `verify:bft-block-shape-safety`; `verify:bft-block-validation-gap-safety`; `verify:bft-block-production-vectors-safety` | partial | Abstract, heighted, production-shape `head - sigma`, constructor-gap, and first BFT-block wire-vector models exist; still need generated fixtures from real serialized production blocks. |
+| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `CrosslinkBftBlockValidationGap.qnt`; `CrosslinkBftBlockProductionVectors.qnt`; `test:proposal-validity`; `test:bft-block-shape`; `test:bft-block-validation-gap`; `test:bft-block-production-vectors` | partial | Abstract validity split exists, and the specs now record that current `BftBlock::try_from` only enforces header count while documented version/order/PoW checks remain unimplemented. Production wire offsets and deserialization sigma-bypass are pinned; concrete production header validation still needs implementation. |
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; `ProposalFor` reuses only real `validValue`/`validRound` state; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
@@ -61,8 +61,9 @@ npm run verify:temporal
 message evidence, local delivery, timeout, liveness witnesses, scheduler
 liveness, scheduler progress contract, stream-churn risk, PoW-reorg stress,
 head-sigma sampling, heighted head-sigma rounds, BFT-block header shape checks,
-BFT-block validation-gap checks, fat-pointer signer-vector format checks,
-fat-pointer production-vector checks, fat-pointer
+BFT-block validation-gap checks, BFT-block production-vector checks,
+fat-pointer signer-vector format checks, fat-pointer production-vector checks,
+fat-pointer
 authenticated-evidence checks, proposal validity, valid-round evidence, fork
 finality, composed resampling/finality, composed liveness, multi-height finality,
 height-indexed round-machine behavior, heighted finality composition, evidence
@@ -96,6 +97,7 @@ CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
 CrosslinkBftBlockShapeModel
 CrosslinkBftBlockValidationGapModel
+CrosslinkBftBlockProductionVectorsModel
 CrosslinkFatPointerFormatModel
 CrosslinkFatPointerProductionVectorsModel
 CrosslinkFatPointerAuthenticatedEvidenceModel
@@ -103,8 +105,8 @@ CrosslinkFatPointerAuthenticatedEvidenceModel
 
 `npm run verify:extended` is a non-default deeper gate for the newest
 stream-churn, PoW-reorg stress, head-sigma stream, BFT-block-shape,
-BFT-block validation-gap, fat-pointer-format, fat-pointer production-vector,
-and evidence-composition models.
+BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
+fat-pointer production-vector, and evidence-composition models.
 It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
 also checked at depth 8, for:
 
@@ -115,6 +117,7 @@ CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
 CrosslinkBftBlockShapeModel
 CrosslinkBftBlockValidationGapModel
+CrosslinkBftBlockProductionVectorsModel
 CrosslinkFatPointerFormatModel
 CrosslinkFatPointerProductionVectorsModel
 CrosslinkFatPointerAuthenticatedEvidenceModel
@@ -140,8 +143,8 @@ The goal is not complete yet. The strongest remaining gaps are:
 - calibrate the current parameterized stream-churn and PoW-reorg stress layers
   against measured or assumed distributions for PoW block arrivals,
   propagation races, GST/validator-set scaling, and long-tail reorg depth;
-- expand the BFT-block header-shape and validation-gap models into captured
-  production data vectors and production code coverage for version,
+- turn the BFT-block production-vector model into generated fixtures from real
+  serialized production blocks, and add production code coverage for version,
   header-order, and PoW-solution checks;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;

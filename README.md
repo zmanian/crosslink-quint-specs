@@ -78,6 +78,10 @@ the Zebra Crosslink working branch:
   not yet enforced at that constructor boundary. The shape model also records
   that deserialization currently has only a 2048-header envelope cap and does
   not delegate through `try_from`.
+- `spec/CrosslinkBftBlockProductionVectors.qnt` pins the production BFT-block
+  wire layout: u32 version, u32 BFT height, counted previous-block fat pointer,
+  u32 finalization-candidate height, u32 header count, and contiguous serialized
+  PoW headers. It records the current deserialization sigma-bypass gap.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -144,7 +148,8 @@ npm run verify:temporal
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer stream-churn risk,
 PoW-reorg stress, head-sigma, BFT-block-shape, BFT-block validation-gap,
-fat-pointer-format, fat-pointer production-vector, fat-pointer
+BFT-block production-vector, fat-pointer-format, fat-pointer production-vector,
+fat-pointer
 authenticated-evidence, validator-evidence, and authenticated evidence
 composition models.
 
@@ -176,6 +181,7 @@ quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
 quint typecheck spec/CrosslinkBftBlockValidationGap.qnt
+quint typecheck spec/CrosslinkBftBlockProductionVectors.qnt
 quint typecheck spec/CrosslinkFatPointerFormat.qnt
 quint typecheck spec/CrosslinkFatPointerProductionVectors.qnt
 quint typecheck spec/CrosslinkFatPointerAuthenticatedEvidence.qnt
@@ -196,6 +202,7 @@ quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSampling
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockValidationGap.qnt --main=CrosslinkBftBlockValidationGapModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkBftBlockProductionVectors.qnt --main=CrosslinkBftBlockProductionVectorsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --max-samples=100 --backend=rust
@@ -237,6 +244,7 @@ quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSampli
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkBftBlockValidationGap.qnt --main=CrosslinkBftBlockValidationGapModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkBftBlockProductionVectors.qnt --main=CrosslinkBftBlockProductionVectorsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
@@ -247,6 +255,7 @@ quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSampli
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkBftBlockValidationGap.qnt --main=CrosslinkBftBlockValidationGapModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkBftBlockProductionVectors.qnt --main=CrosslinkBftBlockProductionVectorsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
