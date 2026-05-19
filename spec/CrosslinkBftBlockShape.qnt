@@ -17,6 +17,7 @@ module CrosslinkBftBlockShape {
   type HeaderIndex_t = int
 
   type Proposal_t = {
+    version: int,
     tip: Snapshot_t,
     declaredCandidateHeight: Height_t,
     headerCount: int,
@@ -26,10 +27,13 @@ module CrosslinkBftBlockShape {
   const Snapshots: Set[Snapshot_t]
   const MaxHeight: Height_t
   const Sigma: int
+  const ExpectedVersion: int
   const InitialFinalized: Snapshot_t
   const HeightOf: Snapshot_t -> Height_t
   const AncestorAt: Snapshot_t -> Height_t -> Block_t
   const AncestorSnapshotAt: Snapshot_t -> Height_t -> Snapshot_t
+  const HeaderVersionKnown: Snapshot_t -> bool
+  const HeaderPowValid: Snapshot_t -> bool
 
   pure val NilSnapshot = "None"
   pure val Heights = 0.to(MaxHeight)
@@ -39,6 +43,8 @@ module CrosslinkBftBlockShape {
     Snapshots.contains(InitialFinalized)
   assume sigma_is_positive =
     Sigma >= 1
+  assume expected_version_is_positive =
+    ExpectedVersion >= 1
   assume nil_is_not_snapshot =
     not(Snapshots.contains(NilSnapshot))
   assume snapshot_heights_are_in_range =
@@ -96,6 +102,7 @@ module CrosslinkBftBlockShape {
   pure def BuildFindHeadersProposal(tip: Snapshot_t): Proposal_t = {
     val candidate = HeadSigmaCandidate(tip)
     {
+      version: ExpectedVersion,
       tip: tip,
       declaredCandidateHeight: CandidateHeight(tip),
       headerCount: Sigma,
@@ -108,6 +115,12 @@ module CrosslinkBftBlockShape {
 
   def HeadersAreKnownSnapshots(proposal: Proposal_t): bool =
     HeaderIndices.forall(i => IsSnapshot(HeaderAt(proposal, i)))
+
+  def HeaderVersionsAreKnown(proposal: Proposal_t): bool =
+    HeaderIndices.forall(i => HeaderVersionKnown.get(HeaderAt(proposal, i)))
+
+  def HeaderPowSolutionsAreValid(proposal: Proposal_t): bool =
+    HeaderIndices.forall(i => HeaderPowValid.get(HeaderAt(proposal, i)))
 
   def HeadersMatchFindHeadersAfterDeclaredCandidate(proposal: Proposal_t): bool =
     HeaderIndices.forall(i =>
@@ -122,6 +135,14 @@ module CrosslinkBftBlockShape {
         Extends(HeaderAt(proposal, i), HeaderAt(proposal, i - 1))
       )
     )
+
+  def StatelessBftBlockShapeValid(proposal: Proposal_t): bool =
+    proposal.version == ExpectedVersion and
+    HeaderCountMatchesSigma(proposal) and
+    HeadersAreKnownSnapshots(proposal) and
+    HeaderVersionsAreKnown(proposal) and
+    HeaderPowSolutionsAreValid(proposal) and
+    HeadersAreConsecutiveDescendants(proposal)
 
   def FirstHeader(proposal: Proposal_t): Snapshot_t =
     HeaderAt(proposal, 0)
@@ -143,14 +164,12 @@ module CrosslinkBftBlockShape {
     FirstHeaderMatchesHeadSigmaCandidate(proposal)
 
   def DeclaredHeadSigmaCheckPasses(proposal: Proposal_t): bool =
-    HeaderCountMatchesSigma(proposal) and
+    StatelessBftBlockShapeValid(proposal) and
     HeadHasFullSigmaWindow(proposal.tip) and
     proposal.declaredCandidateHeight == CandidateHeight(proposal.tip) and
     Extends(HeadSigmaCandidate(proposal.tip), InitialFinalized) and
     TailConfirms(proposal.tip, HeadSigmaCandidate(proposal.tip)) and
-    HeadersAreKnownSnapshots(proposal) and
     HeadersMatchFindHeadersAfterDeclaredCandidate(proposal) and
-    HeadersAreConsecutiveDescendants(proposal) and
     LastHeader(proposal) == proposal.tip
 
   val FindHeadersProposalsPassDeclaredHeadSigmaCheck =
@@ -233,6 +252,7 @@ module CrosslinkBftBlockShapeTest {
     Init
       .then({
         val proposal = {
+          version: 1,
           tip: "a4",
           declaredCandidateHeight: 2,
           headerCount: 3,
@@ -252,6 +272,7 @@ module CrosslinkBftBlockShapeTest {
     Init
       .then({
         val proposal = {
+          version: 1,
           tip: "a4",
           declaredCandidateHeight: 1,
           headerCount: 2,
@@ -263,18 +284,57 @@ module CrosslinkBftBlockShapeTest {
         }
       })
   }
+
+  run wrongVersionRejectedTest = {
+    Init
+      .then({
+        val proposal = {
+          version: 2,
+          tip: "a4",
+          declaredCandidateHeight: 1,
+          headerCount: 3,
+          headers: FindHeadersAfter("a1", "a4"),
+        }
+        all {
+          assert(not(StatelessBftBlockShapeValid(proposal))),
+          assert(not(DeclaredHeadSigmaCheckPasses(proposal))),
+          unchangedAll,
+        }
+      })
+  }
+
+  run invalidPowHeaderRejectedTest = {
+    Init
+      .then({
+        val proposal = {
+          version: 1,
+          tip: "a4",
+          declaredCandidateHeight: 1,
+          headerCount: 3,
+          headers: Map(0 -> "bad2", 1 -> "a3", 2 -> "a4"),
+        }
+        all {
+          assert(not(HeaderPowSolutionsAreValid(proposal))),
+          assert(not(StatelessBftBlockShapeValid(proposal))),
+          assert(not(DeclaredHeadSigmaCheckPasses(proposal))),
+          unchangedAll,
+        }
+      })
+  }
 }
 
 module CrosslinkBftBlockShapeModel {
   import CrosslinkBftBlockShapeTest(
-    Snapshots = Set("g", "a1", "a2", "a3", "a4", "b1", "b2", "b3", "b4"),
+    Snapshots = Set("g", "a1", "a2", "bad2", "a3", "a4", "b1", "b2", "b3", "b4"),
     MaxHeight = 4,
     Sigma = 3,
+    ExpectedVersion = 1,
     InitialFinalized = "g",
     HeightOf = Map(
       "g" -> 0,
       "a1" -> 1,
       "a2" -> 2,
+      "bad2" -> 2,
       "a3" -> 3,
       "a4" -> 4,
       "b1" -> 1,
@@ -286,6 +346,7 @@ module CrosslinkBftBlockShapeModel {
       "g" -> Map(0 -> "g", 1 -> "None", 2 -> "None", 3 -> "None", 4 -> "None"),
       "a1" -> Map(0 -> "g", 1 -> "a1", 2 -> "None", 3 -> "None", 4 -> "None"),
       "a2" -> Map(0 -> "g", 1 -> "a1", 2 -> "a2", 3 -> "None", 4 -> "None"),
+      "bad2" -> Map(0 -> "g", 1 -> "a1", 2 -> "bad2", 3 -> "None", 4 -> "None"),
       "a3" -> Map(0 -> "g", 1 -> "a1", 2 -> "a2", 3 -> "a3", 4 -> "None"),
       "a4" -> Map(0 -> "g", 1 -> "a1", 2 -> "a2", 3 -> "a3", 4 -> "a4"),
       "b1" -> Map(0 -> "g", 1 -> "b1", 2 -> "None", 3 -> "None", 4 -> "None"),
@@ -297,12 +358,37 @@ module CrosslinkBftBlockShapeModel {
       "g" -> Map(0 -> "g", 1 -> "None", 2 -> "None", 3 -> "None", 4 -> "None"),
       "a1" -> Map(0 -> "g", 1 -> "a1", 2 -> "None", 3 -> "None", 4 -> "None"),
       "a2" -> Map(0 -> "g", 1 -> "a1", 2 -> "a2", 3 -> "None", 4 -> "None"),
+      "bad2" -> Map(0 -> "g", 1 -> "a1", 2 -> "bad2", 3 -> "None", 4 -> "None"),
       "a3" -> Map(0 -> "g", 1 -> "a1", 2 -> "a2", 3 -> "a3", 4 -> "None"),
       "a4" -> Map(0 -> "g", 1 -> "a1", 2 -> "a2", 3 -> "a3", 4 -> "a4"),
       "b1" -> Map(0 -> "g", 1 -> "b1", 2 -> "None", 3 -> "None", 4 -> "None"),
       "b2" -> Map(0 -> "g", 1 -> "b1", 2 -> "b2", 3 -> "None", 4 -> "None"),
       "b3" -> Map(0 -> "g", 1 -> "b1", 2 -> "b2", 3 -> "b3", 4 -> "None"),
       "b4" -> Map(0 -> "g", 1 -> "b1", 2 -> "b2", 3 -> "b3", 4 -> "b4"),
+    ),
+    HeaderVersionKnown = Map(
+      "g" -> true,
+      "a1" -> true,
+      "a2" -> true,
+      "bad2" -> true,
+      "a3" -> true,
+      "a4" -> true,
+      "b1" -> true,
+      "b2" -> true,
+      "b3" -> true,
+      "b4" -> true,
+    ),
+    HeaderPowValid = Map(
+      "g" -> true,
+      "a1" -> true,
+      "a2" -> true,
+      "bad2" -> false,
+      "a3" -> true,
+      "a4" -> true,
+      "b1" -> true,
+      "b2" -> true,
+      "b3" -> true,
+      "b4" -> true,
     ),
   ).*
 }
