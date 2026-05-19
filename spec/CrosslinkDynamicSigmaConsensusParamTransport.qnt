@@ -42,9 +42,6 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
   const ParamSignatures: Set[ParamSignature_t]
   const ParamSignatureOwner: ParamSignature_t -> ParamSigner_t
   const ParamSignatureBytes: ParamSignature_t -> ParamBytes_t
-  const ProductionConsensusParamPayload:
-    int -> int -> Height_t -> Height_t -> Sigma_t -> ParamBytes_t
-
   pure val CrosslinkConsensusParamTopic = "crosslink-consensus-v1"
   pure val ConsensusParamEnvelopeKind = "consensus-param"
 
@@ -54,12 +51,7 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
   pure def ParamPayloadBytes(
     wire: ProductionConsensusParamWire_t,
   ): ParamBytes_t =
-    ProductionConsensusParamPayload
-      .get(wire.byteLen)
-      .get(wire.keyTag)
-      .get(wire.activationHeight)
-      .get(wire.telemetryHeight)
-      .get(wire.bcConfirmationDepthSigma)
+    ProductionConsensusParamWireHex(wire)
 
   assume param_signer_power_is_positive =
     ParamSigners.forall(p => ParamVotingPower.get(p) > 0)
@@ -304,13 +296,27 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     bcConfirmationDepthSigma: 3,
   }
 
-  pure val H1ParamBytes = "param-bytes-h1-sigma-3"
-  pure val H1WrongSigmaParamBytes = "param-bytes-h1-sigma-2"
-  pure val H1WrongKeyParamBytes = "param-bytes-h1-wrong-key"
-  pure val H1TrailingBytesParamBytes = "param-bytes-h1-trailing"
-  pure val H1OutOfBoundsSigmaParamBytes = "param-bytes-h1-sigma-99"
-  pure val H0StaleActivationParamBytes = "param-bytes-h0-stale-sigma-3"
-  pure val H2ParamBytes = "param-bytes-h2-sigma-2"
+  pure val H1ParamBytes = ProductionConsensusParamWireHex(
+    H1LowParticipationWire
+  )
+  pure val H1WrongSigmaParamBytes = ProductionConsensusParamWireHex(
+    H1WrongSigmaWire
+  )
+  pure val H1WrongKeyParamBytes = ProductionConsensusParamWireHex(
+    H1WrongKeyWire
+  )
+  pure val H1TrailingBytesParamBytes = ProductionConsensusParamWireHex(
+    H1TrailingBytesWire
+  )
+  pure val H1OutOfBoundsSigmaParamBytes = ProductionConsensusParamWireHex(
+    H1OutOfBoundsSigmaWire
+  )
+  pure val H0StaleActivationParamBytes = ProductionConsensusParamWireHex(
+    H0StaleActivationWire
+  )
+  pure val H2ParamBytes = ProductionConsensusParamWireHex(
+    H2RecoveredParticipationWire
+  )
   pure val WrongParamBytes = "wrong-param-bytes"
 
   pure val Alice = "alice"
@@ -799,14 +805,14 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
     ),
     ParamQuorumVotingPower = 2,
     ParamBytes = Set(
-      "param-bytes-h0-sigma-2",
-      "param-bytes-h1-sigma-3",
-      "param-bytes-h1-sigma-2",
-      "param-bytes-h1-wrong-key",
-      "param-bytes-h1-trailing",
-      "param-bytes-h1-sigma-99",
-      "param-bytes-h0-stale-sigma-3",
-      "param-bytes-h2-sigma-2",
+      "0100000000000000000200",
+      "0101000000000000000300",
+      "0101000000000000000200",
+      "6301000000000000000300",
+      "010100000000000000030000",
+      "0101000000000000006300",
+      "0100000000000000000300",
+      "0102000000010000000200",
       "wrong-param-bytes",
     ),
     ParamSignatures = Set(
@@ -838,58 +844,18 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "sig-alice-wrong-bytes" -> "alice",
     ),
     ParamSignatureBytes = Map(
-      "sig-alice-h1" -> "param-bytes-h1-sigma-3",
-      "sig-bob-h1" -> "param-bytes-h1-sigma-3",
-      "sig-alice-h2" -> "param-bytes-h2-sigma-2",
-      "sig-bob-h2" -> "param-bytes-h2-sigma-2",
-      "sig-alice-h1-wrong-sigma" -> "param-bytes-h1-sigma-2",
-      "sig-bob-h1-wrong-sigma" -> "param-bytes-h1-sigma-2",
-      "sig-alice-h1-wrong-key" -> "param-bytes-h1-wrong-key",
-      "sig-alice-h1-trailing" -> "param-bytes-h1-trailing",
-      "sig-alice-h1-sigma-99" -> "param-bytes-h1-sigma-99",
-      "sig-alice-h0-stale" -> "param-bytes-h0-stale-sigma-3",
-      "sig-bob-h0-stale" -> "param-bytes-h0-stale-sigma-3",
+      "sig-alice-h1" -> "0101000000000000000300",
+      "sig-bob-h1" -> "0101000000000000000300",
+      "sig-alice-h2" -> "0102000000010000000200",
+      "sig-bob-h2" -> "0102000000010000000200",
+      "sig-alice-h1-wrong-sigma" -> "0101000000000000000200",
+      "sig-bob-h1-wrong-sigma" -> "0101000000000000000200",
+      "sig-alice-h1-wrong-key" -> "6301000000000000000300",
+      "sig-alice-h1-trailing" -> "010100000000000000030000",
+      "sig-alice-h1-sigma-99" -> "0101000000000000006300",
+      "sig-alice-h0-stale" -> "0100000000000000000300",
+      "sig-bob-h0-stale" -> "0100000000000000000300",
       "sig-alice-wrong-bytes" -> "wrong-param-bytes",
-    ),
-    ProductionConsensusParamPayload = Map(
-      12 -> Map(
-        1 -> Map(
-          1 -> Map(
-            0 -> Map(
-              3 -> "param-bytes-h1-trailing",
-            ),
-          ),
-        ),
-      ),
-      11 -> Map(
-        1 -> Map(
-          0 -> Map(
-            0 -> Map(
-              2 -> "param-bytes-h0-sigma-2",
-              3 -> "param-bytes-h0-stale-sigma-3",
-            ),
-          ),
-          1 -> Map(
-            0 -> Map(
-              2 -> "param-bytes-h1-sigma-2",
-              3 -> "param-bytes-h1-sigma-3",
-              99 -> "param-bytes-h1-sigma-99",
-            ),
-          ),
-          2 -> Map(
-            1 -> Map(
-              2 -> "param-bytes-h2-sigma-2",
-            ),
-          ),
-        ),
-        99 -> Map(
-          1 -> Map(
-            0 -> Map(
-              3 -> "param-bytes-h1-wrong-key",
-            ),
-          ),
-        ),
-      ),
     ),
   ).*
 }

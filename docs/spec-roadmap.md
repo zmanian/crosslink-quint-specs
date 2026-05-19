@@ -232,10 +232,11 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkDynamicSigmaConsensusParamTransport.qnt` adds the authenticated
   gossip/config-application boundary for those params. It requires quorum-signed
   canonical production param bytes on the Crosslink consensus topic before node
-  config follows a committed next-height sigma after format decoding, while
-  rejecting wrong-topic, wrong-kind, wrong-byte, wrong-signature, malformed
-  production envelopes, no-quorum, quorum-signed stale activation, and
-  nondeterministic sigma updates.
+  config follows a committed next-height sigma after format decoding. The
+  signed payload is `ProductionConsensusParamWireHex(wire)`, so transport bytes
+  are bound directly to the format vectors, while rejecting wrong-topic,
+  wrong-kind, wrong-byte, wrong-signature, malformed production envelopes,
+  no-quorum, quorum-signed stale activation, and nondeterministic sigma updates.
 - `CrosslinkDynamicSigmaHeadSampling.qnt` connects that controller to concrete
   proposal-stream sampling. It imports the dynamic-sigma schedule, samples
   `head - sigma(h)` for the active BFT height, checks that nil-precommit round
@@ -479,9 +480,10 @@ For Crosslink, matching that quality means adding:
   node-config application boundary over the production byte format. It verifies
   quorum-gossiped low-participation sigma raises, recovered-participation
   lowering, nil-round config stability, exact production-wire config storage
-  beside decoded consensus params, and rejection of wrong-topic, wrong-kind,
-  wrong-byte, wrong-signature, malformed production envelopes, no-quorum,
-  quorum-signed stale activation, and nondeterministic-sigma updates.
+  beside decoded consensus params, signatures over the format model's exact hex
+  bytes, and rejection of wrong-topic, wrong-kind, wrong-byte, wrong-signature,
+  malformed production envelopes, no-quorum, quorum-signed stale activation,
+  and nondeterministic-sigma updates.
 - `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel` composes the
   dynamic-sigma candidate boundary with the heighted authenticated-evidence
   pipeline. It verifies accepted height-1 and telemetry-raised height-2

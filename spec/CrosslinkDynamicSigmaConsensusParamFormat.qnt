@@ -40,6 +40,7 @@ module CrosslinkDynamicSigmaConsensusParamFormat {
   pure val SigmaOffset = TelemetryHeightOffset + HeightByteLen
   pure val ConsensusParamWireByteLen = SigmaOffset + SigmaByteLen
   pure val ConsensusParamWireHexCharLen = ConsensusParamWireByteLen * 2
+  pure val UnmodeledConsensusParamWireHex = "unmodeled-consensus-param-wire"
 
   pure def FieldEndOffset(offset: int, width: int): int =
     offset + width
@@ -74,8 +75,16 @@ module CrosslinkDynamicSigmaConsensusParamFormat {
       "0100000000000000000200"
     } else if (wire.byteLen == 11 and wire.keyTag == 1 and
       wire.activationHeight == 1 and wire.telemetryHeight == 0 and
+      wire.bcConfirmationDepthSigma == 2) {
+      "0101000000000000000200"
+    } else if (wire.byteLen == 11 and wire.keyTag == 1 and
+      wire.activationHeight == 1 and wire.telemetryHeight == 0 and
       wire.bcConfirmationDepthSigma == 3) {
       "0101000000000000000300"
+    } else if (wire.byteLen == 11 and wire.keyTag == 1 and
+      wire.activationHeight == 2 and wire.telemetryHeight == 1 and
+      wire.bcConfirmationDepthSigma == 2) {
+      "0102000000010000000200"
     } else if (wire.byteLen == 11 and wire.keyTag == 1 and
       wire.activationHeight == 2 and wire.telemetryHeight == 1 and
       wire.bcConfirmationDepthSigma == 3) {
@@ -105,7 +114,7 @@ module CrosslinkDynamicSigmaConsensusParamFormat {
       wire.bcConfirmationDepthSigma == 99) {
       "0101000000000000006300"
     } else {
-      "unmodeled-consensus-param-wire"
+      UnmodeledConsensusParamWireHex
     }
 
   pure def ProductionConsensusParamWireEnvelopeExact(
@@ -171,6 +180,12 @@ module CrosslinkDynamicSigmaConsensusParamFormat {
       EncodeProductionConsensusParamWire(1, 0, 3)
     ) == "0101000000000000000300" and
     ProductionConsensusParamWireHex(
+      EncodeProductionConsensusParamWire(1, 0, 2)
+    ) == "0101000000000000000200" and
+    ProductionConsensusParamWireHex(
+      EncodeProductionConsensusParamWire(2, 1, 2)
+    ) == "0102000000010000000200" and
+    ProductionConsensusParamWireHex(
       EncodeProductionConsensusParamWire(2, 1, 3)
     ) == "0102000000010000000300" and
     ProductionConsensusParamWireHex(
@@ -179,6 +194,11 @@ module CrosslinkDynamicSigmaConsensusParamFormat {
     ProductionConsensusParamWireHex(
       EncodeProductionConsensusParamWire(4, 3, 3)
     ) == "0104000000030000000300"
+
+  val ProductionParamHexVectorsModeled =
+    ProductionConsensusParamWires.forall(wire =>
+      ProductionConsensusParamWireHex(wire) != UnmodeledConsensusParamWireHex
+    )
 
   val ProductionParamFieldOffsetsContiguous =
     FieldEndOffset(KeyTagOffset, KeyTagByteLen) == ActivationHeightOffset and
@@ -213,6 +233,7 @@ module CrosslinkDynamicSigmaConsensusParamFormat {
     ConsensusParamSafety and
     ProductionParamLayoutConstantsPinned and
     ProductionParamHexVectorsPinned and
+    ProductionParamHexVectorsModeled and
     ProductionParamFieldOffsetsContiguous and
     ActiveAbstractWireHasProductionEncoding and
     AcceptedCommittedParamWiresHaveProductionEncoding

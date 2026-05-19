@@ -204,9 +204,10 @@ The current spec surface has three first-class Crosslink variants:
   `CrosslinkDynamicSigmaConsensusParamTransportModel` requires quorum-signed
   canonical production param bytes on the Crosslink gossip topic before the
   node config follows a committed next-height sigma, and stores both the exact
-  production wire and its decoded consensus-param wire. It rejects malformed
-  production envelopes and quorum-signed stale activation at the transport
-  boundary.
+  production wire and its decoded consensus-param wire. The signed payload is
+  the format model's exact hex string for the production wire, so no separate
+  transport byte map can drift. It rejects malformed production envelopes and
+  quorum-signed stale activation at the transport boundary.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
