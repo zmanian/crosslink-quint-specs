@@ -193,6 +193,12 @@ For Crosslink, matching that quality means adding:
   and round, encoded as a 51-byte typed header plus two canonical `PacketVotes`
   payloads. Witnesses reject prevote evidence, wrong height/round, wrong length,
   same-value packets, wrong-signer claims, and wrong envelope bytes.
+- `CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt` adds the matching
+  Crosslink-topic transport boundary for that envelope. Transported
+  accountability evidence cannot be accepted unless an `accountability-evidence`
+  envelope first carries exact canonical evidence bytes and matching
+  height/round/signer metadata; witnesses reject missing transport, wrong
+  topic/kind/length/height/signer/bytes, and non-canonical evidence.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport
   replay boundary around compact consensus packets. It pins little-endian outer
   nonce prefixes, requires successful abstract Noise decryption before the

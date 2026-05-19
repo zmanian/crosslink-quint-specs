@@ -196,6 +196,16 @@ rejectsWrongLengthEvidenceTest
 rejectsSameValueEvidenceTest
 rejectsWrongSignerEvidenceTest
 rejectsWrongHexEvidenceTest
+accountabilityEvidenceTransportEnvelopeAcceptedTest
+transportedAccountabilityEvidenceAcceptedTest
+missingTransportRejectedTest
+wrongTopicTransportRejectedTest
+wrongKindTransportRejectedTest
+wrongLengthTransportRejectedTest
+wrongHeightTransportRejectedTest
+wrongSignerTransportRejectedTest
+wrongBytesTransportRejectedTest
+nonCanonicalEvidenceTransportRejectedTest
 ```
 
 ## Current Limitations
@@ -238,4 +248,8 @@ is still partial: the model now covers the authentication boundary, wire shape,
 gossip-before-observe rule, fixture-level transport gate, fixture-manifest
 Ed25519 verification, and nil/value equivocation evidence envelope, but does
 not yet call a full production gossip transport implementation or cover every
-future slashing evidence encoding.
+future slashing evidence encoding. The
+`CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt` bridge narrows that
+gap for this first envelope by requiring a Crosslink consensus-topic transport
+envelope with exact evidence bytes and matching height, round, and signer
+metadata before transported accountability evidence can be accepted.
