@@ -93,6 +93,7 @@ mixedPrecommitQuorumDoesNotUnlockTest
 mixedPrecommitQuorumDoesNotClearHeightedLockTest
 CrosslinkMixedWaitProgressContractModel / EventuallyNilCertUnlocksMixedWait
 CrosslinkHeightedProgressProjectionContractModel / EventuallyHeightedProgressFinalizesTwoHeights
+CrosslinkHeightedAuthenticatedProgressProjectionContractModel / EventuallyHeightedAuthenticatedProgressFinalizesTwoHeights
 precommitTimeoutDoesNotUnlockWithoutNilCertificateTest
 precommitTimeoutDoesNotClearHeightedLockTest
 ```
@@ -100,6 +101,11 @@ precommitTimeoutDoesNotClearHeightedLockTest
 The heighted progress projection adds the multi-height boundary: a nil
 certificate can clear the active height's same-round recovery state without
 touching the next BFT height before the current height has decided.
+
+The authenticated progress projection adds the finality/evidence boundary:
+that same recovery path cannot finalize either BFT height until observer-local
+authenticated precommit evidence and matching fat-pointer signatures exist for
+the finalized height and round.
 
 ## Conflicting Commit Accountability
 

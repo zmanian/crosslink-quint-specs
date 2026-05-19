@@ -400,6 +400,9 @@ For Crosslink, matching that quality means adding:
   a nil certificate arrives, height 2 remains pristine until height 1 decides,
   and a fair finality applicator advances the finalized prefix through both
   decided heights in order.
+- `CrosslinkHeightedAuthenticatedProgressProjectionContract.qnt` strengthens
+  that projection by requiring observer-local authenticated precommit evidence
+  and fat-pointer signatures before either height can be finalized.
 - `CrosslinkValidatorScaleFinalityProgressContract.qnt` composes that scale
   progress path with Crosslink finality. It reuses the scale-progress machine,
   adds a linear finalized-prefix cursor, and TLC checks eventual finalization
