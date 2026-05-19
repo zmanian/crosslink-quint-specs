@@ -144,6 +144,12 @@ scheduler-to-finality handoff, and a self-contained composed
 nil-resampling/finality slice. They are not yet temporal proofs over the full
 imported protocol state.
 
+A direct TLC run over the current imported `CrosslinkComposed` state is not in
+the gate yet: the map-heavy imported round-machine state currently fails in the
+Quint-to-TLA/TLC path before state exploration. The standalone progress
+contracts are the green temporal bridge until that imported-state shape or
+backend support is refactored.
+
 ## Remaining Work
 
 The goal is not complete yet. The strongest remaining gaps are:

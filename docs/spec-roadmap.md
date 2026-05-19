@@ -325,7 +325,10 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and gossip transport, and to lift the
   current TLC-friendly progress contracts into a full imported-protocol
-  temporal proof.
+  temporal proof. A direct TLC run over the current imported composed model is
+  blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC path, so
+  this likely needs either a TLC-oriented imported-state refactor or improved
+  backend support.
   The current stream-churn and PoW-reorg stress models are parameterized but
   not calibrated; a later stochastic analysis should replace their integer
   risk numerators and finite fork witnesses with measured or assumed
