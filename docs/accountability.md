@@ -200,6 +200,11 @@ paired with standalone message-authentication models that check canonical
 payload bytes and validator signatures before messages are accepted. The
 heighted authentication slice binds BFT height into proposal, vote, and
 fat-pointer sign bytes, including cross-height replay rejection. The
+dynamic-sigma authenticated-evidence and authenticated-finality slices add the
+corresponding Crosslink-specific boundary: value precommits, fat pointers, and
+finality cursor advancement must be backed by authenticated evidence for the
+active height's `head - sigma(h)` candidate, including telemetry-raised sigma
+at later heights. The
 fat-pointer-format model now also captures the production-shaped signer vector,
 including its counted wire layout, exact wire-envelope length,
 byte offsets, duplicate-pubkey rejection, canonical per-signer vote bytes, and

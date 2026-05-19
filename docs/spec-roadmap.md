@@ -233,6 +233,15 @@ For Crosslink, matching that quality means adding:
   heighted decisions, to match the active height's dynamic `head - sigma(h)`
   candidate, and to satisfy the decided height's dynamic sigma tail before the
   finality cursor advances.
+- `CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt` carries the dynamic
+  candidate rule into the heighted authenticated-evidence pipeline. It keeps
+  canonical signature, gossip-before-observe, and validator authorization
+  checks, while requiring signed value precommits and fat pointers to name the
+  active height/round's `head - sigma(h)` candidate.
+- `CrosslinkDynamicSigmaAuthenticatedFinality.qnt` gates dynamic finality on
+  observer-local authenticated evidence. The finality cursor advances only after
+  authenticated precommit evidence and authenticated fat-pointer signatures
+  support the same dynamic height, round, and candidate.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
@@ -353,11 +362,12 @@ For Crosslink, matching that quality means adding:
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW-reorg-stress, dynamic-sigma,
-  dynamic-sigma head-sampling, dynamic-sigma heighted-round, head-sigma,
-  BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
-  fat-pointer-format, fat-pointer production-vector, heighted
-  validator-evidence, and heighted authenticated-evidence models. It keeps
-  default CI at bounded depth while
+  dynamic-sigma head-sampling, dynamic-sigma heighted-round, dynamic-sigma
+  heighted-finality, dynamic-sigma heighted-authenticated-evidence,
+  dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
+  BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
+  fat-pointer production-vector, heighted validator-evidence, and heighted
+  authenticated-evidence models. It keeps default CI at bounded depth while
   giving reviewers depth-5 Apalache checks, plus a depth-8 PoW-reorg stress
   check, for the models most likely to hide cross-component state-space
   mistakes.
@@ -430,6 +440,16 @@ For Crosslink, matching that quality means adding:
   finality, a telemetry-raised height-2 finality candidate with sigma 2, and
   rejection of a height-2 finality witness that would only satisfy the older
   fixed-sigma depth.
+- `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel` composes the
+  dynamic-sigma candidate boundary with the heighted authenticated-evidence
+  pipeline. It verifies accepted height-1 and telemetry-raised height-2
+  precommit/fat-pointer evidence for the dynamic candidate, and rejects
+  authenticated evidence whose value would match the wrong sigma sample.
+- `CrosslinkDynamicSigmaAuthenticatedFinalityModel` composes dynamic-sigma
+  finality with authenticated fat-pointer evidence. It verifies that the
+  finality cursor only advances when observer-local authenticated precommit
+  evidence and authenticated fat-pointer signatures support the same dynamic
+  height/round/candidate.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
@@ -454,9 +474,10 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
-  and the dynamic-sigma heighted-round/finality bridges cover
-  proposals/precommits/finality over `head - sigma(h)`, but not the broader
-  production message transport or dynamic-sigma auth/evidence composition.
+  and the dynamic-sigma heighted-round/finality/authenticated-evidence bridges
+  cover proposals/precommits/fat-pointer evidence/finality over
+  `head - sigma(h)`, but not the broader production message transport or
+  production consensus-parameter encoding for dynamic sigma.
   The remaining work is also to lift the current TLC-friendly progress contracts
   into a full imported-protocol
   temporal proof. A direct TLC run over the current imported composed model is

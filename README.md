@@ -94,6 +94,14 @@ the Zebra Crosslink working branch:
   `head - sigma(h)` round stream with Crosslink finality: finalized BFT heights
   must come from local heighted decisions and satisfy the decided height's
   dynamic sigma tail, including telemetry-raised sigma at later heights.
+- `spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt` constrains the
+  heighted authenticated-evidence pipeline to the same dynamic candidates:
+  signed value precommits and fat pointers must carry the active height/round's
+  `head - sigma(h)` value.
+- `spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt` adds authenticated
+  evidence to that dynamic finality boundary: the finality cursor advances only
+  after observer-local authenticated precommit evidence and fat-pointer
+  signatures support the same dynamic height/round/candidate.
 - `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
   explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
   locally observed PoW head, including same-branch progress, fork switches, and
@@ -172,8 +180,12 @@ The current spec surface has three first-class Crosslink variants:
   the target, and raises sigma directly below the critical participation floor.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
-  resampling, and `CrosslinkDynamicSigmaHeightedFinalityModel` checks that
-  finality uses the active BFT height's dynamic sigma tail.
+  resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
+  uses the active BFT height's dynamic sigma tail,
+  `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel` checks that
+  authenticated evidence carries the same dynamic candidate, and
+  `CrosslinkDynamicSigmaAuthenticatedFinalityModel` requires authenticated
+  fat-pointer evidence before dynamic finality can advance.
 
 The intended safety rule is deliberately narrow:
 
@@ -217,8 +229,9 @@ npm run verify:temporal
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
 PoW-reorg stress, dynamic-sigma, dynamic-sigma head-sampling,
-dynamic-sigma heighted-round, dynamic-sigma heighted-finality, head-sigma,
-BFT-block-shape,
+dynamic-sigma heighted-round, dynamic-sigma heighted-finality,
+dynamic-sigma heighted-authenticated-evidence,
+dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
 BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
 fat-pointer production-vector, fat-pointer
 authenticated-evidence, fixture-authenticated evidence, fixture-gossip
@@ -256,6 +269,9 @@ quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeadSampling.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeightedRound.qnt
+quint typecheck spec/CrosslinkDynamicSigmaHeightedFinality.qnt
+quint typecheck spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt
+quint typecheck spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
@@ -286,6 +302,9 @@ quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel 
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt --main=CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt --main=CrosslinkDynamicSigmaAuthenticatedFinalityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
@@ -338,6 +357,9 @@ quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressMode
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=3
+quint verify spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=DynamicHeightedFinalitySafety --max-steps=3
+quint verify spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt --main=CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel --init=DynamicInit --step=DynamicNext --invariants=DynamicAuthenticatedEvidenceSafety --max-steps=3
+quint verify spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt --main=CrosslinkDynamicSigmaAuthenticatedFinalityModel --init=AuthenticatedInit --step=AuthenticatedNext --invariants=AuthenticatedDynamicFinalitySafety --max-steps=3
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -357,6 +379,9 @@ quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressMode
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=DynamicHeightedFinalitySafety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt --main=CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel --init=DynamicInit --step=DynamicNext --invariants=DynamicAuthenticatedEvidenceSafety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt --main=CrosslinkDynamicSigmaAuthenticatedFinalityModel --init=AuthenticatedInit --step=AuthenticatedNext --invariants=AuthenticatedDynamicFinalitySafety --max-steps=5
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5
