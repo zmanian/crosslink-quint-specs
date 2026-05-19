@@ -67,12 +67,12 @@ the Zebra Crosslink working branch:
   tag/ack prefix, including nonzero `ack_latest`/`ack_field` bytes, proposal
   chunk packet bytes, and prevote/precommit vote batch packet bytes, including
   the variable-length 112/178/244/376-byte vote batches used by POL evidence.
-- `spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt` pins the first
-  concrete accountability evidence envelope: nil/value precommit equivocation
-  by one validator at the same height and round, carrying two canonical
-  `PacketVotes` payloads plus typed packet-kind and length fields.
+- `spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt` pins concrete
+  accountability evidence envelopes: nil/value and value/value precommit
+  equivocation by one validator at the same height and round, carrying two
+  canonical `PacketVotes` payloads plus typed packet-kind and length fields.
 - `spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt` adds the
-  Crosslink-topic transport gate for that evidence envelope, requiring exact
+  Crosslink-topic transport gate for those evidence envelopes, requiring exact
   canonical evidence bytes and matching height/round/signer metadata before
   transported accountability evidence can be accepted.
 - `spec/CrosslinkTenderlinkNonceAckTransport.qnt` models the known-peer

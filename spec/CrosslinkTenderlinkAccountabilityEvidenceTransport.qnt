@@ -2,10 +2,10 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransport {
   /*
    Tenderlink accountability evidence transport bridge.
 
-   CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt pins the concrete
-   nil/value precommit equivocation envelope. This model adds the adjacent
-   gossip boundary: accountability evidence cannot be accepted through this
-   path unless the exact canonical evidence bytes first arrive in a Crosslink
+   CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt pins concrete
+   precommit equivocation envelopes. This model adds the adjacent gossip
+   boundary: accountability evidence cannot be accepted through this path
+   unless the exact canonical evidence bytes first arrive in a Crosslink
    consensus-topic transport envelope with the expected kind and envelope
    metadata.
    */
@@ -150,6 +150,17 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransportTest {
       NilValuePrecommitEvidenceHex,
     )
 
+  pure val valueValueEvidenceEnvelope =
+    Env(
+      CrosslinkGossipTopic,
+      AccountabilityEvidenceEnvelopeKind,
+      1,
+      0,
+      TestPubKeyHex,
+      valueValuePrecommitEvidence.byteLen,
+      ValueValuePrecommitEvidenceHex,
+    )
+
   pure val wrongTopicEnvelope =
     Env(
       WrongGossipTopic,
@@ -229,6 +240,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransportTest {
 
   pure val TestTransportEnvelopes = Set(
     accountabilityEvidenceEnvelope,
+    valueValueEvidenceEnvelope,
     wrongTopicEnvelope,
     wrongKindEnvelope,
     wrongLengthEnvelope,
@@ -240,6 +252,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransportTest {
 
   pure val TestTransportEvidence = Set(
     nilValuePrecommitEvidence,
+    valueValuePrecommitEvidence,
     prevoteEvidence,
     wrongRoundEvidence,
     wrongHeightEvidence,
@@ -278,6 +291,20 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransportTest {
       })
   }
 
+  run valueValueAccountabilityEvidenceTransportEnvelopeAcceptedTest = {
+    TransportInit
+      .then(ReceiveAccountabilityEvidenceTransport(
+        valueValueEvidenceEnvelope,
+        valueValuePrecommitEvidence,
+      ))
+      .then(all {
+        assert(transportedAccountabilityEvidence.contains(
+          valueValuePrecommitEvidence)),
+        assert(TransportSafety),
+        unchangedTransport,
+      })
+  }
+
   run transportedAccountabilityEvidenceAcceptedTest = {
     TransportInit
       .then(ReceiveAccountabilityEvidenceTransport(
@@ -288,6 +315,23 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransportTest {
       .then(all {
         assert(acceptedTransportedAccountabilityEvidence.contains(
           nilValuePrecommitEvidence)),
+        assert(TransportSafety),
+        unchangedTransport,
+      })
+  }
+
+  run valueValueTransportedAccountabilityEvidenceAcceptedTest = {
+    TransportInit
+      .then(ReceiveAccountabilityEvidenceTransport(
+        valueValueEvidenceEnvelope,
+        valueValuePrecommitEvidence,
+      ))
+      .then(AcceptTransportedAccountabilityEvidence(
+        valueValuePrecommitEvidence,
+      ))
+      .then(all {
+        assert(acceptedTransportedAccountabilityEvidence.contains(
+          valueValuePrecommitEvidence)),
         assert(TransportSafety),
         unchangedTransport,
       })

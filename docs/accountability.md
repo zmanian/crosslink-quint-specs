@@ -101,6 +101,8 @@ If two conflicting values are both committed, accountability should expose at
 least one of:
 
 - same-round correct-validator equivocation,
+- concrete value/value precommit equivocation for the same signer, height, and
+  round,
 - nil/value equivocation for a bogus nil unlock, or
 - a correct validator switching values without a valid nil certificate for the
   abandoned round.
@@ -189,6 +191,7 @@ generatedFixtureWireConstantsAreCoherentTest
 generatedFixtureWireObservedAfterGossipTest
 generatedFixtureWireRejectedBeforeGossipTest
 acceptsNilValuePrecommitEvidenceTest
+acceptsValueValuePrecommitEvidenceTest
 rejectsPrevoteEvidenceTest
 rejectsRoundMismatchEvidenceTest
 rejectsHeightMismatchEvidenceTest
@@ -206,6 +209,8 @@ wrongHeightTransportRejectedTest
 wrongSignerTransportRejectedTest
 wrongBytesTransportRejectedTest
 nonCanonicalEvidenceTransportRejectedTest
+valueValueAccountabilityEvidenceTransportEnvelopeAcceptedTest
+valueValueTransportedAccountabilityEvidenceAcceptedTest
 ```
 
 ## Current Limitations
@@ -239,17 +244,18 @@ fixture: the matching precommit and fat-pointer wire must arrive through
 canonical Crosslink-topic envelopes, wrong topic/sign-bytes/kind/length
 envelopes are rejected, and a fixture precommit cannot enter gossip unless its
 matching transport envelope was seen. `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt`
-adds the first concrete slashing-evidence envelope for the nil-precommit rule:
-nil/value precommit equivocation by one validator at the same height and round,
-encoded as typed header fields plus two canonical `PacketVotes` payloads. It
-rejects prevote evidence, wrong-height/round evidence, wrong byte lengths,
-same-value packets, wrong-signer claims, and non-canonical envelope bytes. This
-is still partial: the model now covers the authentication boundary, wire shape,
+adds concrete slashing-evidence envelopes for nil/value precommit equivocation
+under the nil-precommit rule and ordinary value/value precommit equivocation by
+one validator at the same height and round, encoded as typed header fields plus
+two canonical `PacketVotes` payloads. It rejects prevote evidence,
+wrong-height/round evidence, wrong byte lengths, same-value packets,
+wrong-signer claims, and non-canonical envelope bytes. This is still partial:
+the model now covers the authentication boundary, wire shape,
 gossip-before-observe rule, fixture-level transport gate, fixture-manifest
-Ed25519 verification, and nil/value equivocation evidence envelope, but does
-not yet call a full production gossip transport implementation or cover every
-future slashing evidence encoding. The
+Ed25519 verification, and nil/value plus value/value precommit equivocation
+evidence envelopes, but does not yet call a full production gossip transport
+implementation or cover every future slashing evidence encoding. The
 `CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt` bridge narrows that
-gap for this first envelope by requiring a Crosslink consensus-topic transport
+gap for these envelopes by requiring a Crosslink consensus-topic transport
 envelope with exact evidence bytes and matching height, round, and signer
 metadata before transported accountability evidence can be accepted.

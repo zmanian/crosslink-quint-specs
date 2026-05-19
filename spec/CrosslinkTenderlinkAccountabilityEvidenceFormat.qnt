@@ -3,11 +3,12 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
    Production-shaped Tenderlink accountability evidence.
 
    The abstract accountability model proves that conflicting commits expose
-   slashable behavior. This model pins the first concrete evidence envelope for
-   that story: the nil/value precommit equivocation case used by the
-   nil-precommit resampling rule. The envelope carries two canonical
-   PacketVotes payloads plus enough typed header data to identify the BFT
-   height, round, validator pubkey, packet types, and packet lengths.
+   slashable behavior. This model pins concrete evidence envelopes for that
+   story: the nil/value precommit equivocation case used by the nil-precommit
+   resampling rule, plus ordinary value/value precommit equivocation. Each
+   envelope carries two canonical PacketVotes payloads plus enough typed header
+   data to identify the BFT height, round, validator pubkey, packet types, and
+   packet lengths.
    */
 
   type AccountabilityEvidenceKind_t = str
@@ -56,6 +57,8 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
     "0000000000000000000000000000000000000000000000000000000000000000"
   pure val TestValueIdHex =
     "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+  pure val TestValue2IdHex =
+    "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
   pure val TestVoteSignatureHex =
     "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
   pure val NilPrevoteSignBytes =
@@ -64,10 +67,15 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f200000000000000000000000000000000000000000000000000000000000000000010000000000000000000080"
   pure val ValuePrecommitSignBytes =
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa010000000000000000000080"
+  pure val Value2PrecommitSignBytes =
+    "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb010000000000000000000080"
 
   pure val NilValuePrecommitEquivocationKind =
     "nil-value-precommit-equivocation"
+  pure val ValueValuePrecommitEquivocationKind =
+    "value-value-precommit-equivocation"
   pure val NilValuePrecommitEquivocationKindTag = 1
+  pure val ValueValuePrecommitEquivocationKindTag = 2
   pure val UnmodeledAccountabilityEvidenceHex =
     "unmodeled-accountability-evidence"
   pure val UnmodeledAccountabilityKindTag = -1
@@ -100,12 +108,18 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
 
   pure val NilValuePrecommitEvidenceHeaderHex =
     "010100000000000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20090970007000"
+  pure val ValueValuePrecommitEvidenceHeaderHex =
+    "020100000000000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20090970007000"
   pure val NilPrecommitPacketHex =
     "0100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
   pure val ValuePrecommitPacketHex =
     "0001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+  pure val Value2PrecommitPacketHex =
+    "0001000000000100000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
   pure val NilValuePrecommitEvidenceHex =
     "010100000000000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f200909700070000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111110001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+  pure val ValueValuePrecommitEvidenceHex =
+    "020100000000000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f200909700070000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111110001000000000100000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
 
   var acceptedAccountabilityEvidence: Set[AccountabilityEvidence_t]
   var firedAction: str
@@ -116,6 +130,8 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
   pure def AccountabilityKindTag(kind: AccountabilityEvidenceKind_t): int =
     if (kind == NilValuePrecommitEquivocationKind) {
       NilValuePrecommitEquivocationKindTag
+    } else if (kind == ValueValuePrecommitEquivocationKind) {
+      ValueValuePrecommitEquivocationKindTag
     } else {
       UnmodeledAccountabilityKindTag
     }
@@ -141,18 +157,26 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
     packet.byteLen == 112 and
     packet.round == 0 and
     packet.height == 1 and
-    packet.valueId == TestValueIdHex and
     if (packet.packetType == PacketTypePrecommitSignatures and
-      packet.noVotes == 1 and packet.yesVotes == 0) {
+      packet.noVotes == 1 and packet.yesVotes == 0 and
+      packet.valueId == TestValueIdHex) {
       EntryCanonical(packet.entries.get(0), NilValueId, NilPrecommitSignBytes) and
       packet.hex == NilPrecommitPacketHex
     } else if (packet.packetType == PacketTypePrecommitSignatures and
-      packet.noVotes == 0 and packet.yesVotes == 1) {
+      packet.noVotes == 0 and packet.yesVotes == 1 and
+      packet.valueId == TestValueIdHex) {
       EntryCanonical(packet.entries.get(0), TestValueIdHex,
         ValuePrecommitSignBytes) and
       packet.hex == ValuePrecommitPacketHex
+    } else if (packet.packetType == PacketTypePrecommitSignatures and
+      packet.noVotes == 0 and packet.yesVotes == 1 and
+      packet.valueId == TestValue2IdHex) {
+      EntryCanonical(packet.entries.get(0), TestValue2IdHex,
+        Value2PrecommitSignBytes) and
+      packet.hex == Value2PrecommitPacketHex
     } else if (packet.packetType == PacketTypePrevoteSignatures and
-      packet.noVotes == 1 and packet.yesVotes == 0) {
+      packet.noVotes == 1 and packet.yesVotes == 0 and
+      packet.valueId == TestValueIdHex) {
       EntryCanonical(packet.entries.get(0), NilValueId, NilPrevoteSignBytes) and
       packet.hex == NilPrecommitPacketHex
     } else {
@@ -243,6 +267,37 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
     evidence.secondVote.valueId != NilValueId and
     evidence.firstVote.valueId == evidence.secondVote.valueId
 
+  pure def ValueValuePrecommitEquivocationEvidence(
+    evidence: AccountabilityEvidence_t,
+  ): bool =
+    evidence.kind == ValueValuePrecommitEquivocationKind and
+    EvidenceEnvelopeFieldsValid(evidence) and
+    VotePacketCanonical(evidence.firstVote) and
+    VotePacketCanonical(evidence.secondVote) and
+    PacketCarriesPrecommit(
+      evidence.firstVote,
+      evidence.height,
+      evidence.round,
+      evidence.validatorPubKey,
+      evidence.firstVote.valueId,
+    ) and
+    PacketCarriesPrecommit(
+      evidence.secondVote,
+      evidence.height,
+      evidence.round,
+      evidence.validatorPubKey,
+      evidence.secondVote.valueId,
+    ) and
+    evidence.firstVote.valueId != NilValueId and
+    evidence.secondVote.valueId != NilValueId and
+    evidence.firstVote.valueId != evidence.secondVote.valueId
+
+  pure def PrecommitEquivocationEvidence(
+    evidence: AccountabilityEvidence_t,
+  ): bool =
+    NilValuePrecommitEquivocationEvidence(evidence) or
+    ValueValuePrecommitEquivocationEvidence(evidence)
+
   pure def CanonicalAccountabilityEvidenceHex(
     evidence: AccountabilityEvidence_t,
   ): str =
@@ -256,6 +311,16 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
       evidence.firstVote.hex == NilPrecommitPacketHex and
       evidence.secondVote.hex == ValuePrecommitPacketHex) {
       NilValuePrecommitEvidenceHex
+    } else if (ValueValuePrecommitEquivocationEvidence(evidence) and
+      evidence.height == 1 and evidence.round == 0 and
+      evidence.validatorPubKey == TestPubKeyHex and
+      evidence.firstPacketType == PacketTypePrecommitSignatures and
+      evidence.secondPacketType == PacketTypePrecommitSignatures and
+      evidence.firstPacketByteLen == 112 and
+      evidence.secondPacketByteLen == 112 and
+      evidence.firstVote.hex == ValuePrecommitPacketHex and
+      evidence.secondVote.hex == Value2PrecommitPacketHex) {
+      ValueValuePrecommitEvidenceHex
     } else {
       UnmodeledAccountabilityEvidenceHex
     }
@@ -265,7 +330,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
   ): bool =
     AccountabilityEvidenceLayoutPinned and
     AccountabilityEvidenceFieldOffsetsContiguous and
-    NilValuePrecommitEquivocationEvidence(evidence) and
+    PrecommitEquivocationEvidence(evidence) and
     CanonicalAccountabilityEvidenceHex(evidence) !=
       UnmodeledAccountabilityEvidenceHex and
     evidence.hex == CanonicalAccountabilityEvidenceHex(evidence)
@@ -323,6 +388,16 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
     yesVotes: int,
     entry: VotePacketEntry_t,
     hex: str,
+  ): VotePacket_t =
+    PacketWithValueId(packetType, noVotes, yesVotes, TestValueIdHex, entry, hex)
+
+  def PacketWithValueId(
+    packetType: int,
+    noVotes: int,
+    yesVotes: int,
+    packetValueId: str,
+    entry: VotePacketEntry_t,
+    hex: str,
   ): VotePacket_t = {
     packetType: packetType,
     byteLen: 112,
@@ -330,7 +405,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
     yesVotes: yesVotes,
     round: 0,
     height: 1,
-    valueId: TestValueIdHex,
+    valueId: packetValueId,
     entries: Map(0 -> entry),
     hex: hex,
   }
@@ -362,6 +437,44 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
       ValuePrecommitPacketHex,
     )
 
+  pure val value2PrecommitPacket =
+    PacketWithValueId(
+      PacketTypePrecommitSignatures,
+      0,
+      1,
+      TestValue2IdHex,
+      Entry(TestValue2IdHex, Value2PrecommitSignBytes, TestVoteSignatureHex),
+      Value2PrecommitPacketHex,
+    )
+
+  def EvidenceEnvelope(
+    kind: AccountabilityEvidenceKind_t,
+    byteLen: int,
+    height: int,
+    round: int,
+    validatorPubKey: str,
+    firstPacketType: int,
+    secondPacketType: int,
+    firstPacketByteLen: int,
+    secondPacketByteLen: int,
+    firstVote: VotePacket_t,
+    secondVote: VotePacket_t,
+    hex: str,
+  ): AccountabilityEvidence_t = {
+    kind: kind,
+    byteLen: byteLen,
+    height: height,
+    round: round,
+    validatorPubKey: validatorPubKey,
+    firstPacketType: firstPacketType,
+    secondPacketType: secondPacketType,
+    firstPacketByteLen: firstPacketByteLen,
+    secondPacketByteLen: secondPacketByteLen,
+    firstVote: firstVote,
+    secondVote: secondVote,
+    hex: hex,
+  }
+
   def Evidence(
     byteLen: int,
     height: int,
@@ -371,20 +484,21 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
     firstPacketByteLen: int,
     firstVote: VotePacket_t,
     hex: str,
-  ): AccountabilityEvidence_t = {
-    kind: NilValuePrecommitEquivocationKind,
-    byteLen: byteLen,
-    height: height,
-    round: round,
-    validatorPubKey: validatorPubKey,
-    firstPacketType: firstPacketType,
-    secondPacketType: PacketTypePrecommitSignatures,
-    firstPacketByteLen: firstPacketByteLen,
-    secondPacketByteLen: 112,
-    firstVote: firstVote,
-    secondVote: valuePrecommitPacket,
-    hex: hex,
-  }
+  ): AccountabilityEvidence_t =
+    EvidenceEnvelope(
+      NilValuePrecommitEquivocationKind,
+      byteLen,
+      height,
+      round,
+      validatorPubKey,
+      firstPacketType,
+      PacketTypePrecommitSignatures,
+      firstPacketByteLen,
+      112,
+      firstVote,
+      valuePrecommitPacket,
+      hex,
+    )
 
   pure val nilValuePrecommitEvidence =
     Evidence(
@@ -396,6 +510,22 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
       112,
       nilPrecommitPacket,
       NilValuePrecommitEvidenceHex,
+    )
+
+  pure val valueValuePrecommitEvidence =
+    EvidenceEnvelope(
+      ValueValuePrecommitEquivocationKind,
+      275,
+      1,
+      0,
+      TestPubKeyHex,
+      PacketTypePrecommitSignatures,
+      PacketTypePrecommitSignatures,
+      112,
+      112,
+      valuePrecommitPacket,
+      value2PrecommitPacket,
+      ValueValuePrecommitEvidenceHex,
     )
 
   pure val wrongRoundEvidence =
@@ -484,6 +614,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
 
   pure val TestAccountabilityEvidence = Set(
     nilValuePrecommitEvidence,
+    valueValuePrecommitEvidence,
     wrongRoundEvidence,
     wrongHeightEvidence,
     prevoteEvidence,
@@ -533,6 +664,22 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
         assert(nilValuePrecommitEvidence.byteLen == 275),
         assert(NilValuePrecommitEvidenceHeaderHex ==
           "010100000000000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20090970007000"),
+        assert(Safety),
+        unchangedAll,
+      })
+  }
+
+  run acceptsValueValuePrecommitEvidenceTest = {
+    Init
+      .then(AcceptAccountabilityEvidence(valueValuePrecommitEvidence))
+      .then(all {
+        assert(acceptedAccountabilityEvidence.contains(valueValuePrecommitEvidence)),
+        assert(AccountabilityEvidenceCanonical(valueValuePrecommitEvidence)),
+        assert(CanonicalAccountabilityEvidenceHex(valueValuePrecommitEvidence) ==
+          ValueValuePrecommitEvidenceHex),
+        assert(valueValuePrecommitEvidence.byteLen == 275),
+        assert(ValueValuePrecommitEvidenceHeaderHex ==
+          "020100000000000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20090970007000"),
         assert(Safety),
         unchangedAll,
       })

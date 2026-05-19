@@ -187,14 +187,15 @@ For Crosslink, matching that quality means adding:
   five-entry larger-validator-set payloads. The witnesses also reject
   status-flag compact consensus packets, wrong packet types, malformed ack/tag
   fields, missing proposal signatures, and trailing vote bytes.
-- `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt` pins the first
-  concrete slashing-evidence envelope for the nil-precommit accountability
-  story: nil/value precommit equivocation by one validator at the same height
-  and round, encoded as a 51-byte typed header plus two canonical `PacketVotes`
-  payloads. Witnesses reject prevote evidence, wrong height/round, wrong length,
-  same-value packets, wrong-signer claims, and wrong envelope bytes.
+- `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt` pins concrete
+  slashing-evidence envelopes for the nil-precommit accountability story and
+  ordinary Tendermint equivocation: nil/value and value/value precommit
+  equivocation by one validator at the same height and round, encoded as a
+  51-byte typed header plus two canonical `PacketVotes` payloads. Witnesses
+  reject prevote evidence, wrong height/round, wrong length, same-value
+  packets, wrong-signer claims, and wrong envelope bytes.
 - `CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt` adds the matching
-  Crosslink-topic transport boundary for that envelope. Transported
+  Crosslink-topic transport boundary for those envelopes. Transported
   accountability evidence cannot be accepted unless an `accountability-evidence`
   envelope first carries exact canonical evidence bytes and matching
   height/round/signer metadata; witnesses reject missing transport, wrong
