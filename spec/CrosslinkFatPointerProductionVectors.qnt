@@ -36,6 +36,18 @@ module CrosslinkFatPointerProductionVectors {
   pure val PrototypeTryFromBytesCountEndExclusive = SignatureCountByteLen
 
   pure val SignatureCounts = 0.to(MaxVectorSignatures)
+  pure val CheckedInFixturePreviousFatPointerOffset = 8
+  pure val CheckedInFixtureTrailingFatPointerOffset = 4619
+  pure val CheckedInFixtureSignatureCount = 1
+  pure val CheckedInFixturePreviousPayloadFirstByte = 19
+  pure val CheckedInFixturePreviousPayloadLastByte = 128
+  pure val CheckedInFixtureTrailingPayloadFirstByte = 253
+  pure val CheckedInFixtureTrailingPayloadLastByte = 128
+  pure val CheckedInFixtureSignerPubKeyFirstByte = 240
+  pure val CheckedInFixturePreviousSignatureFirstByte = 60
+  pure val CheckedInFixturePreviousSignatureLastByte = 2
+  pure val CheckedInFixtureTrailingSignatureFirstByte = 60
+  pure val CheckedInFixtureTrailingSignatureLastByte = 15
 
   assume max_vector_signatures_covers_current_examples =
     MaxVectorSignatures >= 4
@@ -70,6 +82,30 @@ module CrosslinkFatPointerProductionVectors {
   pure def CountedWireEnvelopeExact(signatureCount: int, byteLen: int): bool =
     SignatureCounts.contains(signatureCount) and
     byteLen == FatPointerWireByteLen(signatureCount)
+
+  pure def EmbeddedSignatureCountOffset(fatPointerOffset: int): int =
+    fatPointerOffset + SignatureCountOffset
+
+  pure def EmbeddedSignatureEntriesOffset(fatPointerOffset: int): int =
+    fatPointerOffset + SignatureEntriesOffset
+
+  pure def EmbeddedSignatureEntryPubKeyOffset(
+    fatPointerOffset: int,
+    i: int,
+  ): int =
+    fatPointerOffset + SignatureEntryPubKeyOffset(i)
+
+  pure def EmbeddedSignatureEntryVoteSignatureOffset(
+    fatPointerOffset: int,
+    i: int,
+  ): int =
+    fatPointerOffset + SignatureEntryVoteSignatureOffset(i)
+
+  pure def EmbeddedSignatureEntryEndOffset(
+    fatPointerOffset: int,
+    i: int,
+  ): int =
+    fatPointerOffset + SignatureEntryEndOffset(i)
 
   val ProductionLayoutConstantsMatchCode =
     VotePayloadOffset == 0 and
@@ -115,13 +151,57 @@ module CrosslinkFatPointerProductionVectors {
       SignatureEntryEndOffset(i) == SignatureEntryOffset(i + 1)
     )
 
+  val CheckedInFixtureOffsetsPinned =
+    FatPointerWireByteLen(CheckedInFixtureSignatureCount) == 142 and
+    EmbeddedSignatureCountOffset(CheckedInFixturePreviousFatPointerOffset) == 52 and
+    EmbeddedSignatureEntriesOffset(CheckedInFixturePreviousFatPointerOffset) == 54 and
+    EmbeddedSignatureEntryPubKeyOffset(
+      CheckedInFixturePreviousFatPointerOffset,
+      0,
+    ) == 54 and
+    EmbeddedSignatureEntryVoteSignatureOffset(
+      CheckedInFixturePreviousFatPointerOffset,
+      0,
+    ) == 86 and
+    EmbeddedSignatureEntryEndOffset(
+      CheckedInFixturePreviousFatPointerOffset,
+      0,
+    ) == 150 and
+    EmbeddedSignatureCountOffset(CheckedInFixtureTrailingFatPointerOffset) == 4663 and
+    EmbeddedSignatureEntriesOffset(CheckedInFixtureTrailingFatPointerOffset) == 4665 and
+    EmbeddedSignatureEntryPubKeyOffset(
+      CheckedInFixtureTrailingFatPointerOffset,
+      0,
+    ) == 4665 and
+    EmbeddedSignatureEntryVoteSignatureOffset(
+      CheckedInFixtureTrailingFatPointerOffset,
+      0,
+    ) == 4697 and
+    EmbeddedSignatureEntryEndOffset(
+      CheckedInFixtureTrailingFatPointerOffset,
+      0,
+    ) == 4761
+
+  val CheckedInFixtureByteProbesPinned =
+    CheckedInFixturePreviousPayloadFirstByte == 19 and
+    CheckedInFixturePreviousPayloadLastByte == 128 and
+    CheckedInFixtureTrailingPayloadFirstByte == 253 and
+    CheckedInFixtureTrailingPayloadLastByte == 128 and
+    CheckedInFixtureSignerPubKeyFirstByte == 240 and
+    CheckedInFixturePreviousSignatureFirstByte == 60 and
+    CheckedInFixturePreviousSignatureLastByte == 2 and
+    CheckedInFixtureTrailingSignatureFirstByte == 60 and
+    CheckedInFixtureTrailingSignatureLastByte == 15
+
   val Safety =
     ProductionLayoutConstantsMatchCode and
     SerializerCountSliceIsBytes44To46 and
     StreamingDeserializerMatchesSerializer and
     PrototypeTryFromBytesGapRecorded and
     ProductionWireLengthVectorPinned and
-    SignatureEntryOffsetsAreContiguous
+    SignatureEntryOffsetsAreContiguous and
+    CheckedInFixtureOffsetsPinned and
+    CheckedInFixtureByteProbesPinned
 
   var checked: bool
 
@@ -162,6 +242,40 @@ module CrosslinkFatPointerProductionVectorsTest {
         assert(SignatureEntryVoteSignatureOffset(0) == 78),
         assert(SignatureEntryEndOffset(0) == 142),
         assert(SignatureEntryOffset(1) == 142),
+        unchangedAll,
+      })
+  }
+
+  run checkedInFixtureFatPointerOffsetsArePinnedTest = {
+    Init
+      .then(all {
+        assert(FatPointerWireByteLen(1) == 142),
+        assert(EmbeddedSignatureCountOffset(8) == 52),
+        assert(EmbeddedSignatureEntriesOffset(8) == 54),
+        assert(EmbeddedSignatureEntryPubKeyOffset(8, 0) == 54),
+        assert(EmbeddedSignatureEntryVoteSignatureOffset(8, 0) == 86),
+        assert(EmbeddedSignatureEntryEndOffset(8, 0) == 150),
+        assert(EmbeddedSignatureCountOffset(4619) == 4663),
+        assert(EmbeddedSignatureEntriesOffset(4619) == 4665),
+        assert(EmbeddedSignatureEntryPubKeyOffset(4619, 0) == 4665),
+        assert(EmbeddedSignatureEntryVoteSignatureOffset(4619, 0) == 4697),
+        assert(EmbeddedSignatureEntryEndOffset(4619, 0) == 4761),
+        unchangedAll,
+      })
+  }
+
+  run checkedInFixtureFatPointerByteProbesArePinnedTest = {
+    Init
+      .then(all {
+        assert(CheckedInFixturePreviousPayloadFirstByte == 19),
+        assert(CheckedInFixturePreviousPayloadLastByte == 128),
+        assert(CheckedInFixtureTrailingPayloadFirstByte == 253),
+        assert(CheckedInFixtureTrailingPayloadLastByte == 128),
+        assert(CheckedInFixtureSignerPubKeyFirstByte == 240),
+        assert(CheckedInFixturePreviousSignatureFirstByte == 60),
+        assert(CheckedInFixturePreviousSignatureLastByte == 2),
+        assert(CheckedInFixtureTrailingSignatureFirstByte == 60),
+        assert(CheckedInFixtureTrailingSignatureLastByte == 15),
         unchangedAll,
       })
   }

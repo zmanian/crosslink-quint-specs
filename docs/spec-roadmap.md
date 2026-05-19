@@ -191,8 +191,13 @@ For Crosslink, matching that quality means adding:
   prefix from `BftBlock::zcash_serialize`: u32 version, u32 BFT height,
   counted previous-block fat pointer, u32 finalization-candidate height, u32
   header count, and contiguous serialized PoW headers. The witnesses also pin
-  the checked-in `test_pos_block_*.bin` envelope with version-4 PoW headers
-  and the deserialization sigma-bypass gap.
+  the generated `fixtures/production-bft-block-vectors.json` manifest for the
+  checked-in `test_pos_block_*.bin` envelopes: the first fixture has a
+  zero-signature previous fat pointer, later fixtures have one previous
+  signature, all current fixtures carry three version-4 PoW headers, and all
+  include one trailing fat-pointer signature. The manifest also pins
+  previous/trailing fat-pointer count bytes and first signer-entry byte probes.
+  The model still records the deserialization sigma-bypass gap.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
@@ -206,7 +211,9 @@ For Crosslink, matching that quality means adding:
   fat-pointer byte vectors: count bytes 44..46, exact wire lengths for 0-4
   signatures, contiguous 96-byte entry offsets, streaming
   serializer/deserializer agreement, and the current prototype
-  `try_from_bytes` reversed-count-slice gap.
+  `try_from_bytes` reversed-count-slice gap. It now also pins checked-in
+  `test_pos_block_*.bin` previous and trailing fat-pointer offsets, signer
+  entry offsets, and byte probes.
 - `CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
   production-shaped signer vector to the authenticated observer pipeline. A
   production fat-pointer wire can only be observed after its counted envelope

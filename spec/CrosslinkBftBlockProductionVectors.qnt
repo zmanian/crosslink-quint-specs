@@ -4,6 +4,9 @@ module CrosslinkBftBlockProductionVectors {
 
    This pins the field-order and small offset vectors implemented by
    zebra-crosslink/src/chain.rs::BftBlock::{zcash_serialize, zcash_deserialize}.
+   The checked-in fixture constants are generated into
+   fixtures/production-bft-block-vectors.json from zebra-crosslink's
+   crosslink-test-data/test_pos_block_*.bin files.
    The block prefix is:
    - u32 version,
    - u32 BFT height,
@@ -38,11 +41,14 @@ module CrosslinkBftBlockProductionVectors {
     CompactCommonSolutionLenByteLen +
     CommonSolutionByteLen
   pure val FixtureHeaderLogicalVersion = 4
-  pure val FixturePreviousFatPointerSignatureCount = 1
+  pure val FixtureFirstPreviousFatPointerSignatureCount = 0
+  pure val FixtureLaterPreviousFatPointerSignatureCount = 1
   pure val FixtureTrailingFatPointerSignatureCount = 1
   pure val FixtureHeaderCount = 3
-  pure val FixtureBftBlockByteLen = 4619
-  pure val FixtureBftBlockAndFatPointerByteLen = 4761
+  pure val FixtureFirstBftBlockByteLen = 4523
+  pure val FixtureFirstBftBlockAndFatPointerByteLen = 4665
+  pure val FixtureLaterBftBlockByteLen = 4619
+  pure val FixtureLaterBftBlockAndFatPointerByteLen = 4761
 
   pure val VersionOffset = 0
   pure val BftHeightOffset = VersionOffset + U32ByteLen
@@ -224,44 +230,83 @@ module CrosslinkBftBlockProductionVectors {
     DeserializationBypassesTryFromSigma(0) and
     DeserializationBypassesTryFromSigma(Sigma + 1)
 
-  val CheckedInFixtureEnvelopePinned =
+  val CheckedInFirstFixtureEnvelopePinned =
     BftBlockWireByteLenForHeaderVersion(
-      FixturePreviousFatPointerSignatureCount,
+      FixtureFirstPreviousFatPointerSignatureCount,
       FixtureHeaderCount,
       0,
       FixtureHeaderLogicalVersion,
-    ) == FixtureBftBlockByteLen and
+    ) == FixtureFirstBftBlockByteLen and
     BftBlockAndFatPointerWireByteLenForHeaderVersion(
-      FixturePreviousFatPointerSignatureCount,
+      FixtureFirstPreviousFatPointerSignatureCount,
       FixtureHeaderCount,
       0,
       FixtureHeaderLogicalVersion,
       FixtureTrailingFatPointerSignatureCount,
-    ) == FixtureBftBlockAndFatPointerByteLen and
+    ) == FixtureFirstBftBlockAndFatPointerByteLen and
     HeaderStartOffsetForHeaderVersion(
-      FixturePreviousFatPointerSignatureCount,
+      FixtureFirstPreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      0,
+    ) == 62 and
+    HeaderStartOffsetForHeaderVersion(
+      FixtureFirstPreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      1,
+    ) == 1549 and
+    HeaderStartOffsetForHeaderVersion(
+      FixtureFirstPreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      2,
+    ) == 3036 and
+    HeaderEndOffsetForHeaderVersion(
+      FixtureFirstPreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      2,
+    ) == FixtureFirstBftBlockByteLen
+
+  val CheckedInLaterFixtureEnvelopePinned =
+    BftBlockWireByteLenForHeaderVersion(
+      FixtureLaterPreviousFatPointerSignatureCount,
+      FixtureHeaderCount,
+      0,
+      FixtureHeaderLogicalVersion,
+    ) == FixtureLaterBftBlockByteLen and
+    BftBlockAndFatPointerWireByteLenForHeaderVersion(
+      FixtureLaterPreviousFatPointerSignatureCount,
+      FixtureHeaderCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      FixtureTrailingFatPointerSignatureCount,
+    ) == FixtureLaterBftBlockAndFatPointerByteLen and
+    HeaderStartOffsetForHeaderVersion(
+      FixtureLaterPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       0,
     ) == 158 and
     HeaderStartOffsetForHeaderVersion(
-      FixturePreviousFatPointerSignatureCount,
+      FixtureLaterPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       1,
     ) == 1645 and
     HeaderStartOffsetForHeaderVersion(
-      FixturePreviousFatPointerSignatureCount,
+      FixtureLaterPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       2,
     ) == 3132 and
     HeaderEndOffsetForHeaderVersion(
-      FixturePreviousFatPointerSignatureCount,
+      FixtureLaterPreviousFatPointerSignatureCount,
       0,
       FixtureHeaderLogicalVersion,
       2,
-    ) == FixtureBftBlockByteLen
+    ) == FixtureLaterBftBlockByteLen
 
   val Safety =
     FixedPrefixOffsetsMatchCode and
@@ -271,7 +316,8 @@ module CrosslinkBftBlockProductionVectors {
     HeaderVectorsAreContiguous and
     DeserializerCountCapMatchesImplementation and
     DeserializationSigmaBypassGapRecorded and
-    CheckedInFixtureEnvelopePinned
+    CheckedInFirstFixtureEnvelopePinned and
+    CheckedInLaterFixtureEnvelopePinned
 
   var checked: bool
 
@@ -347,7 +393,26 @@ module CrosslinkBftBlockProductionVectorsTest {
       })
   }
 
-  run checkedInBftBlockAndFatPointerFixtureEnvelopeTest = {
+  run checkedInFirstBftBlockAndFatPointerFixtureEnvelopeTest = {
+    Init
+      .then(all {
+        assert(BftBlockWireByteLenForHeaderVersion(0, 3, 0, 4) == 4523),
+        assert(BftBlockAndFatPointerWireByteLenForHeaderVersion(
+          0,
+          3,
+          0,
+          4,
+          1,
+        ) == 4665),
+        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 0) == 62),
+        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 1) == 1549),
+        assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 2) == 3036),
+        assert(HeaderEndOffsetForHeaderVersion(0, 0, 4, 2) == 4523),
+        unchangedAll,
+      })
+  }
+
+  run checkedInLaterBftBlockAndFatPointerFixtureEnvelopeTest = {
     Init
       .then(all {
         assert(BftBlockWireByteLenForHeaderVersion(1, 3, 0, 4) == 4619),

@@ -1,0 +1,556 @@
+{
+  "schema": 1,
+  "source": {
+    "repo": "zebra-crosslink",
+    "commit": "79dcc6ff9a0c36b0db2f123c1d1e3b4011955464",
+    "fixtureGlob": "crosslink-test-data/test_pos_block_*.bin"
+  },
+  "layout": {
+    "u32Bytes": 4,
+    "fatPointerVotePayloadBytes": 44,
+    "fatPointerCountBytes": 2,
+    "fatPointerSignatureEntryBytes": 96,
+    "preCrosslinkHeaderBytes": 1487
+  },
+  "fixtures": [
+    {
+      "file": "test_pos_block_5.bin",
+      "totalByteLen": 4665,
+      "bftBlockVersion": 0,
+      "bftHeight": 1,
+      "previousFatPointerSignatureCount": 0,
+      "previousFatPointerByteLen": 46,
+      "previousFatPointerProbe": {
+        "offset": 8,
+        "payloadFirstByte": 0,
+        "payloadLastByte": 0,
+        "signatureCountOffset": 52,
+        "signatureCountBytes": [
+          0,
+          0
+        ],
+        "entriesOffset": 54,
+        "firstSignatureEntry": null
+      },
+      "finalizationCandidateHeightOffset": 54,
+      "finalizationCandidateHeight": 0,
+      "headerCountOffset": 58,
+      "headerCount": 3,
+      "headersStartOffset": 62,
+      "headers": [
+        {
+          "index": 0,
+          "logicalVersion": 4,
+          "startOffset": 62,
+          "endOffset": 1549,
+          "byteLen": 1487
+        },
+        {
+          "index": 1,
+          "logicalVersion": 4,
+          "startOffset": 1549,
+          "endOffset": 3036,
+          "byteLen": 1487
+        },
+        {
+          "index": 2,
+          "logicalVersion": 4,
+          "startOffset": 3036,
+          "endOffset": 4523,
+          "byteLen": 1487
+        }
+      ],
+      "bftBlockByteLen": 4523,
+      "trailingFatPointerOffset": 4523,
+      "trailingFatPointerSignatureCount": 1,
+      "trailingFatPointerByteLen": 142,
+      "trailingFatPointerProbe": {
+        "offset": 4523,
+        "payloadFirstByte": 19,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 4567,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 4569,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 4569,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 4601,
+          "voteSignatureFirstByte": 60,
+          "voteSignatureLastByte": 2,
+          "endOffset": 4665
+        }
+      }
+    },
+    {
+      "file": "test_pos_block_8.bin",
+      "totalByteLen": 4761,
+      "bftBlockVersion": 0,
+      "bftHeight": 2,
+      "previousFatPointerSignatureCount": 1,
+      "previousFatPointerByteLen": 142,
+      "previousFatPointerProbe": {
+        "offset": 8,
+        "payloadFirstByte": 19,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 52,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 54,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 54,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 86,
+          "voteSignatureFirstByte": 60,
+          "voteSignatureLastByte": 2,
+          "endOffset": 150
+        }
+      },
+      "finalizationCandidateHeightOffset": 150,
+      "finalizationCandidateHeight": 0,
+      "headerCountOffset": 154,
+      "headerCount": 3,
+      "headersStartOffset": 158,
+      "headers": [
+        {
+          "index": 0,
+          "logicalVersion": 4,
+          "startOffset": 158,
+          "endOffset": 1645,
+          "byteLen": 1487
+        },
+        {
+          "index": 1,
+          "logicalVersion": 4,
+          "startOffset": 1645,
+          "endOffset": 3132,
+          "byteLen": 1487
+        },
+        {
+          "index": 2,
+          "logicalVersion": 4,
+          "startOffset": 3132,
+          "endOffset": 4619,
+          "byteLen": 1487
+        }
+      ],
+      "bftBlockByteLen": 4619,
+      "trailingFatPointerOffset": 4619,
+      "trailingFatPointerSignatureCount": 1,
+      "trailingFatPointerByteLen": 142,
+      "trailingFatPointerProbe": {
+        "offset": 4619,
+        "payloadFirstByte": 253,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 4663,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 4665,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 4665,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 4697,
+          "voteSignatureFirstByte": 60,
+          "voteSignatureLastByte": 15,
+          "endOffset": 4761
+        }
+      }
+    },
+    {
+      "file": "test_pos_block_11.bin",
+      "totalByteLen": 4761,
+      "bftBlockVersion": 0,
+      "bftHeight": 3,
+      "previousFatPointerSignatureCount": 1,
+      "previousFatPointerByteLen": 142,
+      "previousFatPointerProbe": {
+        "offset": 8,
+        "payloadFirstByte": 253,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 52,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 54,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 54,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 86,
+          "voteSignatureFirstByte": 60,
+          "voteSignatureLastByte": 15,
+          "endOffset": 150
+        }
+      },
+      "finalizationCandidateHeightOffset": 150,
+      "finalizationCandidateHeight": 0,
+      "headerCountOffset": 154,
+      "headerCount": 3,
+      "headersStartOffset": 158,
+      "headers": [
+        {
+          "index": 0,
+          "logicalVersion": 4,
+          "startOffset": 158,
+          "endOffset": 1645,
+          "byteLen": 1487
+        },
+        {
+          "index": 1,
+          "logicalVersion": 4,
+          "startOffset": 1645,
+          "endOffset": 3132,
+          "byteLen": 1487
+        },
+        {
+          "index": 2,
+          "logicalVersion": 4,
+          "startOffset": 3132,
+          "endOffset": 4619,
+          "byteLen": 1487
+        }
+      ],
+      "bftBlockByteLen": 4619,
+      "trailingFatPointerOffset": 4619,
+      "trailingFatPointerSignatureCount": 1,
+      "trailingFatPointerByteLen": 142,
+      "trailingFatPointerProbe": {
+        "offset": 4619,
+        "payloadFirstByte": 175,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 4663,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 4665,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 4665,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 4697,
+          "voteSignatureFirstByte": 228,
+          "voteSignatureLastByte": 2,
+          "endOffset": 4761
+        }
+      }
+    },
+    {
+      "file": "test_pos_block_16.bin",
+      "totalByteLen": 4761,
+      "bftBlockVersion": 0,
+      "bftHeight": 4,
+      "previousFatPointerSignatureCount": 1,
+      "previousFatPointerByteLen": 142,
+      "previousFatPointerProbe": {
+        "offset": 8,
+        "payloadFirstByte": 175,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 52,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 54,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 54,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 86,
+          "voteSignatureFirstByte": 228,
+          "voteSignatureLastByte": 2,
+          "endOffset": 150
+        }
+      },
+      "finalizationCandidateHeightOffset": 150,
+      "finalizationCandidateHeight": 0,
+      "headerCountOffset": 154,
+      "headerCount": 3,
+      "headersStartOffset": 158,
+      "headers": [
+        {
+          "index": 0,
+          "logicalVersion": 4,
+          "startOffset": 158,
+          "endOffset": 1645,
+          "byteLen": 1487
+        },
+        {
+          "index": 1,
+          "logicalVersion": 4,
+          "startOffset": 1645,
+          "endOffset": 3132,
+          "byteLen": 1487
+        },
+        {
+          "index": 2,
+          "logicalVersion": 4,
+          "startOffset": 3132,
+          "endOffset": 4619,
+          "byteLen": 1487
+        }
+      ],
+      "bftBlockByteLen": 4619,
+      "trailingFatPointerOffset": 4619,
+      "trailingFatPointerSignatureCount": 1,
+      "trailingFatPointerByteLen": 142,
+      "trailingFatPointerProbe": {
+        "offset": 4619,
+        "payloadFirstByte": 44,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 4663,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 4665,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 4665,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 4697,
+          "voteSignatureFirstByte": 186,
+          "voteSignatureLastByte": 0,
+          "endOffset": 4761
+        }
+      }
+    },
+    {
+      "file": "test_pos_block_20.bin",
+      "totalByteLen": 4761,
+      "bftBlockVersion": 0,
+      "bftHeight": 5,
+      "previousFatPointerSignatureCount": 1,
+      "previousFatPointerByteLen": 142,
+      "previousFatPointerProbe": {
+        "offset": 8,
+        "payloadFirstByte": 44,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 52,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 54,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 54,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 86,
+          "voteSignatureFirstByte": 186,
+          "voteSignatureLastByte": 0,
+          "endOffset": 150
+        }
+      },
+      "finalizationCandidateHeightOffset": 150,
+      "finalizationCandidateHeight": 0,
+      "headerCountOffset": 154,
+      "headerCount": 3,
+      "headersStartOffset": 158,
+      "headers": [
+        {
+          "index": 0,
+          "logicalVersion": 4,
+          "startOffset": 158,
+          "endOffset": 1645,
+          "byteLen": 1487
+        },
+        {
+          "index": 1,
+          "logicalVersion": 4,
+          "startOffset": 1645,
+          "endOffset": 3132,
+          "byteLen": 1487
+        },
+        {
+          "index": 2,
+          "logicalVersion": 4,
+          "startOffset": 3132,
+          "endOffset": 4619,
+          "byteLen": 1487
+        }
+      ],
+      "bftBlockByteLen": 4619,
+      "trailingFatPointerOffset": 4619,
+      "trailingFatPointerSignatureCount": 1,
+      "trailingFatPointerByteLen": 142,
+      "trailingFatPointerProbe": {
+        "offset": 4619,
+        "payloadFirstByte": 94,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 4663,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 4665,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 4665,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 4697,
+          "voteSignatureFirstByte": 176,
+          "voteSignatureLastByte": 0,
+          "endOffset": 4761
+        }
+      }
+    },
+    {
+      "file": "test_pos_block_24.bin",
+      "totalByteLen": 4761,
+      "bftBlockVersion": 0,
+      "bftHeight": 6,
+      "previousFatPointerSignatureCount": 1,
+      "previousFatPointerByteLen": 142,
+      "previousFatPointerProbe": {
+        "offset": 8,
+        "payloadFirstByte": 94,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 52,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 54,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 54,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 86,
+          "voteSignatureFirstByte": 176,
+          "voteSignatureLastByte": 0,
+          "endOffset": 150
+        }
+      },
+      "finalizationCandidateHeightOffset": 150,
+      "finalizationCandidateHeight": 0,
+      "headerCountOffset": 154,
+      "headerCount": 3,
+      "headersStartOffset": 158,
+      "headers": [
+        {
+          "index": 0,
+          "logicalVersion": 4,
+          "startOffset": 158,
+          "endOffset": 1645,
+          "byteLen": 1487
+        },
+        {
+          "index": 1,
+          "logicalVersion": 4,
+          "startOffset": 1645,
+          "endOffset": 3132,
+          "byteLen": 1487
+        },
+        {
+          "index": 2,
+          "logicalVersion": 4,
+          "startOffset": 3132,
+          "endOffset": 4619,
+          "byteLen": 1487
+        }
+      ],
+      "bftBlockByteLen": 4619,
+      "trailingFatPointerOffset": 4619,
+      "trailingFatPointerSignatureCount": 1,
+      "trailingFatPointerByteLen": 142,
+      "trailingFatPointerProbe": {
+        "offset": 4619,
+        "payloadFirstByte": 129,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 4663,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 4665,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 4665,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 4697,
+          "voteSignatureFirstByte": 254,
+          "voteSignatureLastByte": 8,
+          "endOffset": 4761
+        }
+      }
+    },
+    {
+      "file": "test_pos_block_27.bin",
+      "totalByteLen": 4761,
+      "bftBlockVersion": 0,
+      "bftHeight": 7,
+      "previousFatPointerSignatureCount": 1,
+      "previousFatPointerByteLen": 142,
+      "previousFatPointerProbe": {
+        "offset": 8,
+        "payloadFirstByte": 129,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 52,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 54,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 54,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 86,
+          "voteSignatureFirstByte": 254,
+          "voteSignatureLastByte": 8,
+          "endOffset": 150
+        }
+      },
+      "finalizationCandidateHeightOffset": 150,
+      "finalizationCandidateHeight": 0,
+      "headerCountOffset": 154,
+      "headerCount": 3,
+      "headersStartOffset": 158,
+      "headers": [
+        {
+          "index": 0,
+          "logicalVersion": 4,
+          "startOffset": 158,
+          "endOffset": 1645,
+          "byteLen": 1487
+        },
+        {
+          "index": 1,
+          "logicalVersion": 4,
+          "startOffset": 1645,
+          "endOffset": 3132,
+          "byteLen": 1487
+        },
+        {
+          "index": 2,
+          "logicalVersion": 4,
+          "startOffset": 3132,
+          "endOffset": 4619,
+          "byteLen": 1487
+        }
+      ],
+      "bftBlockByteLen": 4619,
+      "trailingFatPointerOffset": 4619,
+      "trailingFatPointerSignatureCount": 1,
+      "trailingFatPointerByteLen": 142,
+      "trailingFatPointerProbe": {
+        "offset": 4619,
+        "payloadFirstByte": 99,
+        "payloadLastByte": 128,
+        "signatureCountOffset": 4663,
+        "signatureCountBytes": [
+          1,
+          0
+        ],
+        "entriesOffset": 4665,
+        "firstSignatureEntry": {
+          "pubKeyOffset": 4665,
+          "pubKeyFirstByte": 240,
+          "voteSignatureOffset": 4697,
+          "voteSignatureFirstByte": 87,
+          "voteSignatureLastByte": 13,
+          "endOffset": 4761
+        }
+      }
+    }
+  ]
+}

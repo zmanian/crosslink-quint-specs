@@ -93,10 +93,14 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkBftBlockProductionVectors.qnt` pins the production BFT-block
   wire layout: u32 version, u32 BFT height, counted previous-block fat pointer,
   u32 finalization-candidate height, u32 header count, and contiguous serialized
-  PoW headers. It also pins the checked-in `test_pos_block_*.bin`
-  `BftBlockAndFatPointerToIt` envelope: one previous fat-pointer signature,
-  three version-4 PoW headers without header fat pointers, and one trailing fat
-  pointer signature. It records the current deserialization sigma-bypass gap.
+  PoW headers. It also pins a generated manifest for the checked-in
+  `test_pos_block_*.bin` `BftBlockAndFatPointerToIt` envelopes: the first
+  fixture has a zero-signature previous fat pointer, later fixtures have one
+  previous fat-pointer signature, all current fixtures carry three version-4
+  PoW headers without header fat pointers, and all have one trailing fat
+  pointer signature. The manifest also pins previous/trailing fat-pointer count
+  bytes and first signer-entry byte probes. It records the current
+  deserialization sigma-bypass gap.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -106,8 +110,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkFatPointerProductionVectors.qnt` pins the small production
   byte vectors for fat pointers: count bytes 44..46, 0-4 signer wire lengths,
   contiguous 96-byte signature entries, streaming serializer/deserializer
-  count-slice agreement, and the current prototype `try_from_bytes` reversed
-  range gap.
+  count-slice agreement, checked-in `test_pos_block_*.bin` previous/trailing
+  fat-pointer offsets and byte probes, and the current prototype
+  `try_from_bytes` reversed range gap.
 - `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
   production-shaped fat pointer to the authenticated evidence path: a fat
   pointer wire can only be observed after its envelope is exact and each active
@@ -162,11 +167,11 @@ npm run verify:temporal
 
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
-composed-progress, stream-churn risk, PoW stochastic-assumption, PoW-reorg stress, head-sigma,
-BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
-fat-pointer-format, fat-pointer production-vector, fat-pointer
-authenticated-evidence, validator-evidence, and authenticated evidence
-composition models.
+composed-progress, stream-churn risk, PoW stochastic-assumption,
+PoW-reorg stress, head-sigma, BFT-block-shape, BFT-block validation-gap,
+BFT-block production-vector, fat-pointer-format, fat-pointer
+production-vector, fat-pointer authenticated-evidence, validator-evidence,
+and authenticated evidence composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
 small scheduler progress contract, the scheduler-plus-finality contract, and
@@ -226,6 +231,7 @@ quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHead
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockValidationGap.qnt --main=CrosslinkBftBlockValidationGapModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockProductionVectors.qnt --main=CrosslinkBftBlockProductionVectorsModel --max-samples=100 --backend=rust
+node scripts/extract-bft-block-vectors.mjs --validate
 quint test spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --max-samples=100 --backend=rust
