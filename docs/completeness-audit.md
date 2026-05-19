@@ -20,7 +20,7 @@ Status terms:
 | Baseline Crosslink spec | `BaselineCrosslink` in `spec/CrosslinkResampling.qnt`; `test:baseline`; `verify:baseline-safety` | covered | Heighted round-machine coverage is currently a separate model. |
 | Nil-precommit resampling spec | `NilPrecommitResamplingCrosslink`; `test:resampling`; `verify:resampling-safety`; `CrosslinkHeightedRound.qnt` | covered | Heighted round-machine coverage is currently a separate model. |
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
-| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`; `test:head-sigma`; `verify:head-sigma-safety` | partial | Abstract `head - sigma` fork-tree model exists; needs production data vectors. |
+| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`; `test:head-sigma`; `test:heighted-head-sigma`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety` | partial | Abstract and heighted `head - sigma` fork-tree models exist; need production data vectors. |
 | Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `test:proposal-validity` | covered | Needs concrete Crosslink block/header validity wiring. |
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
@@ -30,7 +30,7 @@ Status terms:
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
 | Local receive/delivery semantics | `seenPropose`, `seenPrevote`, `seenPrecommit`, `Deliver*`; `test:local-delivery` | covered | Needs network scheduling/fairness assumptions. |
 | Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout`; `precommitTimeoutDoesNotClearHeightedLockTest` | partial | Needs fuller timeout scheduling and temporal properties. |
-| Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `test:heighted-round`; `verify:heighted-round-safety` | partial | First receive-reactive heighted slice; not yet composed with auth/evidence rules. |
+| Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedHeadSigmaRound.qnt`; `test:heighted-round`; `test:heighted-head-sigma`; `verify:heighted-round-safety`; `verify:heighted-head-sigma-safety` | partial | First receive-reactive heighted slice now has concrete head-sigma stream linkage; not yet composed with auth/evidence rules. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Production signer-set formats remain open. |
 | Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `test:validator-set-change`; `verify:validator-set-change-safety` | partial | Standalone validator-set rotation model; not yet linked to production signer-set formats. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
@@ -56,7 +56,8 @@ npm run verify
 
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
 message evidence, local delivery, timeout, liveness witnesses, scheduler
-liveness, head-sigma sampling, proposal validity, valid-round evidence, fork
+liveness, head-sigma sampling, heighted head-sigma rounds, proposal validity,
+valid-round evidence, fork
 finality, composed resampling/finality, composed liveness, multi-height finality,
 height-indexed round-machine behavior, heighted finality composition, evidence
 gossip, heighted evidence gossip, message authentication, heighted message
@@ -79,6 +80,7 @@ CrosslinkHeightedMessageAuthModel
 CrosslinkValidatorSetChangeModel
 CrosslinkSchedulerLivenessModel
 CrosslinkHeadSigmaSamplingModel
+CrosslinkHeightedHeadSigmaRoundModel
 ```
 
 ## Remaining Work
@@ -87,8 +89,8 @@ The goal is not complete yet. The strongest remaining gaps are:
 
 - replace bounded scheduler-parametric liveness checks with a general temporal
   liveness proof under post-GST stream stability;
-- link the abstract `head - sigma` and proposal-validity models to concrete
-  Crosslink block/header data;
+- link the abstract and heighted `head - sigma` proposal-validity models to
+  concrete Crosslink block/header data;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
 - link dynamic validator-set changes to production signer-set formats;

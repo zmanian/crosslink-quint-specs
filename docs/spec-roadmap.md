@@ -131,6 +131,12 @@ For Crosslink, matching that quality means adding:
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
   windows, and tail-confirmed candidate validity.
+- `CrosslinkHeightedHeadSigmaRound.qnt` connects that concrete `head - sigma`
+  stream back into the height-indexed round machine. Fresh correct proposals
+  must carry the current fork-tree-derived candidate, value precommits must
+  target that current candidate, and a nil-precommit certificate clears the
+  cached round-0 candidate so the next round can resample the new head-sigma
+  value.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
