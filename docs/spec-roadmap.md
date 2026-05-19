@@ -175,6 +175,13 @@ For Crosslink, matching that quality means adding:
   rejection, current-ack rejection, tolerance-boundary acceptance,
   beyond-tolerance rejection, failed-decrypt rejection, bad nonce-prefix
   rejection, and bad decrypted consensus-packet rejection.
+- `CrosslinkTenderlinkStatusPacketFormat.qnt` pins the inline status request
+  format read after a status-flagged compact `PacketHeader`. It records the
+  28-byte `PacketStatus` body layout for height, round, one proposal chunk
+  range, one prevote range, and one precommit range, plus exact status-only and
+  acked-status hex vectors. The witnesses reject missing status flags,
+  reversed proposal ranges, vote request ranges past the roster, malformed
+  ack/tag fields, and truncated status packets.
 
 ### 2026-05-18
 
