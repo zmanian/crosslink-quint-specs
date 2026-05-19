@@ -20,7 +20,7 @@ finality semantics.
 
 | Tendermint concept | Crosslink model location | Notes |
 | --- | --- | --- |
-| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt`; `nextBftHeight`, `decision`, and `Next` in `CrosslinkMultiHeight.qnt`; `height`, per-height `round`/`step`, and `Next` in `CrosslinkHeightedRound.qnt`; `CrosslinkDynamicSigmaHeightedRound.qnt` | The first height-indexed round-machine slice now exists, including fixed-sigma and dynamic-sigma head-stream bridges, but it is not yet composed with every richer auth/evidence/finality rule. |
+| Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt`; `nextBftHeight`, `decision`, and `Next` in `CrosslinkMultiHeight.qnt`; `height`, per-height `round`/`step`, and `Next` in `CrosslinkHeightedRound.qnt`; `CrosslinkDynamicSigmaHeightedRound.qnt`; `CrosslinkDynamicSigmaHeightedFinality.qnt` | The first height-indexed round-machine slice now exists, including fixed-sigma and dynamic-sigma head-stream bridges and dynamic-sigma finality composition, but it is not yet composed with every richer auth/evidence rule. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
 | Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal`; heighted equivalents in `CrosslinkHeightedRound.qnt` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value at the same BFT height. |
 | Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower`, `CrosslinkValidatorSetChange.qnt` | Current examples cover equal-weight, non-uniform power, and a first dynamic validator-set rotation slice. |
@@ -28,7 +28,7 @@ finality semantics.
 | Precommit quorum | `LocalPrecommitQuorum`, `LocalNilPrecommitCert`, `LocalAnyPrecommitQuorum` | Used for decision, nil-certificate recovery, and round advancement over delivered precommits. |
 | Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | Main round receive guards now use local delivery state rather than global broadcast state. |
 | Lock and valid-value state | `lockedValue`, `lockedRound`, `validValue`, `validRound` | The resampling rule is constrained to same-round state only. |
-| Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix`, `PerHeightAgreement`, `HeightCursorSequential`, `FinalityCursorSequential` | The finality model prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix; the heighted round model checks per-height agreement and sequential validator cursors; the heighted-finality model requires finality to follow local heighted decisions. |
+| Agreement | `DecisionUniqueness`, `DecisionCursorIsSequential`, `DecisionsRespectFinalizedPrefix`, `PerHeightAgreement`, `HeightCursorSequential`, `FinalityCursorSequential` | The finality model prevents skipped/duplicate BFT decisions and preserves a linear finalized PoW prefix; the heighted round model checks per-height agreement and sequential validator cursors; the heighted-finality models require finality to follow local heighted decisions, including the dynamic-sigma tail for the dynamic variant. |
 | Accountability | `evidencePropose`, `evidencePrevote`, `evidencePrecommit`, `evidenceFatPointer`, `CrosslinkEvidenceGossip.qnt`, `CrosslinkFixtureGossipTransport.qnt`, and `ConflictingCommitsAccountable` | Current witnesses cover invalid unlocks, nil/value equivocation, fat-pointer signer validation, an explicit gossip-to-observer evidence pipeline, and a fixture-level transport boundary. |
 
 ## Crosslink-Specific Concepts
@@ -43,7 +43,7 @@ finality semantics.
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink`, `CrosslinkHeightedRound.qnt` | A `2f + 1 PRECOMMIT nil` cert clears only same-height/same-round cached/lock/valid state. Mixed precommit quorums can advance waiting, but do not unlock. |
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkFinalityProgressContract.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights; the progress contract adds a TLC-checked decision-to-finality handoff. |
-| Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkComposedProgressContract.qnt` | Wires a resampled BFT decision into Crosslink finality, including a first height-indexed composition and a TLC-sized nil-resampling/finality progress contract. |
+| Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkDynamicSigmaHeightedFinality.qnt`, `CrosslinkComposedProgressContract.qnt` | Wires a resampled BFT decision into Crosslink finality, including fixed-sigma and dynamic-sigma height-indexed compositions and a TLC-sized nil-resampling/finality progress contract. |
 | Evidence gossip | `CrosslinkEvidenceGossip.qnt`, `CrosslinkHeightedEvidenceGossip.qnt`, `CrosslinkFixtureGossipTransport.qnt` | Separates gossiped evidence from observer-local accepted evidence; the heighted variant requires gossip, observed precommits, and fat pointers to agree on BFT height. The fixture transport bridge requires canonical Crosslink-topic envelopes before accepting the generated fixture wire. |
 | Message authentication | `CrosslinkMessageAuth.qnt`, `CrosslinkHeightedMessageAuth.qnt`, `CrosslinkFixtureGossipTransport.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted; the heighted variant binds BFT height into the sign bytes. The fixture transport bridge checks the generated fixture sign-bytes token and relies on the fixture-manifest gate for real Ed25519 verification. |
 
@@ -162,6 +162,11 @@ local heighted decisions in BFT-height order. This catches the Crosslink
 composition obligation that a later heighted decision on an incompatible PoW
 fork is not finalizable after an earlier BFT height has finalized a different
 branch.
+
+`CrosslinkDynamicSigmaHeightedFinality.qnt` adds the corresponding dynamic-sigma
+composition: finality consumes the heighted decision only if the candidate is
+the active height's `head - sigma(h)` sample and has the tail required by that
+height's consensus-visible sigma.
 
 ## Remaining Work To Match Upstream Quality
 
