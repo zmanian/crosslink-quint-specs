@@ -37,6 +37,10 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
+- `spec/CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler
+  liveness model for nil-precommit resampling: unstable rounds burn
+  nil-precommit certificates, then a stable stream window can deliver the
+  proposal/vote duties in nondeterministic validator order and decide.
 
 The round-recovery model has two first-class instantiations:
 
@@ -96,6 +100,7 @@ quint typecheck spec/CrosslinkHeightedEvidenceGossip.qnt
 quint typecheck spec/CrosslinkMessageAuth.qnt
 quint typecheck spec/CrosslinkHeightedMessageAuth.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
+quint typecheck spec/CrosslinkSchedulerLiveness.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -105,6 +110,7 @@ quint test spec/CrosslinkResampling.qnt --main=CrosslinkMessageEvidenceModel --m
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkLocalDeliveryModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkTimeoutModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingStableWindowLiveness --max-samples=100 --backend=rust
+quint test spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkProposalValidityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkValidRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --max-samples=100 --backend=rust
@@ -131,6 +137,7 @@ quint verify spec/CrosslinkHeightedEvidenceGossip.qnt --main=CrosslinkHeightedEv
 quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3
 ```
 
 ## Source

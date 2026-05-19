@@ -121,6 +121,12 @@ For Crosslink, matching that quality means adding:
   slice: a BFT decision records the active signer set for that height and
   installs the decided next validator set for the following height. It rejects
   removed validators signing at the next height and signer sets without quorum.
+- `CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler liveness
+  slice for nil-precommit resampling. It still assumes a bounded post-GST
+  window, but it no longer fixes a single validator ordering: unstable rounds
+  can burn nil-precommit certificates and advance correct validators in
+  nondeterministic order, then a stable round can deliver proposal, prevote,
+  and precommit duties until a correct validator decides.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -168,6 +174,9 @@ For Crosslink, matching that quality means adding:
   followed by a stable window where resampling reaches a decision. This still
   needs to become a general temporal liveness property rather than a scripted
   executable trace.
+- `CrosslinkSchedulerLivenessModel` strengthens that liveness track with a
+  bounded fair-scheduler model and a `SchedulerSafety` invariant. It remains a
+  bounded scheduler-parametric check, not a full temporal proof.
 - `CrosslinkComposedLivenessModel` now has an executable end-to-end liveness
   script that includes explicit local delivery of the proposal, prevotes, and
   precommits before finalizing the fresh candidate.

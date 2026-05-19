@@ -40,7 +40,7 @@ Status terms:
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
 | Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; production data/linkage remains abstract. |
 | Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:composed`; `test:heighted-finality`; `verify:composed-safety`; `verify:heighted-finality-safety` | partial | Heighted composition exists; production data/linkage remains abstract. |
-| Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel` | partial | Scripted bounded witnesses only; no general temporal liveness proof yet. |
+| Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel`, `CrosslinkSchedulerLivenessModel`; `test:scheduler-liveness`; `verify:scheduler-liveness-safety` | partial | Bounded scheduler-parametric checks now exist; no general temporal liveness proof yet. |
 | CI for checks | `package.json` scripts and `.github/workflows/quint.yml` | covered | Latest pushed commit may still be running until GitHub Actions completes. |
 | Documentation mapping to Tendermint | `docs/tendermint-crosslink-map.md`, `docs/implementation-correspondence.md`, `docs/spec-roadmap.md` | covered | Should keep updated as models become less abstract. |
 
@@ -55,12 +55,12 @@ npm run verify
 ```
 
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
-message evidence, local delivery, timeout, liveness witnesses, proposal
-validity, valid-round evidence, fork finality, composed resampling/finality,
-composed liveness, multi-height finality, height-indexed round-machine
-behavior, heighted finality composition, evidence gossip, heighted evidence
-gossip, message authentication, heighted message authentication, and
-validator-set changes.
+message evidence, local delivery, timeout, liveness witnesses, scheduler
+liveness, proposal validity, valid-round evidence, fork finality, composed
+resampling/finality, composed liveness, multi-height finality,
+height-indexed round-machine behavior, heighted finality composition, evidence
+gossip, heighted evidence gossip, message authentication, heighted message
+authentication, and validator-set changes.
 
 `npm run verify` currently runs bounded Apalache safety checks at depth 3 for:
 
@@ -77,14 +77,15 @@ CrosslinkHeightedEvidenceGossipModel
 CrosslinkMessageAuthModel
 CrosslinkHeightedMessageAuthModel
 CrosslinkValidatorSetChangeModel
+CrosslinkSchedulerLivenessModel
 ```
 
 ## Remaining Work
 
 The goal is not complete yet. The strongest remaining gaps are:
 
-- replace scripted liveness witnesses with temporal or scheduler-parametric
-  liveness checks under post-GST stream stability;
+- replace bounded scheduler-parametric liveness checks with a general temporal
+  liveness proof under post-GST stream stability;
 - link abstract proposal validity to concrete Crosslink block/header data;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;

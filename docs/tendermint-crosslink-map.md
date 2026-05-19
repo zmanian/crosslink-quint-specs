@@ -174,4 +174,5 @@ branch.
 - Connect the standalone evidence gossip model to production gossip messages
   and signature verification.
 - Expand bounded verification beyond `Safety` at depth 3.
-- Add temporal liveness checks parameterized by stream stability after GST.
+- Lift the bounded fair-scheduler liveness model into temporal liveness checks
+  parameterized by stream stability after GST.
