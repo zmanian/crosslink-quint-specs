@@ -81,6 +81,9 @@ Required pieces:
 - A bridge from the dynamic sigma schedule into concrete `head - sigma(h)`
   proposal-stream sampling, so future BFT heights use updated sigma while the
   active height remains fixed.
+- A bridge from that dynamic `head - sigma(h)` stream into the height-indexed
+  round machine, so proposals, value precommits, and nil-round resampling use
+  the active height's sigma while height transitions use the updated schedule.
 
 ## Tendermint-Quality Target
 
@@ -217,6 +220,12 @@ For Crosslink, matching that quality means adding:
   while later stable high-participation telemetry can sample shallower again.
   A low Crosslink-participating hash-power witness prevents that relaxation
   and keeps the future proposal stream at the deeper sampled candidate.
+- `CrosslinkDynamicSigmaHeightedRound.qnt` carries the dynamic-sigma schedule
+  into the height-indexed Tenderlink round machine. It constrains `Stream(h,r)`
+  to `head - sigma(h)`, checks that correct fresh proposals and value
+  precommits carry the active height's dynamic candidate, preserves sigma
+  across same-height nil-precommit resampling, and shows a decided height-1
+  block leading to a height-2 proposal that uses telemetry-raised sigma.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
@@ -337,7 +346,7 @@ For Crosslink, matching that quality means adding:
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW-reorg-stress, dynamic-sigma,
-  dynamic-sigma head-sampling, head-sigma,
+  dynamic-sigma head-sampling, dynamic-sigma heighted-round, head-sigma,
   BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
   fat-pointer-format, fat-pointer production-vector, heighted
   validator-evidence, and heighted authenticated-evidence models. It keeps
@@ -402,6 +411,11 @@ For Crosslink, matching that quality means adding:
   samples a shallower candidate. It also checks that low Crosslink-participating
   hash power prevents future sigma relaxation and preserves the deeper
   `head - sigma(h)` sample.
+- `CrosslinkDynamicSigmaHeightedRoundModel` composes the controller with the
+  heighted round machine. It verifies that a fresh height-1 proposal uses the
+  initial sigma, a nil-precommit certificate advances the round without
+  changing height-1 sigma, and a height-2 proposal after a local decision uses
+  the telemetry-raised `head - sigma(h)` candidate.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
@@ -426,7 +440,9 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
-  but not the broader production message transport. The remaining work is also
+  and the dynamic-sigma heighted-round bridge covers proposals/precommits over
+  `head - sigma(h)`, but not the broader production message transport or
+  dynamic-sigma auth/evidence/finality composition. The remaining work is also
   to lift the current TLC-friendly progress contracts into a full imported-protocol
   temporal proof. A direct TLC run over the current imported composed model is
   blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC path, so

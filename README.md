@@ -83,6 +83,11 @@ the Zebra Crosslink working branch:
   concrete `head - sigma(h)` sampling: already-sampled same-height candidates
   survive nil-precommit round burns, while committed telemetry changes the
   candidate depth only for future BFT heights.
+- `spec/CrosslinkDynamicSigmaHeightedRound.qnt` carries the dynamic-sigma
+  schedule into the height-indexed round machine: fresh proposals and value
+  precommits use `head - sigma(h)`, nil-precommit resampling keeps the active
+  height's sigma fixed, and a BFT-height transition uses committed telemetry to
+  change the next height's proposal depth.
 - `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
   explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
   locally observed PoW head, including same-branch progress, fork switches, and
@@ -158,6 +163,9 @@ The current spec surface has three first-class Crosslink variants:
   Low Crosslink-participating PoW hash power is modeled separately from
   validator/network coverage: it contributes to sigma-relevant pressure for
   long-reorg or ambiguous low-coverage failures and prevents sigma relaxation.
+  `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
+  also respected by height-indexed proposals, precommits, and nil-round
+  resampling.
 
 The intended safety rule is deliberately narrow:
 
@@ -200,9 +208,10 @@ npm run verify:temporal
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
-PoW-reorg stress, dynamic-sigma, dynamic-sigma head-sampling, head-sigma,
-BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
-fat-pointer-format, fat-pointer production-vector, fat-pointer
+PoW-reorg stress, dynamic-sigma, dynamic-sigma head-sampling,
+dynamic-sigma heighted-round, head-sigma, BFT-block-shape,
+BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
+fat-pointer production-vector, fat-pointer
 authenticated-evidence, fixture-authenticated evidence, fixture-gossip
 transport, validator-evidence, and authenticated evidence composition models.
 
@@ -237,6 +246,7 @@ quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeadSampling.qnt
+quint typecheck spec/CrosslinkDynamicSigmaHeightedRound.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
@@ -266,6 +276,7 @@ quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochas
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
@@ -317,6 +328,7 @@ quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStoch
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -335,6 +347,7 @@ quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStoch
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5
