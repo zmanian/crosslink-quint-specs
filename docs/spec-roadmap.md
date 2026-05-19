@@ -327,6 +327,13 @@ For Crosslink, matching that quality means adding:
   long-reorg/low-coverage/low-hash participation failures can raise sigma,
   critically low participation can raise sigma directly, and stable covered
   high-participation windows lower it slowly.
+- `CrosslinkDynamicSigmaTelemetry.qnt` gives that committed telemetry a
+  production-shaped calibration contract. It derives participation from
+  Crosslink-participating work over total observed PoW work, requires coverage
+  and round-failure estimates to conservatively upper-bound raw samples, checks
+  monotone rollback-risk estimates across the sigma ladder, and forces the
+  selected sigma to satisfy rollback-risk and expected-loss budgets whenever
+  the bounded ladder can satisfy them.
 - `CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
   boundary for the dynamic controller. It checks that committed per-height
   `bc_confirmation_depth_sigma` wires decode to the deterministic active sigma,
@@ -512,7 +519,7 @@ For Crosslink, matching that quality means adding:
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW-reorg-stress, dynamic-sigma,
-  dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
+  dynamic-sigma telemetry, dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
   dynamic-sigma consensus-param-transport, dynamic-sigma head-sampling,
   dynamic-sigma heighted-round,
   dynamic-sigma heighted-finality,
@@ -577,6 +584,12 @@ For Crosslink, matching that quality means adding:
   prevents sigma relaxation, that critically low participation raises sigma
   directly, and that stable covered high-participation windows lower sigma at
   most one step.
+- `CrosslinkDynamicSigmaTelemetryModel` checks a production-shaped telemetry
+  calibration harness. It verifies that participating hash-work coverage is
+  derived from raw work samples, that coverage and round-failure estimates
+  conservatively upper-bound those samples, that rollback-risk estimates are
+  monotone across the sigma ladder, and that expected-loss budgets can raise
+  sigma even when rollback probability is within the PPM target.
 - `CrosslinkDynamicSigmaHeadSamplingModel` composes that controller with
   `head - sigma(h)` sampling. It verifies that height 0 samples with the
   initial sigma, a nil-round burn leaves that sample and same-height sigma

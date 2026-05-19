@@ -137,6 +137,12 @@ the Zebra Crosslink working branch:
   Crosslink. Participation has two thresholds: the target required before sigma
   may relax, and a lower floor where participation is itself enough to raise
   sigma.
+- `spec/CrosslinkDynamicSigmaTelemetry.qnt` tightens that telemetry boundary
+  into a production-shaped contract: Crosslink-participating work is compared
+  with total observed PoW work, round-failure and coverage estimates must
+  upper-bound raw samples, rollback-risk curves must be monotone across the
+  sigma ladder, and the selected sigma must satisfy explicit rollback-risk and
+  expected-loss budgets whenever the ladder can satisfy them.
 - `spec/CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
   boundary for that controller: committed per-height
   `bc_confirmation_depth_sigma` params must decode to the active sigma,
@@ -254,6 +260,9 @@ The current spec surface has three first-class Crosslink variants:
   validator/network coverage: it contributes to sigma-relevant pressure for
   long-reorg or ambiguous low-coverage failures, prevents sigma relaxation below
   the target, and raises sigma directly below the critical participation floor.
+  `CrosslinkDynamicSigmaTelemetryModel` checks nine bounded production-shaped
+  telemetry windows, including economic expected-loss cases where sigma must
+  rise even though rollback probability alone is within the PPM target.
   `CrosslinkDynamicSigmaConsensusParamsModel` checks that the schedule is
   installed through canonical `bc_confirmation_depth_sigma` consensus-param
   wires at height boundaries and rejects malformed keys, stale activation
@@ -319,7 +328,8 @@ npm run verify:temporal
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
-PoW-reorg stress, dynamic-sigma, dynamic-sigma consensus-params,
+PoW-reorg stress, dynamic-sigma, dynamic-sigma telemetry,
+dynamic-sigma consensus-params,
 dynamic-sigma consensus-param-format, dynamic-sigma consensus-param-transport,
 dynamic-sigma head-sampling, dynamic-sigma heighted-round,
 dynamic-sigma heighted-finality,
