@@ -444,6 +444,7 @@ function validateManifest(manifest) {
 
   let hasZeroPreviousSignatureFixture = false
   let hasOnePreviousSignatureFixture = false
+  let previousFixture = null
   const powFixtureHeights = new Set(manifest.powBlockFixtures.map(fixture => fixture.height))
 
   for (const fixture of manifest.fixtures) {
@@ -520,8 +521,42 @@ function validateManifest(manifest) {
       `${prefix}total length mismatch`,
     )
 
+    if (previousFixture === null) {
+      assert(fixture.previousFatPointerSignatureCount === 0, `${prefix}first fixture should have null previous pointer`)
+    } else {
+      assert(fixture.bftHeight === previousFixture.bftHeight + 1, `${prefix}BFT height sequence mismatch`)
+      assert(
+        fixture.previousFatPointerSignatureCount === previousFixture.trailingFatPointerSignatureCount,
+        `${prefix}previous pointer signature count should match prior trailing pointer`,
+      )
+      assert(
+        fixture.previousFatPointerProbe.payloadHex === previousFixture.trailingFatPointerProbe.payloadHex,
+        `${prefix}previous pointer payload should match prior trailing pointer`,
+      )
+      assert(
+        fixture.previousFatPointerProbe.blockHashHex === previousFixture.trailingFatPointerProbe.blockHashHex,
+        `${prefix}previous pointer block hash should match prior trailing pointer`,
+      )
+      assert(
+        fixture.previousFatPointerProbe.firstSignatureEntry?.pubKeyHex ===
+          previousFixture.trailingFatPointerProbe.firstSignatureEntry?.pubKeyHex,
+        `${prefix}previous pointer pubkey should match prior trailing pointer`,
+      )
+      assert(
+        fixture.previousFatPointerProbe.firstSignatureEntry?.voteSignatureHex ===
+          previousFixture.trailingFatPointerProbe.firstSignatureEntry?.voteSignatureHex,
+        `${prefix}previous pointer signature should match prior trailing pointer`,
+      )
+      assert(
+        fixture.previousFatPointerProbe.firstSignatureEntry?.voteSignDataHex ===
+          previousFixture.trailingFatPointerProbe.firstSignatureEntry?.voteSignDataHex,
+        `${prefix}previous pointer sign-data should match prior trailing pointer`,
+      )
+    }
+
     hasZeroPreviousSignatureFixture ||= fixture.previousFatPointerSignatureCount === 0
     hasOnePreviousSignatureFixture ||= fixture.previousFatPointerSignatureCount === 1
+    previousFixture = fixture
   }
 
   assert(hasZeroPreviousSignatureFixture, 'missing first-height fixture with zero previous signatures')
@@ -590,10 +625,69 @@ function renderGeneratedQuintModule(manifest) {
     return header.rawPowFixtureHeights[0]
   }
   const rawPowMatchCount = header => header.rawPowFixtureHeights.length
+  const bftHeights = manifest.fixtures.map(fixture => fixture.bftHeight)
+  const previousFatPointerLinksToPriorTrailingFatPointer = (fixture, index) => {
+    if (index === 0) {
+      return fixture.previousFatPointerSignatureCount === 0
+    }
+    const prior = manifest.fixtures[index - 1]
+    return (
+      fixture.previousFatPointerSignatureCount === prior.trailingFatPointerSignatureCount &&
+      fixture.previousFatPointerProbe.payloadHex === prior.trailingFatPointerProbe.payloadHex &&
+      fixture.previousFatPointerProbe.blockHashHex === prior.trailingFatPointerProbe.blockHashHex &&
+      fixture.previousFatPointerProbe.firstSignatureEntry?.pubKeyHex ===
+        prior.trailingFatPointerProbe.firstSignatureEntry?.pubKeyHex &&
+      fixture.previousFatPointerProbe.firstSignatureEntry?.voteSignatureHex ===
+        prior.trailingFatPointerProbe.firstSignatureEntry?.voteSignatureHex &&
+      fixture.previousFatPointerProbe.firstSignatureEntry?.voteSignDataHex ===
+        prior.trailingFatPointerProbe.firstSignatureEntry?.voteSignDataHex
+    )
+  }
 
   const constants = [
     ['GeneratedFixtureCount', manifest.fixtures.length],
     ['GeneratedPowBlockFixtureCount', manifest.powBlockFixtures.length],
+    ['GeneratedBftHeightMin', Math.min(...bftHeights)],
+    ['GeneratedBftHeightMax', Math.max(...bftHeights)],
+    ['GeneratedBftHeightSum', bftHeights.reduce((sum, height) => sum + height, 0)],
+    ['GeneratedBftHeightSquareSum', bftHeights.reduce((sum, height) => sum + height * height, 0)],
+    [
+      'GeneratedZeroPreviousFatPointerFixtureCount',
+      manifest.fixtures.filter(fixture => fixture.previousFatPointerSignatureCount === 0).length,
+    ],
+    [
+      'GeneratedOnePreviousFatPointerFixtureCount',
+      manifest.fixtures.filter(fixture => fixture.previousFatPointerSignatureCount === 1).length,
+    ],
+    ['GeneratedEmbeddedBftHeaderCount', manifest.fixtures.reduce((sum, fixture) => sum + fixture.headerCount, 0)],
+    [
+      'GeneratedEmbeddedRawPowHeaderMatchCount',
+      manifest.fixtures.reduce(
+        (sum, fixture) =>
+          sum + fixture.headers.reduce((headerSum, header) => headerSum + rawPowMatchCount(header), 0),
+        0,
+      ),
+    ],
+    [
+      'GeneratedAllBftBlockVersionsZero',
+      manifest.fixtures.every(fixture => fixture.bftBlockVersion === 0),
+    ],
+    [
+      'GeneratedAllFinalizationCandidateHeightsZero',
+      manifest.fixtures.every(fixture => fixture.finalizationCandidateHeight === 0),
+    ],
+    [
+      'GeneratedAllHeaderCountsMatchFixtureHeaderCount',
+      manifest.fixtures.every(fixture => fixture.headerCount === later.headerCount),
+    ],
+    [
+      'GeneratedAllTrailingFatPointerSignatureCountsOne',
+      manifest.fixtures.every(fixture => fixture.trailingFatPointerSignatureCount === 1),
+    ],
+    [
+      'GeneratedAllPreviousPointersLinkToPriorTrailingPointers',
+      manifest.fixtures.every(previousFatPointerLinksToPriorTrailingFatPointer),
+    ],
     ['FixtureHeaderLogicalVersion', later.headers[0].logicalVersion],
     ['FixtureHeaderCount', later.headerCount],
     ['FixtureFirstBftBlockVersion', first.bftBlockVersion],

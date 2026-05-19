@@ -318,16 +318,19 @@ the Zebra Crosslink working branch:
   header length, body length split, and header/body byte probes. The same
   generator links each embedded BFT-envelope header to matching raw PoW fixture
   header bytes, so the production-vector invariant now checks that the BFT
-  header vectors are backed by checked-in raw blocks. The manifest also pins
+  header vectors are backed by checked-in raw blocks. The generated module also
+  pins the complete checked-in BFT-height sequence, fixture-class counts, and
+  the rule that each later fixture's previous fat pointer byte-for-byte matches
+  the prior fixture's trailing fat pointer. The manifest also pins
   previous/trailing fat-pointer count bytes and first signer-entry byte probes.
   It records the current deserialization sigma-bypass gap.
 - `spec/CrosslinkProductionFixtureVectorsGenerated.qnt` is generated from that
   fixture manifest and is imported by the BFT-block and fat-pointer production
   vector specs so checked-in fixture constants do not have to be copied by hand.
-  The manifest/module also pin the serialized BFT-block prefix fields, fixture
-  payload, pubkey, vote signature, and `pubkey || payload` sign-data hex
-  strings; `test:fixture-manifest` verifies those Ed25519 signatures with
-  Node's built-in crypto.
+  The manifest/module also pin the serialized BFT-block prefix fields, full
+  checked-in fixture sequence metadata, fixture payload, pubkey, vote signature,
+  and `pubkey || payload` sign-data hex strings; `test:fixture-manifest`
+  verifies those Ed25519 signatures with Node's built-in crypto.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey

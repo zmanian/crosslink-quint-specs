@@ -553,10 +553,13 @@ For Crosslink, matching that quality means adding:
   split, and header/body byte probes. The generator also records which raw PoW
   fixture headers byte-match the headers embedded in each BFT envelope, so the
   production-vector invariant checks that the BFT header vectors are backed by
-  checked-in raw blocks. The manifest also pins previous/trailing fat-pointer
-  count bytes and first signer-entry byte probes. A generated Quint module
-  imports those constants into the production-vector specs, and the generated
-  artifacts pin the full payload, pubkey, vote signature, and
+  checked-in raw blocks. The generated module also pins the whole checked-in
+  BFT-height sequence, fixture-class counts, and previous-to-trailing
+  fat-pointer continuity between adjacent BFT envelopes. The manifest also
+  pins previous/trailing fat-pointer count bytes and first signer-entry byte
+  probes. A generated Quint module imports those constants into the
+  production-vector specs, and the generated artifacts pin the full payload,
+  pubkey, vote signature, and
   `pubkey || payload` sign-data hex strings. The manifest validator verifies
   those Ed25519 signatures with Node crypto. The model still records the
   deserialization sigma-bypass gap.

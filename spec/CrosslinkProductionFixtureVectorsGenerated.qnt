@@ -7,6 +7,19 @@ module CrosslinkProductionFixtureVectorsGenerated {
 
   pure val GeneratedFixtureCount = 7
   pure val GeneratedPowBlockFixtureCount = 24
+  pure val GeneratedBftHeightMin = 1
+  pure val GeneratedBftHeightMax = 7
+  pure val GeneratedBftHeightSum = 28
+  pure val GeneratedBftHeightSquareSum = 140
+  pure val GeneratedZeroPreviousFatPointerFixtureCount = 1
+  pure val GeneratedOnePreviousFatPointerFixtureCount = 6
+  pure val GeneratedEmbeddedBftHeaderCount = 21
+  pure val GeneratedEmbeddedRawPowHeaderMatchCount = 22
+  pure val GeneratedAllBftBlockVersionsZero = true
+  pure val GeneratedAllFinalizationCandidateHeightsZero = true
+  pure val GeneratedAllHeaderCountsMatchFixtureHeaderCount = true
+  pure val GeneratedAllTrailingFatPointerSignatureCountsOne = true
+  pure val GeneratedAllPreviousPointersLinkToPriorTrailingPointers = true
   pure val FixtureHeaderLogicalVersion = 4
   pure val FixtureHeaderCount = 3
   pure val FixtureFirstBftBlockVersion = 0

@@ -224,6 +224,23 @@ module CrosslinkBftBlockProductionVectors {
     DeserializationBypassesTryFromSigma(0) and
     DeserializationBypassesTryFromSigma(Sigma + 1)
 
+  val CheckedInFixtureSequencePinned =
+    GeneratedFixtureCount == 7 and
+    GeneratedBftHeightMin == 1 and
+    GeneratedBftHeightMax == 7 and
+    GeneratedBftHeightSum == 28 and
+    GeneratedBftHeightSquareSum == 140 and
+    GeneratedZeroPreviousFatPointerFixtureCount == 1 and
+    GeneratedOnePreviousFatPointerFixtureCount == 6 and
+    GeneratedEmbeddedBftHeaderCount == GeneratedFixtureCount * FixtureHeaderCount and
+    GeneratedEmbeddedBftHeaderCount == 21 and
+    GeneratedEmbeddedRawPowHeaderMatchCount == 22 and
+    GeneratedAllBftBlockVersionsZero and
+    GeneratedAllFinalizationCandidateHeightsZero and
+    GeneratedAllHeaderCountsMatchFixtureHeaderCount and
+    GeneratedAllTrailingFatPointerSignatureCountsOne and
+    GeneratedAllPreviousPointersLinkToPriorTrailingPointers
+
   val CheckedInFirstFixtureEnvelopePinned =
     FixtureFirstBftBlockVersion == 0 and
     FixtureFirstBftHeight == 1 and
@@ -375,6 +392,7 @@ module CrosslinkBftBlockProductionVectors {
     HeaderVectorsAreContiguous and
     DeserializerCountCapMatchesImplementation and
     DeserializationSigmaBypassGapRecorded and
+    CheckedInFixtureSequencePinned and
     CheckedInFirstFixtureEnvelopePinned and
     CheckedInLaterFixtureEnvelopePinned and
     CheckedInPowBlockFixturesPinned and
@@ -475,6 +493,29 @@ module CrosslinkBftBlockProductionVectorsTest {
         assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 1) == FixtureFirstHeader1StartOffset),
         assert(HeaderStartOffsetForHeaderVersion(0, 0, 4, 2) == FixtureFirstHeader2StartOffset),
         assert(HeaderEndOffsetForHeaderVersion(0, 0, 4, 2) == FixtureFirstHeader2EndOffset),
+        unchangedAll,
+      })
+  }
+
+  run checkedInBftBlockFixtureSequenceTest = {
+    Init
+      .then(all {
+        assert(GeneratedFixtureCount == 7),
+        assert(GeneratedBftHeightMin == 1),
+        assert(GeneratedBftHeightMax == 7),
+        assert(GeneratedBftHeightSum == 28),
+        assert(GeneratedBftHeightSquareSum == 140),
+        assert(GeneratedZeroPreviousFatPointerFixtureCount == 1),
+        assert(GeneratedOnePreviousFatPointerFixtureCount == 6),
+        assert(GeneratedEmbeddedBftHeaderCount == 21),
+        assert(GeneratedEmbeddedBftHeaderCount == GeneratedFixtureCount * FixtureHeaderCount),
+        assert(GeneratedEmbeddedRawPowHeaderMatchCount == 22),
+        assert(GeneratedAllBftBlockVersionsZero),
+        assert(GeneratedAllFinalizationCandidateHeightsZero),
+        assert(GeneratedAllHeaderCountsMatchFixtureHeaderCount),
+        assert(GeneratedAllTrailingFatPointerSignatureCountsOne),
+        assert(GeneratedAllPreviousPointersLinkToPriorTrailingPointers),
+        assert(CheckedInFixtureSequencePinned),
         unchangedAll,
       })
   }
