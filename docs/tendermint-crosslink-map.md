@@ -69,8 +69,9 @@ justified valid-round evidence. `CrosslinkValidRoundModel` has executable
 witnesses for both the nil-prevote rejection path and the justified unlock path.
 `CrosslinkTenderlinkProposalPolEvidence.qnt` adds the production-shaped bridge:
 non-nil `validRound` proposal chunks must be paired with canonical Tenderlink
-three-signature prevote packet evidence for the same height, valid round, value
-id, and modeled quorum power.
+prevote packet evidence for the same height, valid round, value id, and
+packet-derived quorum power. The bounded bridge covers both a weighted
+two-signature quorum and a three-signature f = 1 quorum.
 
 ### Moving Values
 
