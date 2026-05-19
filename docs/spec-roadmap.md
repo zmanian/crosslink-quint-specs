@@ -315,7 +315,9 @@ For Crosslink, matching that quality means adding:
   proposal/liveness/sync lanes and dynamic-sigma consensus-param lanes, and
   rejects cross-protocol routing such as Malachite proposals on the Tenderlink
   consensus channel, Tenderlink precommits on the Malachite liveness channel,
-  or consensus-param bytes on a Tenderlink/Malachite lane.
+  or consensus-param bytes on a Tenderlink/Malachite lane. The dynamic-sigma
+  lane now pins the exact raised/recovered consensus-param hex vectors from
+  the production-shaped format model rather than a placeholder byte token.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to

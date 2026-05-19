@@ -39,7 +39,10 @@ module CrosslinkProductionGossipIngress {
   pure val MalachiteLivenessIngressFixtures = Set(MalachiteRoundEnvelope)
   pure val MalachiteSyncIngressFixtures = Set(MalachiteSyncResponseEnvelope)
   pure val DynamicSigmaConsensusParamIngressFixtures =
-    Set(DynamicSigmaConsensusParamEnvelope)
+    Set(
+      DynamicSigmaConsensusParamEnvelope,
+      DynamicSigmaConsensusParamRecoveredEnvelope,
+    )
 
   val AcceptedTenderlinkConsensusValid =
     acceptedTenderlinkConsensus.forall(TenderlinkConsensusRouteValid)
@@ -346,6 +349,9 @@ module CrosslinkProductionGossipIngressTest {
       .then(AcceptMalachiteLiveness(MalachiteRoundEnvelope))
       .then(AcceptMalachiteSync(MalachiteSyncResponseEnvelope))
       .then(AcceptDynamicSigmaConsensusParam(DynamicSigmaConsensusParamEnvelope))
+      .then(AcceptDynamicSigmaConsensusParam(
+        DynamicSigmaConsensusParamRecoveredEnvelope
+      ))
       .then(all {
         assert(IngressSafety),
         assert(acceptedTenderlinkConsensus.contains(TenderlinkMixedPrecommitEnvelope)),
@@ -358,6 +364,11 @@ module CrosslinkProductionGossipIngressTest {
         assert(
           acceptedDynamicSigmaConsensusParam.contains(
             DynamicSigmaConsensusParamEnvelope
+          )
+        ),
+        assert(
+          acceptedDynamicSigmaConsensusParam.contains(
+            DynamicSigmaConsensusParamRecoveredEnvelope
           )
         ),
         ingressUnchangedAll,

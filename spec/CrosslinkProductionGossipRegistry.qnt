@@ -102,8 +102,21 @@ module CrosslinkProductionGossipRegistry {
   pure val MalachiteSyncResponseBytes =
     "malachite-sync-response-proto-bytes"
 
+  // Exact production-shaped consensus-param bytes pinned in
+  // CrosslinkDynamicSigmaConsensusParamFormat.qnt.
+  pure val DynamicSigmaConsensusParamH1RaisedBytes =
+    "0101000000000000000300"
+  pure val DynamicSigmaConsensusParamH2StableBytes =
+    "0102000000010000000200"
+  pure val DynamicSigmaConsensusParamH2RaisedBytes =
+    "0102000000010000000300"
+
   pure val DynamicSigmaConsensusParamBytes =
-    "dynamic-sigma-consensus-param-bytes"
+    Set(
+      DynamicSigmaConsensusParamH1RaisedBytes,
+      DynamicSigmaConsensusParamH2StableBytes,
+      DynamicSigmaConsensusParamH2RaisedBytes,
+    )
 
   pure val WrongBytes = "wrong-production-gossip-bytes"
 
@@ -269,7 +282,7 @@ module CrosslinkProductionGossipRegistry {
     env.channel == DynamicSigmaConsensusParamChannel and
     env.topic == CrosslinkConsensusTopic and
     env.kind == DynamicSigmaConsensusParamKind and
-    env.bytes == DynamicSigmaConsensusParamBytes
+    DynamicSigmaConsensusParamBytes.contains(env.bytes)
 
   def ProductionRouteValid(env: ProductionEnvelope_t): bool =
     TenderlinkConsensusRouteValid(env) or
@@ -361,7 +374,15 @@ module CrosslinkProductionGossipRegistry {
       DynamicSigmaConsensusParamChannel,
       CrosslinkConsensusTopic,
       DynamicSigmaConsensusParamKind,
-      DynamicSigmaConsensusParamBytes,
+      DynamicSigmaConsensusParamH1RaisedBytes,
+    )
+  pure val DynamicSigmaConsensusParamRecoveredEnvelope =
+    Envelope(
+      DynamicSigmaProtocol,
+      DynamicSigmaConsensusParamChannel,
+      CrosslinkConsensusTopic,
+      DynamicSigmaConsensusParamKind,
+      DynamicSigmaConsensusParamH2StableBytes,
     )
 
   pure val MalachiteProposalOnTenderlinkConsensus =
@@ -402,7 +423,7 @@ module CrosslinkProductionGossipRegistry {
       TenderlinkConsensusChannel,
       CrosslinkConsensusTopic,
       DynamicSigmaConsensusParamKind,
-      DynamicSigmaConsensusParamBytes,
+      DynamicSigmaConsensusParamH1RaisedBytes,
     )
   pure val TenderlinkPrecommitOnDynamicSigmaParam =
     Envelope(
@@ -465,6 +486,7 @@ module CrosslinkProductionGossipRegistry {
       MalachiteRoundEnvelope,
       MalachiteSyncResponseEnvelope,
       DynamicSigmaConsensusParamEnvelope,
+      DynamicSigmaConsensusParamRecoveredEnvelope,
     )
 
   var routedProductionEnvelopes: Set[ProductionEnvelope_t]
@@ -534,6 +556,7 @@ module CrosslinkProductionGossipRegistryTest {
       .then(RouteProduction(MalachiteRoundEnvelope))
       .then(RouteProduction(MalachiteSyncResponseEnvelope))
       .then(RouteProduction(DynamicSigmaConsensusParamEnvelope))
+      .then(RouteProduction(DynamicSigmaConsensusParamRecoveredEnvelope))
       .then(all {
         assert(RegistrySafety),
         assert(routedProductionEnvelopes.contains(TenderlinkMixedPrecommitEnvelope)),
@@ -553,6 +576,33 @@ module CrosslinkProductionGossipRegistryTest {
             DynamicSigmaConsensusParamEnvelope
           )
         ),
+        assert(
+          routedProductionEnvelopes.contains(
+            DynamicSigmaConsensusParamRecoveredEnvelope
+          )
+        ),
+        registryUnchangedAll,
+      })
+  }
+
+  run dynamicSigmaProductionBytesMatchFormatBridgeTest = {
+    RegistryInit
+      .then(RouteProduction(DynamicSigmaConsensusParamEnvelope))
+      .then(RouteProduction(DynamicSigmaConsensusParamRecoveredEnvelope))
+      .then(all {
+        assert(
+          DynamicSigmaConsensusParamH1RaisedBytes ==
+            "0101000000000000000300"
+        ),
+        assert(
+          DynamicSigmaConsensusParamH2StableBytes ==
+            "0102000000010000000200"
+        ),
+        assert(
+          DynamicSigmaConsensusParamH2RaisedBytes ==
+            "0102000000010000000300"
+        ),
+        assert(RegistrySafety),
         registryUnchangedAll,
       })
   }

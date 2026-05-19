@@ -466,7 +466,9 @@ The current spec surface has three first-class Crosslink variants:
   `CrosslinkProductionGossipIngressModel` now route those dynamic-sigma
   consensus-param envelopes through a dedicated production lane, checking that
   they cannot be accepted as Tenderlink consensus traffic or Malachite liveness
-  traffic.
+  traffic. The dynamic-sigma lane uses the same exact production-shaped hex
+  vectors pinned by the consensus-param format model for raised and recovered
+  sigma updates.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
