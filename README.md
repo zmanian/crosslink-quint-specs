@@ -205,6 +205,12 @@ the Zebra Crosslink working branch:
   models validator-set/GST growth as the vulnerable window, uses the
   one-block Poisson/union-bound numerator for normal block-arrival exposure,
   and keeps long-reorg tails as an explicit geometric-decay profile by sigma.
+- `spec/CrosslinkPowFixtureMeasuredDistribution.qnt` adds the first measured
+  fixture-data bridge for that layer. It imports generated raw PoW fixture
+  header timestamps, pins the Zcash header-time offset, checked-in height/time
+  span, interval buckets, and average interval ratio, and explicitly records
+  that these deterministic fixtures are not mainnet stochastic calibration
+  data.
 - `spec/CrosslinkPowForkSchedule.qnt` derives rollback depth from a bounded
   sequence of PoW best-tip changes, making the fork-switch signal that feeds
   the stress and dynamic-sigma models explicit.
@@ -315,13 +321,17 @@ the Zebra Crosslink working branch:
   finalization/header-count/header-start offsets for both fixture classes. For
   raw `test_pow_block_*.bin` blocks, the manifest
   pins the 24 current samples across heights 0..29, their version-4 serialized
-  header length, body length split, and header/body byte probes. The same
-  generator links each embedded BFT-envelope header to matching raw PoW fixture
-  header bytes, so the production-vector invariant now checks that the BFT
-  header vectors are backed by checked-in raw blocks. The generated module also
-  pins the complete checked-in BFT-height sequence, fixture-class counts, and
-  the rule that each later fixture's previous fat pointer byte-for-byte matches
-  the prior fixture's trailing fat pointer. The manifest also pins
+  header length, body length split, header-time offset, header timestamp, and
+  header/body byte probes. The generated module also derives the checked-in
+  fixture interval distribution: 23 checked intervals over a 27,000-second
+  span, 18 zero-second intervals, 5 intervals above the 75-second target, and
+  height gaps summing to 29. The same generator links each embedded
+  BFT-envelope header to matching raw PoW fixture header bytes, so the
+  production-vector invariant now checks that the BFT header vectors are backed
+  by checked-in raw blocks. The generated module also pins the complete
+  checked-in BFT-height sequence, fixture-class counts, and the rule that each
+  later fixture's previous fat pointer byte-for-byte matches the prior
+  fixture's trailing fat pointer. The manifest also pins
   previous/trailing fat-pointer count bytes and first signer-entry byte probes.
   It records the current deserialization sigma-bypass gap.
 - `spec/CrosslinkProductionFixtureVectorsGenerated.qnt` is generated from that
@@ -465,7 +475,7 @@ heighted progress projection, rotating authenticated progress projection,
 delivery-fairness,
 timeout-progress, stream-churn risk, validator-scale progress,
 validator-scale finality progress,
-PoW stochastic-assumption,
+PoW stochastic-assumption, PoW fixture measured-distribution,
 PoW fork-schedule, PoW branch-competition, PoW-reorg stress, dynamic-sigma,
 dynamic-sigma calibration, dynamic-sigma telemetry, dynamic-sigma fork-schedule,
 dynamic-sigma branch-competition, dynamic-sigma resampling,

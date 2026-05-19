@@ -16,6 +16,7 @@ const layout = {
   fatPointerCountBytes: 2,
   fatPointerSignatureEntryBytes: 96,
   preCrosslinkHeaderBytes: 1487,
+  powHeaderTimeOffset: 4 + 32 * 3,
 }
 
 const ed25519SpkiPrefix = Buffer.from('302a300506032b6570032100', 'hex')
@@ -260,6 +261,9 @@ function parsePowBlockFixture(filePath) {
   if (headerByteLen > buffer.length) {
     throw new Error(`${file}: header runs past end of block fixture`)
   }
+  if (layout.powHeaderTimeOffset + layout.u32Bytes > headerByteLen) {
+    throw new Error(`${file}: header time offset runs past header`)
+  }
 
   return {
     file,
@@ -267,6 +271,8 @@ function parsePowBlockFixture(filePath) {
     totalByteLen: buffer.length,
     logicalVersion,
     headerByteLen,
+    headerTimeOffset: layout.powHeaderTimeOffset,
+    headerTime: buffer.readUInt32LE(layout.powHeaderTimeOffset),
     bodyByteLen: buffer.length - headerByteLen,
     probe: {
       headerFirstByte: buffer.readUInt8(0),
@@ -436,6 +442,10 @@ function validateManifest(manifest) {
     manifest.layout.preCrosslinkHeaderBytes === layout.preCrosslinkHeaderBytes,
     'unexpected pre-Crosslink header length',
   )
+  assert(
+    manifest.layout.powHeaderTimeOffset === layout.powHeaderTimeOffset,
+    'unexpected PoW header time offset',
+  )
   assert(Array.isArray(manifest.fixtures) && manifest.fixtures.length > 0, 'fixtures missing')
   assert(
     Array.isArray(manifest.powBlockFixtures) && manifest.powBlockFixtures.length > 0,
@@ -562,6 +572,7 @@ function validateManifest(manifest) {
   assert(hasZeroPreviousSignatureFixture, 'missing first-height fixture with zero previous signatures')
   assert(hasOnePreviousSignatureFixture, 'missing later fixture with one previous signature')
 
+  let previousPowFixture = null
   for (const fixture of manifest.powBlockFixtures) {
     const prefix = `${fixture.file}: `
     assert(Number.isInteger(fixture.height), `${prefix}height missing`)
@@ -573,6 +584,14 @@ function validateManifest(manifest) {
     assert(
       fixture.headerByteLen === headerByteLen(fixture.logicalVersion),
       `${prefix}header length mismatch`,
+    )
+    assert(
+      fixture.headerTimeOffset === layout.powHeaderTimeOffset,
+      `${prefix}header time offset mismatch`,
+    )
+    assert(
+      Number.isInteger(fixture.headerTime) && fixture.headerTime >= 0,
+      `${prefix}header time missing`,
     )
     assert(
       fixture.bodyByteLen === fixture.totalByteLen - fixture.headerByteLen,
@@ -591,6 +610,17 @@ function validateManifest(manifest) {
       fixture.bodyByteLen === 0 || typeof fixture.probe?.bodyLastByte === 'number',
       `${prefix}body last byte probe missing`,
     )
+    if (previousPowFixture !== null) {
+      assert(
+        fixture.height > previousPowFixture.height,
+        `${prefix}PoW fixture heights must be strictly increasing`,
+      )
+      assert(
+        fixture.headerTime >= previousPowFixture.headerTime,
+        `${prefix}PoW fixture header times must be monotone in checked-in order`,
+      )
+    }
+    previousPowFixture = fixture
   }
 }
 
@@ -626,6 +656,38 @@ function renderGeneratedQuintModule(manifest) {
   }
   const rawPowMatchCount = header => header.rawPowFixtureHeights.length
   const bftHeights = manifest.fixtures.map(fixture => fixture.bftHeight)
+  const powIntervalStats = manifest.powBlockFixtures.slice(1).reduce(
+    (stats, fixture, index) => {
+      const previous = manifest.powBlockFixtures[index]
+      const intervalSeconds = fixture.headerTime - previous.headerTime
+      const heightGap = fixture.height - previous.height
+
+      return {
+        count: stats.count + 1,
+        minSeconds: Math.min(stats.minSeconds, intervalSeconds),
+        maxSeconds: Math.max(stats.maxSeconds, intervalSeconds),
+        sumSeconds: stats.sumSeconds + intervalSeconds,
+        atOrBelowTargetCount: stats.atOrBelowTargetCount + (intervalSeconds <= 75 ? 1 : 0),
+        aboveTargetCount: stats.aboveTargetCount + (intervalSeconds > 75 ? 1 : 0),
+        zeroSecondCount: stats.zeroSecondCount + (intervalSeconds === 0 ? 1 : 0),
+        targetMultipleCount: stats.targetMultipleCount + (intervalSeconds % 75 === 0 ? 1 : 0),
+        maxHeightGap: Math.max(stats.maxHeightGap, heightGap),
+        sumHeightGaps: stats.sumHeightGaps + heightGap,
+      }
+    },
+    {
+      count: 0,
+      minSeconds: Number.POSITIVE_INFINITY,
+      maxSeconds: Number.NEGATIVE_INFINITY,
+      sumSeconds: 0,
+      atOrBelowTargetCount: 0,
+      aboveTargetCount: 0,
+      zeroSecondCount: 0,
+      targetMultipleCount: 0,
+      maxHeightGap: 0,
+      sumHeightGaps: 0,
+    },
+  )
   const previousFatPointerLinksToPriorTrailingFatPointer = (fixture, index) => {
     if (index === 0) {
       return fixture.previousFatPointerSignatureCount === 0
@@ -647,6 +709,27 @@ function renderGeneratedQuintModule(manifest) {
   const constants = [
     ['GeneratedFixtureCount', manifest.fixtures.length],
     ['GeneratedPowBlockFixtureCount', manifest.powBlockFixtures.length],
+    ['GeneratedPowBlockHeaderTimeOffset', layout.powHeaderTimeOffset],
+    ['GeneratedPowBlockFirstHeaderTime', firstPow.headerTime],
+    ['GeneratedPowBlockLastHeaderTime', lastPow.headerTime],
+    ['GeneratedPowBlockObservedSpanSeconds', lastPow.headerTime - firstPow.headerTime],
+    ['GeneratedPowBlockObservedHeightSpan', lastPow.height - firstPow.height],
+    ['GeneratedPowBlockCheckedIntervalCount', powIntervalStats.count],
+    [
+      'GeneratedPowBlockMinCheckedIntervalSeconds',
+      powIntervalStats.count === 0 ? 0 : powIntervalStats.minSeconds,
+    ],
+    [
+      'GeneratedPowBlockMaxCheckedIntervalSeconds',
+      powIntervalStats.count === 0 ? 0 : powIntervalStats.maxSeconds,
+    ],
+    ['GeneratedPowBlockSumCheckedIntervalSeconds', powIntervalStats.sumSeconds],
+    ['GeneratedPowBlockIntervalAtOrBelowTargetCount', powIntervalStats.atOrBelowTargetCount],
+    ['GeneratedPowBlockIntervalAboveTargetCount', powIntervalStats.aboveTargetCount],
+    ['GeneratedPowBlockZeroSecondIntervalCount', powIntervalStats.zeroSecondCount],
+    ['GeneratedPowBlockTargetMultipleIntervalCount', powIntervalStats.targetMultipleCount],
+    ['GeneratedPowBlockMaxCheckedHeightGap', powIntervalStats.maxHeightGap],
+    ['GeneratedPowBlockSumCheckedHeightGaps', powIntervalStats.sumHeightGaps],
     ['GeneratedBftHeightMin', Math.min(...bftHeights)],
     ['GeneratedBftHeightMax', Math.max(...bftHeights)],
     ['GeneratedBftHeightSum', bftHeights.reduce((sum, height) => sum + height, 0)],

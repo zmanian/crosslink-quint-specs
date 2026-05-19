@@ -2,7 +2,7 @@
   "schema": 1,
   "source": {
     "repo": "zebra-crosslink",
-    "commit": "92e3ead1c2ff3d8db68c8c84cda2345532ebeb87",
+    "commit": "620d0af57fbc1b47899ccd1b39463d87e53552c6",
     "fixtureGlob": "crosslink-test-data/test_pos_block_*.bin",
     "powFixtureGlob": "crosslink-test-data/test_pow_block_*.bin"
   },
@@ -11,7 +11,8 @@
     "fatPointerVotePayloadBytes": 44,
     "fatPointerCountBytes": 2,
     "fatPointerSignatureEntryBytes": 96,
-    "preCrosslinkHeaderBytes": 1487
+    "preCrosslinkHeaderBytes": 1487,
+    "powHeaderTimeOffset": 100
   },
   "fixtures": [
     {
@@ -692,6 +693,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296694002,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -706,6 +709,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296699402,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -720,6 +725,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296699402,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -734,6 +741,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296699402,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -748,6 +757,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296704802,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -762,6 +773,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296704802,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -776,6 +789,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296704802,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -790,6 +805,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296704802,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -804,6 +821,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296704802,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -818,6 +837,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296710202,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -832,6 +853,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296710202,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -846,6 +869,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296710202,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -860,6 +885,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296710202,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -874,6 +901,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296710202,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -888,6 +917,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296710202,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -902,6 +933,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296715602,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -916,6 +949,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296715602,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -930,6 +965,8 @@
       "totalByteLen": 1592,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296715602,
       "bodyByteLen": 105,
       "probe": {
         "headerFirstByte": 4,
@@ -944,6 +981,8 @@
       "totalByteLen": 1593,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296715602,
       "bodyByteLen": 106,
       "probe": {
         "headerFirstByte": 4,
@@ -958,6 +997,8 @@
       "totalByteLen": 1593,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296715602,
       "bodyByteLen": 106,
       "probe": {
         "headerFirstByte": 4,
@@ -972,6 +1013,8 @@
       "totalByteLen": 1593,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296715602,
       "bodyByteLen": 106,
       "probe": {
         "headerFirstByte": 4,
@@ -986,6 +1029,8 @@
       "totalByteLen": 1593,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296721002,
       "bodyByteLen": 106,
       "probe": {
         "headerFirstByte": 4,
@@ -1000,6 +1045,8 @@
       "totalByteLen": 1593,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296721002,
       "bodyByteLen": 106,
       "probe": {
         "headerFirstByte": 4,
@@ -1014,6 +1061,8 @@
       "totalByteLen": 1593,
       "logicalVersion": 4,
       "headerByteLen": 1487,
+      "headerTimeOffset": 100,
+      "headerTime": 1296721002,
       "bodyByteLen": 106,
       "probe": {
         "headerFirstByte": 4,

@@ -418,6 +418,12 @@ For Crosslink, matching that quality means adding:
   post-Blossom 75-second PoW target spacing, models prevote/precommit window
   growth as the one-block Poisson/union-bound arrival-risk numerator, and
   keeps the long-reorg tail as an explicit geometric-decay profile by sigma.
+- `CrosslinkPowFixtureMeasuredDistribution.qnt` adds the first measured-data
+  bridge for the PoW risk layer. It imports generated raw PoW fixture header
+  times, pins the Zcash header-time offset, checked-in height/time span,
+  interval buckets, and average-interval ratio, and records that the current
+  deterministic fixtures are useful production-serialization samples but not
+  mainnet stochastic calibration data.
 - `CrosslinkPowForkSchedule.qnt` derives rollback depth from a bounded
   sequence of PoW best-tip changes. It makes the fork-switch signal explicit
   before it is consumed by stress or dynamic-sigma models.
@@ -550,7 +556,10 @@ For Crosslink, matching that quality means adding:
   offsets for both fixture classes. For raw
   `test_pow_block_*.bin` blocks, the manifest pins the 24 current samples
   across heights 0..29, their version-4 serialized header length, body length
-  split, and header/body byte probes. The generator also records which raw PoW
+  split, header-time offset, header timestamp, and header/body byte probes. The
+  generator also derives the checked-in interval distribution: 23 intervals
+  over a 27,000-second span, 18 zero-second intervals, 5 intervals above the
+  75-second target, and height gaps summing to 29. It records which raw PoW
   fixture headers byte-match the headers embedded in each BFT envelope, so the
   production-vector invariant checks that the BFT header vectors are backed by
   checked-in raw blocks. The generated module also pins the whole checked-in
@@ -686,7 +695,7 @@ For Crosslink, matching that quality means adding:
   the newest finality-progress, composed-progress, stream-churn-risk,
   validator-scale liveness envelope, validator-scale progress contract,
   validator-scale finality progress contract, PoW stochastic-assumption,
-  PoW fork-schedule, PoW branch-competition,
+  PoW fixture measured-distribution, PoW fork-schedule, PoW branch-competition,
   PoW-reorg-stress, dynamic-sigma, dynamic-sigma calibration,
   dynamic-sigma telemetry,
   dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
@@ -900,6 +909,7 @@ For Crosslink, matching that quality means adding:
   this likely needs either a TLC-oriented imported-state refactor or improved
   backend support.
   The current stream-churn, fork-schedule, branch-competition, and PoW-reorg
-  stress models now have an executable analytic assumption profile, but the
-  arrival, propagation-race, GST-scaling, branch-competition, and long-reorg
-  numerators still need to be calibrated against measured distributions.
+  stress models now have an executable analytic assumption profile plus a
+  checked-in fixture interval contract, but the arrival, propagation-race,
+  GST-scaling, branch-competition, and long-reorg numerators still need to be
+  calibrated against production measured distributions.
