@@ -190,6 +190,12 @@ For Crosslink, matching that quality means adding:
   rejection witnesses cover missing values, nil proposal rounds, short
   validator/proposer keys, wrong signed-message oneof tags, and missing
   signatures.
+- `CrosslinkMalachiteProposalGossipTransport.qnt` adds a transport-envelope
+  bridge for those exact proposal protobuf bytes. It requires a Crosslink
+  proposal topic, raw/signed/streamed envelope kinds, and byte equality with
+  the canonical protobuf payload before accepting proposal messages; witnesses
+  reject raw signed/streamed decoder acceptance, wrong topics/kinds, wrong
+  bytes, wrong oneof tags, and short streamed proposers.
 - `CrosslinkMalachiteLivenessProtobufFormat.qnt` pins the first Malachite
   liveness protobuf certificate vectors: a polka certificate, a skip-round nil
   certificate, and a value precommit certificate under their `LivenessMessage`

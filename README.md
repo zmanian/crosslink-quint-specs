@@ -63,6 +63,10 @@ the Zebra Crosslink working branch:
   protobuf proposal boundary for `Value`, `Proposal`,
   `SignedMessage::Proposal`, and streamed proposal parts, including exact
   proto3 tags, lengths, omitted nil POL round, and fixed 32/64-byte fields.
+- `spec/CrosslinkMalachiteProposalGossipTransport.qnt` adds a Crosslink
+  proposal-topic transport-envelope boundary around those exact proposal
+  protobuf bytes, covering raw proposals, signed proposal messages, and
+  streamed proposal parts.
 - `spec/CrosslinkMalachiteLivenessProtobufFormat.qnt` pins Malachite
   liveness protobuf certificates: polka certificates, skip-round nil
   certificates, value precommit certificates, and their `LivenessMessage`
@@ -314,7 +318,7 @@ fixture-authenticated evidence, fixture-gossip transport, heighted message
 gossip transport, Tenderlink vote/proposal bytes, vote packets, consensus
 packets, nonce/ack transport, status packets, heighted authenticated gossip
 transport, Malachite proposal/liveness/sync protobuf certificates and
-messages, Malachite sync gossip transport, validator-evidence, and
+messages, Malachite proposal/sync gossip transport, validator-evidence, and
 authenticated evidence composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
@@ -344,6 +348,7 @@ quint typecheck spec/CrosslinkTenderlinkConsensusPacketFormat.qnt
 quint typecheck spec/CrosslinkTenderlinkNonceAckTransport.qnt
 quint typecheck spec/CrosslinkTenderlinkStatusPacketFormat.qnt
 quint typecheck spec/CrosslinkMalachiteProposalProtobufFormat.qnt
+quint typecheck spec/CrosslinkMalachiteProposalGossipTransport.qnt
 quint typecheck spec/CrosslinkMalachiteLivenessProtobufFormat.qnt
 quint typecheck spec/CrosslinkMalachiteSyncProtobufFormat.qnt
 quint typecheck spec/CrosslinkMalachiteSyncGossipTransport.qnt
@@ -435,6 +440,7 @@ quint test spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTen
 quint test spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteProposalProtobufFormat.qnt --main=CrosslinkMalachiteProposalProtobufFormatModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkMalachiteProposalGossipTransport.qnt --main=CrosslinkMalachiteProposalGossipTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteLivenessProtobufFormat.qnt --main=CrosslinkMalachiteLivenessProtobufFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalachiteSyncProtobufFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --max-samples=100 --backend=rust
@@ -462,6 +468,7 @@ quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkT
 quint verify spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --init=TransportInit --step=Next --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteProposalProtobufFormat.qnt --main=CrosslinkMalachiteProposalProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkMalachiteProposalGossipTransport.qnt --main=CrosslinkMalachiteProposalGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkMalachiteLivenessProtobufFormat.qnt --main=CrosslinkMalachiteLivenessProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalachiteSyncProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
@@ -528,6 +535,7 @@ quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkT
 quint verify spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --init=TransportInit --step=Next --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteProposalProtobufFormat.qnt --main=CrosslinkMalachiteProposalProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkMalachiteProposalGossipTransport.qnt --main=CrosslinkMalachiteProposalGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkMalachiteLivenessProtobufFormat.qnt --main=CrosslinkMalachiteLivenessProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalachiteSyncProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
