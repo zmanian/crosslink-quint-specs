@@ -19,6 +19,8 @@ module CrosslinkHeightedProgressProjectionContractModel {
   pure val P4 = "p4"
   pure val Corr = Set(P1, P2, P3)
   pure val NilCertSigners = Set(P1, P2, P4)
+  pure val InitialNilSigners = Set(P1, P2)
+  pure val ValuePrecommitSigner = P3
   pure val Validators = Set(P1, P2, P3, P4)
   pure val QuorumPower = 3
   pure val H1 = 1
@@ -28,9 +30,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
 
   var h1Round: int
   var h1NilPrecommits: Set[Proc_t]
+  var h1ValuePrecommits: Set[Proc_t]
   var h1NilCertObserved: bool
+  var h1WaitedOnMixed: bool
   var h1Advanced: Set[Proc_t]
   var h1SameRoundCleared: bool
+  var h1CurrentRoundLock: Set[Proc_t]
   var h1ProposalInserted: bool
   var h1ProposalDelivered: bool
   var h1Prevoted: Set[Proc_t]
@@ -59,6 +64,19 @@ module CrosslinkHeightedProgressProjectionContractModel {
   def H1NilCertificate: bool =
     VotingPowerOf(h1NilPrecommits.intersect(NilCertSigners)) >= QuorumPower
 
+  def H1AnyPrecommitQuorum: bool =
+    VotingPowerOf(h1NilPrecommits.union(h1ValuePrecommits)) >= QuorumPower
+
+  def H1ValuePrecommitCertificate: bool =
+    VotingPowerOf(h1ValuePrecommits) >= QuorumPower
+
+  def H1MixedPrecommitQuorumWithoutNilCert: bool =
+    H1AnyPrecommitQuorum and
+    not(H1NilCertificate) and
+    not(H1ValuePrecommitCertificate) and
+    h1NilPrecommits != Set() and
+    h1ValuePrecommits != Set()
+
   def H2Pristine: bool =
     h2Round == 0 and
     not(h2ProposalInserted) and
@@ -81,9 +99,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
   action KeepH1 = all {
     h1Round' = h1Round,
     h1NilPrecommits' = h1NilPrecommits,
+    h1ValuePrecommits' = h1ValuePrecommits,
     h1NilCertObserved' = h1NilCertObserved,
+    h1WaitedOnMixed' = h1WaitedOnMixed,
     h1Advanced' = h1Advanced,
     h1SameRoundCleared' = h1SameRoundCleared,
+    h1CurrentRoundLock' = h1CurrentRoundLock,
     h1ProposalInserted' = h1ProposalInserted,
     h1ProposalDelivered' = h1ProposalDelivered,
     h1Prevoted' = h1Prevoted,
@@ -114,9 +135,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
     activeHeight' = H1,
     h1Round' = 0,
     h1NilPrecommits' = Set(),
+    h1ValuePrecommits' = Set(),
     h1NilCertObserved' = false,
+    h1WaitedOnMixed' = false,
     h1Advanced' = Set(),
     h1SameRoundCleared' = false,
+    h1CurrentRoundLock' = Corr,
     h1ProposalInserted' = false,
     h1ProposalDelivered' = false,
     h1Prevoted' = Set(),
@@ -152,14 +176,101 @@ module CrosslinkHeightedProgressProjectionContractModel {
       activeHeight == H1,
       h1Round == 0,
       not(h1SameRoundCleared),
-      NilCertSigners.contains(p),
+      InitialNilSigners.contains(p),
       not(h1NilPrecommits.contains(p)),
       h1Round' = h1Round,
       h1NilPrecommits' = nextNilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' =
         (h1NilCertObserved or VotingPowerOf(nextNilPrecommits.intersect(NilCertSigners)) >= QuorumPower),
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
+      h1ProposalInserted' = h1ProposalInserted,
+      h1ProposalDelivered' = h1ProposalDelivered,
+      h1Prevoted' = h1Prevoted,
+      h1PrevotesDelivered' = h1PrevotesDelivered,
+      h1Precommitted' = h1Precommitted,
+      h1PrecommitsDelivered' = h1PrecommitsDelivered,
+      h1DecisionMade' = h1DecisionMade,
+      KeepH2,
+      KeepFinality,
+      activeHeight' = activeHeight,
+      progress' = progress + 1,
+    }
+  }
+
+  action ObserveHeight1ValuePrecommit: bool =
+    all {
+      activeHeight == H1,
+      h1Round == 0,
+      not(h1SameRoundCleared),
+      not(h1ValuePrecommits.contains(ValuePrecommitSigner)),
+      h1Round' = h1Round,
+      h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits.union(Set(ValuePrecommitSigner)),
+      h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
+      h1Advanced' = h1Advanced,
+      h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
+      h1ProposalInserted' = h1ProposalInserted,
+      h1ProposalDelivered' = h1ProposalDelivered,
+      h1Prevoted' = h1Prevoted,
+      h1PrevotesDelivered' = h1PrevotesDelivered,
+      h1Precommitted' = h1Precommitted,
+      h1PrecommitsDelivered' = h1PrecommitsDelivered,
+      h1DecisionMade' = h1DecisionMade,
+      KeepH2,
+      KeepFinality,
+      activeHeight' = activeHeight,
+      progress' = progress + 1,
+    }
+
+  action WaitOnHeight1MixedPrecommitQuorum: bool =
+    all {
+      activeHeight == H1,
+      h1Round == 0,
+      H1MixedPrecommitQuorumWithoutNilCert,
+      not(h1WaitedOnMixed),
+      h1Round' = h1Round,
+      h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
+      h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = true,
+      h1Advanced' = h1Advanced,
+      h1SameRoundCleared' = false,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
+      h1ProposalInserted' = h1ProposalInserted,
+      h1ProposalDelivered' = h1ProposalDelivered,
+      h1Prevoted' = h1Prevoted,
+      h1PrevotesDelivered' = h1PrevotesDelivered,
+      h1Precommitted' = h1Precommitted,
+      h1PrecommitsDelivered' = h1PrecommitsDelivered,
+      h1DecisionMade' = h1DecisionMade,
+      KeepH2,
+      KeepFinality,
+      activeHeight' = activeHeight,
+      progress' = progress + 1,
+    }
+
+  action ObserveHeight1NilCertCompleter: bool = {
+    val nextNilPrecommits = h1NilPrecommits.union(Set(P4))
+    all {
+      activeHeight == H1,
+      h1Round == 0,
+      h1WaitedOnMixed,
+      not(h1NilPrecommits.contains(P4)),
+      h1Round' = h1Round,
+      h1NilPrecommits' = nextNilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
+      h1NilCertObserved' =
+        (VotingPowerOf(nextNilPrecommits.intersect(NilCertSigners)) >= QuorumPower),
+      h1WaitedOnMixed' = h1WaitedOnMixed,
+      h1Advanced' = h1Advanced,
+      h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted,
@@ -180,14 +291,18 @@ module CrosslinkHeightedProgressProjectionContractModel {
     all {
       activeHeight == H1,
       h1Round == 0,
+      h1WaitedOnMixed,
       H1NilCertificate,
       Corr.contains(p),
       not(h1Advanced.contains(p)),
       h1Round' = if (roundDone) { 1 } else { h1Round },
       h1NilPrecommits' = if (roundDone) { Set() } else { h1NilPrecommits },
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = true,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = if (roundDone) { Set() } else { advancedNow },
       h1SameRoundCleared' = if (roundDone) { true } else { h1SameRoundCleared },
+      h1CurrentRoundLock' = if (roundDone) { Set() } else { h1CurrentRoundLock },
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted,
@@ -210,9 +325,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
       not(h1ProposalInserted),
       h1Round' = h1Round,
       h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = true,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted,
@@ -233,9 +351,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
       not(h1ProposalDelivered),
       h1Round' = h1Round,
       h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = true,
       h1Prevoted' = h1Prevoted,
@@ -257,9 +378,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
       not(h1Prevoted.contains(p)),
       h1Round' = h1Round,
       h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted.union(Set(p)),
@@ -281,9 +405,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
       not(h1PrevotesDelivered.contains(p)),
       h1Round' = h1Round,
       h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted,
@@ -305,9 +432,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
       not(h1Precommitted.contains(p)),
       h1Round' = h1Round,
       h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted,
@@ -328,9 +458,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
       not(h1PrecommitsDelivered),
       h1Round' = h1Round,
       h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted,
@@ -351,9 +484,12 @@ module CrosslinkHeightedProgressProjectionContractModel {
       not(h1DecisionMade),
       h1Round' = h1Round,
       h1NilPrecommits' = h1NilPrecommits,
+      h1ValuePrecommits' = h1ValuePrecommits,
       h1NilCertObserved' = h1NilCertObserved,
+      h1WaitedOnMixed' = h1WaitedOnMixed,
       h1Advanced' = h1Advanced,
       h1SameRoundCleared' = h1SameRoundCleared,
+      h1CurrentRoundLock' = h1CurrentRoundLock,
       h1ProposalInserted' = h1ProposalInserted,
       h1ProposalDelivered' = h1ProposalDelivered,
       h1Prevoted' = h1Prevoted,
@@ -556,8 +692,11 @@ module CrosslinkHeightedProgressProjectionContractModel {
 
   action Next: bool =
     any {
-      nondet p = oneOf(NilCertSigners)
+      nondet p = oneOf(InitialNilSigners)
       SeedHeight1NilPrecommit(p),
+      ObserveHeight1ValuePrecommit,
+      WaitOnHeight1MixedPrecommitQuorum,
+      ObserveHeight1NilCertCompleter,
       nondet p = oneOf(Corr)
       AdvanceHeight1AfterNilCert(p),
       InsertHeight1StableProposal,
@@ -591,7 +730,10 @@ module CrosslinkHeightedProgressProjectionContractModel {
     0.to(1).contains(h1Round) and
     h2Round == 0 and
     h1NilPrecommits.subseteq(Validators) and
+    h1ValuePrecommits.subseteq(Validators) and
+    h1NilPrecommits.intersect(h1ValuePrecommits) == Set() and
     h1Advanced.subseteq(Corr) and
+    h1CurrentRoundLock.subseteq(Corr) and
     h1Prevoted.subseteq(Corr) and
     h1PrevotesDelivered.subseteq(Corr) and
     h1Precommitted.subseteq(Corr) and
@@ -613,8 +755,18 @@ module CrosslinkHeightedProgressProjectionContractModel {
     (activeHeight == H1 implies H2Pristine and not(finalizedHeights.contains(H2))) and
     (h1SameRoundCleared and not(h1DecisionMade) implies H2Pristine)
 
+  val MixedWaitDoesNotUnlockHeightedState =
+    (h1WaitedOnMixed and not(h1NilCertObserved) implies
+      activeHeight == H1 and
+      h1Round == 0 and
+      not(h1SameRoundCleared) and
+      h1CurrentRoundLock == Corr and
+      H2Pristine) and
+    (h1WaitedOnMixed and not(h1NilCertObserved) implies H1MixedPrecommitQuorumWithoutNilCert)
+
   val NilResamplingClearsOnlyActiveHeight =
-    (h1SameRoundCleared implies h1NilCertObserved and h1Round == 1) and
+    (h1SameRoundCleared implies h1NilCertObserved and h1WaitedOnMixed and h1Round == 1) and
+    (h1SameRoundCleared implies h1CurrentRoundLock == Set()) and
     (h1SameRoundCleared and activeHeight == H1 implies H2Pristine) and
     (h1ProposalInserted implies h1SameRoundCleared)
 
@@ -635,6 +787,8 @@ module CrosslinkHeightedProgressProjectionContractModel {
 
   val PhaseOrder =
     (h1NilCertObserved implies h1SameRoundCleared or H1NilCertificate) and
+    (h1WaitedOnMixed implies h1NilCertObserved or H1MixedPrecommitQuorumWithoutNilCert) and
+    (h1SameRoundCleared implies h1WaitedOnMixed) and
     (h1ProposalDelivered implies h1ProposalInserted) and
     (h1Prevoted != Set() implies h1ProposalDelivered) and
     (h1PrevotesDelivered != Set() implies Corr.subseteq(h1Prevoted)) and
@@ -652,6 +806,7 @@ module CrosslinkHeightedProgressProjectionContractModel {
     StateWellFormed and
     HeightCursorSequentialProjection and
     FutureHeightPristineUntilTransition and
+    MixedWaitDoesNotUnlockHeightedState and
     NilResamplingClearsOnlyActiveHeight and
     DecisionRequiresLocalPrecommitQuorumProjection and
     FinalityInOrder and
@@ -659,20 +814,32 @@ module CrosslinkHeightedProgressProjectionContractModel {
 
   temporal EventuallyHeightedProgressFinalizesTwoHeights =
     Next.weakFair(Set(progress)).implies(eventually(
-      latestFinalHeight == H2 and finalizedHeights == Set(H1, H2)
+      h1WaitedOnMixed and latestFinalHeight == H2 and finalizedHeights == Set(H1, H2)
     ))
 
   run nilResamplingClearsOnlyHeight1Test = {
     Init
       .then(SeedHeight1NilPrecommit(P1))
       .then(SeedHeight1NilPrecommit(P2))
-      .then(SeedHeight1NilPrecommit(P4))
+      .then(ObserveHeight1ValuePrecommit)
+      .then(WaitOnHeight1MixedPrecommitQuorum)
+      .then(all {
+        assert(h1WaitedOnMixed),
+        assert(not(h1SameRoundCleared)),
+        assert(h1CurrentRoundLock == Corr),
+        assert(H2Pristine),
+        assert(Safety),
+        Unchanged,
+      })
+      .then(ObserveHeight1NilCertCompleter)
       .then(AdvanceHeight1AfterNilCert(P1))
       .then(AdvanceHeight1AfterNilCert(P2))
       .then(AdvanceHeight1AfterNilCert(P3))
       .then(all {
         assert(h1SameRoundCleared),
         assert(h1NilCertObserved),
+        assert(h1WaitedOnMixed),
+        assert(h1CurrentRoundLock == Set()),
         assert(H2Pristine),
         assert(Safety),
         Unchanged,
@@ -683,7 +850,9 @@ module CrosslinkHeightedProgressProjectionContractModel {
     Init
       .then(SeedHeight1NilPrecommit(P2))
       .then(SeedHeight1NilPrecommit(P1))
-      .then(SeedHeight1NilPrecommit(P4))
+      .then(ObserveHeight1ValuePrecommit)
+      .then(WaitOnHeight1MixedPrecommitQuorum)
+      .then(ObserveHeight1NilCertCompleter)
       .then(AdvanceHeight1AfterNilCert(P3))
       .then(AdvanceHeight1AfterNilCert(P1))
       .then(AdvanceHeight1AfterNilCert(P2))
@@ -702,8 +871,10 @@ module CrosslinkHeightedProgressProjectionContractModel {
   run heightedProgressFinalizesTwoHeightsTest = {
     Init
       .then(SeedHeight1NilPrecommit(P1))
-      .then(SeedHeight1NilPrecommit(P4))
       .then(SeedHeight1NilPrecommit(P2))
+      .then(ObserveHeight1ValuePrecommit)
+      .then(WaitOnHeight1MixedPrecommitQuorum)
+      .then(ObserveHeight1NilCertCompleter)
       .then(AdvanceHeight1AfterNilCert(P2))
       .then(AdvanceHeight1AfterNilCert(P3))
       .then(AdvanceHeight1AfterNilCert(P1))
@@ -738,6 +909,7 @@ module CrosslinkHeightedProgressProjectionContractModel {
       .then(FinalizeHeight2)
       .then(all {
         assert(activeHeight == H2),
+        assert(h1WaitedOnMixed),
         assert(h1DecisionMade),
         assert(h2DecisionMade),
         assert(latestFinalHeight == H2),

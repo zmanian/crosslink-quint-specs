@@ -167,9 +167,10 @@ the Zebra Crosslink working branch:
   for mixed precommit sets: a mixed quorum can make validators wait, but it
   cannot unlock or resample until an actual nil-precommit certificate appears.
 - `spec/CrosslinkHeightedProgressProjectionContract.qnt` is a TLC-friendly
-  projection of the heighted round/finality composition: height 1 burns a
-  nil-certified unstable round, height 2 remains pristine until height 1
-  decides, and finality applies the decided heights in order.
+  projection of the heighted round/finality composition: height 1 waits on a
+  mixed precommit quorum without unlocking, burns the round only after a real
+  nil certificate arrives, height 2 remains pristine until height 1 decides,
+  and finality applies the decided heights in order.
 - `spec/CrosslinkStreamChurnRisk.qnt` adds a parameterized integer-risk model
   for the liveness intuition behind resampling: GST grows with validator-set
   size, global distribution can add quadratic delay, normal PoW head arrivals
