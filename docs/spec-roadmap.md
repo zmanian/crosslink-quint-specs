@@ -159,6 +159,12 @@ For Crosslink, matching that quality means adding:
   the declared `head - sigma` ancestor. It also models the stateless validation
   guards documented on `BftBlock::try_from`: expected version, sigma header
   count, consecutive header order, and valid PoW solutions.
+- `CrosslinkBftBlockValidationGap.qnt` makes the current implementation
+  correspondence gap executable: the intended constructor boundary rejects bad
+  version, header-order, and PoW-solution inputs, while the current prototype
+  `BftBlock::try_from` only rejects an incorrect sigma header count. The
+  shape model also records that deserialization has only a 2048-header
+  envelope cap and bypasses `try_from`.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
@@ -227,9 +233,9 @@ For Crosslink, matching that quality means adding:
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
-  the newest head-sigma, BFT-block-shape, fat-pointer-format, fat-pointer
-  production-vector, heighted validator-evidence, and heighted
-  authenticated-evidence models. It keeps
+  the newest head-sigma, BFT-block-shape, BFT-block validation-gap,
+  fat-pointer-format, fat-pointer production-vector, heighted
+  validator-evidence, and heighted authenticated-evidence models. It keeps
   default CI at bounded depth while giving reviewers a depth-5 Apalache check
   for the models most likely to hide cross-component state-space mistakes.
 

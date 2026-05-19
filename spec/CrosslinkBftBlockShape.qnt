@@ -28,6 +28,7 @@ module CrosslinkBftBlockShape {
   const MaxHeight: Height_t
   const Sigma: int
   const ExpectedVersion: int
+  const MaxSerializedHeaderCount: int
   const InitialFinalized: Snapshot_t
   const HeightOf: Snapshot_t -> Height_t
   const AncestorAt: Snapshot_t -> Height_t -> Block_t
@@ -45,6 +46,8 @@ module CrosslinkBftBlockShape {
     Sigma >= 1
   assume expected_version_is_positive =
     ExpectedVersion >= 1
+  assume max_serialized_header_count_covers_sigma =
+    MaxSerializedHeaderCount >= Sigma
   assume nil_is_not_snapshot =
     not(Snapshots.contains(NilSnapshot))
   assume snapshot_heights_are_in_range =
@@ -186,6 +189,22 @@ module CrosslinkBftBlockShape {
     HeadersMatchFindHeadersAfterDeclaredCandidate(proposal) and
     LastHeader(proposal) == proposal.tip
 
+  /*
+   Production gap model:
+   BftBlock::try_from currently checks only header count and then logs that the
+   documented validations are not yet implemented. ZcashDeserialize also builds
+   BftBlock directly, with a 2048-count envelope cap, instead of delegating to
+   try_from.
+   */
+  def CurrentTryFromImmediateChecksPass(proposal: Proposal_t): bool =
+    HeaderCountMatchesSigma(proposal)
+
+  def CurrentDeserializeEnvelopeAccepts(headerCount: int): bool =
+    headerCount <= MaxSerializedHeaderCount
+
+  val DeserializationHeaderCountBoundMatchesImplementation =
+    MaxSerializedHeaderCount == 2048
+
   val FindHeadersProposalsPassDeclaredHeadSigmaCheck =
     Snapshots.forall(tip =>
       not(HeadHasFullSigmaWindow(tip)) or
@@ -216,7 +235,8 @@ module CrosslinkBftBlockShape {
     FindHeadersProposalsPassDeclaredHeadSigmaCheck and
     FindHeadersProposalsFailFirstHeaderVotingCheck and
     FindHeadersProposalsExposeAccessorTipNotCandidate and
-    FindHeadersProposalsExposeVotingChildNotCandidate
+    FindHeadersProposalsExposeVotingChildNotCandidate and
+    DeserializationHeaderCountBoundMatchesImplementation
 
   action Init = all {
     firedAction' = "Init",
@@ -278,6 +298,55 @@ module CrosslinkBftBlockShapeTest {
       })
   }
 
+  run currentTryFromOnlyChecksHeaderCountGapTest = {
+    Init
+      .then({
+        val proposal = {
+          version: 1,
+          tip: "a4",
+          declaredCandidateHeight: 1,
+          headerCount: 3,
+          headers: Map(0 -> "bad2", 1 -> "a3", 2 -> "a4"),
+        }
+        all {
+          assert(CurrentTryFromImmediateChecksPass(proposal)),
+          assert(not(HeaderPowSolutionsAreValid(proposal))),
+          assert(not(StatelessBftBlockShapeValid(proposal))),
+          assert(not(DeclaredHeadSigmaCheckPasses(proposal))),
+          unchangedAll,
+        }
+      })
+  }
+
+  run currentTryFromAcceptsWrongHeaderVersionGapTest = {
+    Init
+      .then({
+        val proposal = {
+          version: 2,
+          tip: "a4",
+          declaredCandidateHeight: 1,
+          headerCount: 3,
+          headers: FindHeadersAfter("a1", "a4"),
+        }
+        all {
+          assert(CurrentTryFromImmediateChecksPass(proposal)),
+          assert(not(StatelessBftBlockShapeValid(proposal))),
+          assert(not(DeclaredHeadSigmaCheckPasses(proposal))),
+          unchangedAll,
+        }
+      })
+  }
+
+  run deserializationBypassesTryFromSigmaGapTest = {
+    Init
+      .then(all {
+        assert(CurrentDeserializeEnvelopeAccepts(2)),
+        assert(2 != Sigma),
+        assert(DeserializationHeaderCountBoundMatchesImplementation),
+        unchangedAll,
+      })
+  }
+
   run producedProposalExposesAccessorAndVotingCandidateMismatchTest = {
     Init
       .then({
@@ -324,6 +393,7 @@ module CrosslinkBftBlockShapeTest {
           headers: FindHeadersAfter("a1", "a4"),
         }
         all {
+          assert(not(CurrentTryFromImmediateChecksPass(proposal))),
           assert(not(DeclaredHeadSigmaCheckPasses(proposal))),
           unchangedAll,
         }
@@ -374,6 +444,7 @@ module CrosslinkBftBlockShapeModel {
     MaxHeight = 4,
     Sigma = 3,
     ExpectedVersion = 1,
+    MaxSerializedHeaderCount = 2048,
     InitialFinalized = "g",
     HeightOf = Map(
       "g" -> 0,
