@@ -403,6 +403,12 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkHeightedAuthenticatedProgressProjectionContract.qnt` strengthens
   that projection by requiring observer-local authenticated precommit evidence
   and fat-pointer signatures before either height can be finalized.
+- `CrosslinkRotatingAuthenticatedProgressProjectionContract.qnt` adds the next
+  TLC-friendly projection boundary: the same mixed-precommit recovery path now
+  decides height 1 under `{p1, p2, p3}`, rotates to `{p2, p3, p4}`, rejects
+  removed height-1 signers at height 2 and new height-2 signers for height-1
+  evidence, and finalizes both heights only after authenticated evidence from
+  signers authorized at each height.
 - `CrosslinkValidatorScaleFinalityProgressContract.qnt` composes that scale
   progress path with Crosslink finality. It reuses the scale-progress machine,
   adds a linear finalized-prefix cursor, and TLC checks eventual finalization

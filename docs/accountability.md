@@ -94,6 +94,7 @@ mixedPrecommitQuorumDoesNotClearHeightedLockTest
 CrosslinkMixedWaitProgressContractModel / EventuallyNilCertUnlocksMixedWait
 CrosslinkHeightedProgressProjectionContractModel / EventuallyHeightedProgressFinalizesTwoHeights
 CrosslinkHeightedAuthenticatedProgressProjectionContractModel / EventuallyHeightedAuthenticatedProgressFinalizesTwoHeights
+CrosslinkRotatingAuthenticatedProgressProjectionContractModel / EventuallyRotatingAuthenticatedProgressFinalizesTwoHeights
 precommitTimeoutDoesNotUnlockWithoutNilCertificateTest
 precommitTimeoutDoesNotClearHeightedLockTest
 ```
@@ -106,6 +107,11 @@ The authenticated progress projection adds the finality/evidence boundary:
 that same recovery path cannot finalize either BFT height until observer-local
 authenticated precommit evidence and matching fat-pointer signatures exist for
 the finalized height and round.
+
+The rotating authenticated projection adds the validator-set boundary: height 1
+evidence must be signed by height-1 validators, height 2 evidence must be
+signed by the rotated height-2 validators, and removed or newly added validators
+cannot be replayed into the wrong height's observer evidence.
 
 ## Conflicting Commit Accountability
 
