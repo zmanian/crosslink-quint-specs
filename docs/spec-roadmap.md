@@ -228,6 +228,11 @@ For Crosslink, matching that quality means adding:
   precommits carry the active height's dynamic candidate, preserves sigma
   across same-height nil-precommit resampling, and shows a decided height-1
   block leading to a height-2 proposal that uses telemetry-raised sigma.
+- `CrosslinkDynamicSigmaHeightedFinality.qnt` composes that dynamic stream with
+  Crosslink finality. It requires finalized BFT heights to come from local
+  heighted decisions, to match the active height's dynamic `head - sigma(h)`
+  candidate, and to satisfy the decided height's dynamic sigma tail before the
+  finality cursor advances.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
@@ -420,6 +425,11 @@ For Crosslink, matching that quality means adding:
   initial sigma, a nil-precommit certificate advances the round without
   changing height-1 sigma, and a height-2 proposal after a local decision uses
   the telemetry-raised `head - sigma(h)` candidate.
+- `CrosslinkDynamicSigmaHeightedFinalityModel` composes dynamic-sigma heighted
+  rounds with finality. It verifies nil-resampling followed by dynamic
+  finality, a telemetry-raised height-2 finality candidate with sigma 2, and
+  rejection of a height-2 finality witness that would only satisfy the older
+  fixed-sigma depth.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
@@ -444,10 +454,11 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
-  and the dynamic-sigma heighted-round bridge covers proposals/precommits over
-  `head - sigma(h)`, but not the broader production message transport or
-  dynamic-sigma auth/evidence/finality composition. The remaining work is also
-  to lift the current TLC-friendly progress contracts into a full imported-protocol
+  and the dynamic-sigma heighted-round/finality bridges cover
+  proposals/precommits/finality over `head - sigma(h)`, but not the broader
+  production message transport or dynamic-sigma auth/evidence composition.
+  The remaining work is also to lift the current TLC-friendly progress contracts
+  into a full imported-protocol
   temporal proof. A direct TLC run over the current imported composed model is
   blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC path, so
   this likely needs either a TLC-oriented imported-state refactor or improved

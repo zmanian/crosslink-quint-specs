@@ -90,6 +90,10 @@ the Zebra Crosslink working branch:
   precommits use `head - sigma(h)`, nil-precommit resampling keeps the active
   height's sigma fixed, and a BFT-height transition uses committed telemetry to
   change the next height's proposal depth.
+- `spec/CrosslinkDynamicSigmaHeightedFinality.qnt` composes that dynamic
+  `head - sigma(h)` round stream with Crosslink finality: finalized BFT heights
+  must come from local heighted decisions and satisfy the decided height's
+  dynamic sigma tail, including telemetry-raised sigma at later heights.
 - `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
   explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
   locally observed PoW head, including same-branch progress, fork switches, and
@@ -168,7 +172,8 @@ The current spec surface has three first-class Crosslink variants:
   the target, and raises sigma directly below the critical participation floor.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
-  resampling.
+  resampling, and `CrosslinkDynamicSigmaHeightedFinalityModel` checks that
+  finality uses the active BFT height's dynamic sigma tail.
 
 The intended safety rule is deliberately narrow:
 
@@ -212,7 +217,8 @@ npm run verify:temporal
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
 PoW-reorg stress, dynamic-sigma, dynamic-sigma head-sampling,
-dynamic-sigma heighted-round, head-sigma, BFT-block-shape,
+dynamic-sigma heighted-round, dynamic-sigma heighted-finality, head-sigma,
+BFT-block-shape,
 BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
 fat-pointer production-vector, fat-pointer
 authenticated-evidence, fixture-authenticated evidence, fixture-gossip
