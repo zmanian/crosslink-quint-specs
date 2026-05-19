@@ -13,6 +13,7 @@ module CrosslinkFatPointerAuthenticatedEvidence {
 
   var gossipedPrecommit: Height_t -> Round_t -> Set[RoundCommit_t]
   var observedProductionFatPointer: Set[FatPointer_t]
+  var observedProductionFatPointerWire: Set[FatPointerWire_t]
 
   def ProductionPrecommitAuthentic(
     h: Height_t,
@@ -46,11 +47,16 @@ module CrosslinkFatPointerAuthenticatedEvidence {
       GossipedMatchingPrecommitForSignature(fp, fp.signatures.get(i))
     )
 
+  def ProductionFatPointerWireEvidenceValid(wire: FatPointerWire_t): bool =
+    FatPointerWireEnvelopeValid(wire) and
+    ProductionFatPointerEvidenceValid(wire.fatPointer)
+
   action PipelineInit = all {
     acceptedFatPointers' = Set(),
     acceptedFatPointerWires' = Set(),
     gossipedPrecommit' = Heights.mapBy(_ => Rounds.mapBy(_ => Set())),
     observedProductionFatPointer' = Set(),
+    observedProductionFatPointerWire' = Set(),
     firedAction' = "PipelineInit",
   }
 
@@ -62,6 +68,7 @@ module CrosslinkFatPointerAuthenticatedEvidence {
   action KeepPipelineEvidence = all {
     gossipedPrecommit' = gossipedPrecommit,
     observedProductionFatPointer' = observedProductionFatPointer,
+    observedProductionFatPointerWire' = observedProductionFatPointerWire,
   }
 
   action GossipProductionPrecommit(
@@ -77,6 +84,7 @@ module CrosslinkFatPointerAuthenticatedEvidence {
           byRound.setBy(r, old => old.union(Set(commit)))
         ),
       observedProductionFatPointer' = observedProductionFatPointer,
+      observedProductionFatPointerWire' = observedProductionFatPointerWire,
       firedAction' = "GossipProductionPrecommit",
     }
 
@@ -87,7 +95,21 @@ module CrosslinkFatPointerAuthenticatedEvidence {
       acceptedFatPointerWires' = acceptedFatPointerWires,
       gossipedPrecommit' = gossipedPrecommit,
       observedProductionFatPointer' = observedProductionFatPointer.union(Set(fp)),
+      observedProductionFatPointerWire' = observedProductionFatPointerWire,
       firedAction' = "ObserveProductionFatPointer",
+    }
+
+  action ObserveProductionFatPointerWire(wire: FatPointerWire_t): bool =
+    all {
+      ProductionFatPointerWireEvidenceValid(wire),
+      acceptedFatPointers' = acceptedFatPointers.union(Set(wire.fatPointer)),
+      acceptedFatPointerWires' = acceptedFatPointerWires.union(Set(wire)),
+      gossipedPrecommit' = gossipedPrecommit,
+      observedProductionFatPointer' =
+        observedProductionFatPointer.union(Set(wire.fatPointer)),
+      observedProductionFatPointerWire' =
+        observedProductionFatPointerWire.union(Set(wire)),
+      firedAction' = "ObserveProductionFatPointerWire",
     }
 
   action PipelineStutter: bool =
@@ -109,15 +131,23 @@ module CrosslinkFatPointerAuthenticatedEvidence {
   val ObservedProductionFatPointersValid =
     observedProductionFatPointer.forall(ProductionFatPointerEvidenceValid)
 
+  val ObservedProductionFatPointerWiresValid =
+    observedProductionFatPointerWire.forall(ProductionFatPointerWireEvidenceValid)
+
   val ObservedFatPointersAlsoAcceptedByFormat =
     observedProductionFatPointer.subseteq(acceptedFatPointers)
+
+  val ObservedFatPointerWiresAlsoAcceptedByFormat =
+    observedProductionFatPointerWire.subseteq(acceptedFatPointerWires)
 
   val PipelineSafety =
     AcceptedFatPointersValid and
     AcceptedFatPointerWiresValid and
     GossipedPrecommitsAuthentic and
     ObservedProductionFatPointersValid and
-    ObservedFatPointersAlsoAcceptedByFormat
+    ObservedProductionFatPointerWiresValid and
+    ObservedFatPointersAlsoAcceptedByFormat and
+    ObservedFatPointerWiresAlsoAcceptedByFormat
 }
 
 module CrosslinkFatPointerAuthenticatedEvidenceTest {
@@ -154,6 +184,11 @@ module CrosslinkFatPointerAuthenticatedEvidenceTest {
     blockHash: blockHash,
     signatureCount: signatureCount,
     signatures: Map(0 -> s0, 1 -> s1, 2 -> s2, 3 -> s3),
+  }
+
+  def Wire(fatPointer: FatPointer_t, byteLen: int): FatPointerWire_t = {
+    fatPointer: fatPointer,
+    byteLen: byteLen,
   }
 
   def Commit(
@@ -227,10 +262,25 @@ module CrosslinkFatPointerAuthenticatedEvidenceTest {
       blankSig,
     )
 
+  pure val validHeight2Wire =
+    Wire(validHeight2FatPointer, 334)
+
+  pure val trailingByteWire =
+    Wire(validHeight2FatPointer, 335)
+
+  pure val oldHeightWire =
+    Wire(oldHeightFatPointer, 334)
+
   pure val TestFatPointers = Set(
     validHeight2FatPointer,
     duplicatePubKeyFatPointer,
     oldHeightFatPointer,
+  )
+
+  pure val TestFatPointerWires = Set(
+    validHeight2Wire,
+    trailingByteWire,
+    oldHeightWire,
   )
 
   pure val TestPrecommitEnvelopes = Set(
@@ -249,6 +299,8 @@ module CrosslinkFatPointerAuthenticatedEvidenceTest {
       GossipProductionPrecommit(env.height, env.round, env.commit),
       nondet fp = oneOf(TestFatPointers)
       ObserveProductionFatPointer(fp),
+      nondet wire = oneOf(TestFatPointerWires)
+      ObserveProductionFatPointerWire(wire),
       PipelineStutter,
     }
 
@@ -257,6 +309,7 @@ module CrosslinkFatPointerAuthenticatedEvidenceTest {
     acceptedFatPointerWires' = acceptedFatPointerWires,
     gossipedPrecommit' = gossipedPrecommit,
     observedProductionFatPointer' = observedProductionFatPointer,
+    observedProductionFatPointerWire' = observedProductionFatPointerWire,
     firedAction' = firedAction,
   }
 
@@ -277,6 +330,37 @@ module CrosslinkFatPointerAuthenticatedEvidenceTest {
   run cannotObserveFatPointerBeforeGossipedPrecommitsTest = {
     PipelineInit
       .then(ObserveProductionFatPointer(validHeight2FatPointer))
+      .fail()
+  }
+
+  run observesProductionFatPointerWireAfterGossipedPrecommitsTest = {
+    PipelineInit
+      .then(GossipProductionPrecommit(2, 0, k2h2))
+      .then(GossipProductionPrecommit(2, 0, k3h2))
+      .then(GossipProductionPrecommit(2, 0, k4h2))
+      .then(ObserveProductionFatPointerWire(validHeight2Wire))
+      .then(all {
+        assert(observedProductionFatPointerWire.contains(validHeight2Wire)),
+        assert(observedProductionFatPointer.contains(validHeight2FatPointer)),
+        assert(acceptedFatPointerWires.contains(validHeight2Wire)),
+        assert(acceptedFatPointers.contains(validHeight2FatPointer)),
+        assert(PipelineSafety),
+        unchangedAll,
+      })
+  }
+
+  run cannotObserveFatPointerWireBeforeGossipedPrecommitsTest = {
+    PipelineInit
+      .then(ObserveProductionFatPointerWire(validHeight2Wire))
+      .fail()
+  }
+
+  run trailingByteFatPointerWireRejectedDespiteGossipTest = {
+    PipelineInit
+      .then(GossipProductionPrecommit(2, 0, k2h2))
+      .then(GossipProductionPrecommit(2, 0, k3h2))
+      .then(GossipProductionPrecommit(2, 0, k4h2))
+      .then(ObserveProductionFatPointerWire(trailingByteWire))
       .fail()
   }
 

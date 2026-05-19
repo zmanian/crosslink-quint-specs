@@ -70,8 +70,9 @@ the Zebra Crosslink working branch:
   signers, and derivation from producer round data.
 - `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
   production-shaped fat pointer to the authenticated evidence path: a fat
-  pointer can only be observed after each active signer entry has a matching
-  gossiped precommit at the same height, round, and value.
+  pointer wire can only be observed after its envelope is exact and each active
+  signer entry has a matching gossiped precommit at the same height, round, and
+  value.
 
 The round-recovery model has two first-class instantiations:
 

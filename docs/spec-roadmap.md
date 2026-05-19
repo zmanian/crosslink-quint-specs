@@ -170,11 +170,11 @@ For Crosslink, matching that quality means adding:
   rejected.
 - `CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
   production-shaped signer vector to the authenticated observer pipeline. A
-  production fat pointer can only be observed after every active signer entry
-  is backed by a matching gossiped precommit at the same BFT height, round, and
-  value; the witnesses reject observation before gossip, missing signer
-  precommits, duplicate signer entries, and removed-validator next-height
-  precommits.
+  production fat-pointer wire can only be observed after its counted envelope
+  is exact and every active signer entry is backed by a matching gossiped
+  precommit at the same BFT height, round, and value; the witnesses reject
+  observation before gossip, missing signer precommits, trailing-byte wires,
+  duplicate signer entries, and removed-validator next-height precommits.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
