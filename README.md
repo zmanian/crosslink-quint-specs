@@ -34,6 +34,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkHeightedMessageAuth.qnt` adds the BFT-height dimension to
   the authentication boundary so signed proposals, votes, and fat-pointer
   signatures bind the claimed height as well as the round and value.
+- `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
+  BFT heights, requiring each height's commit signers to be authorized by that
+  height's active validator set.
 
 The round-recovery model has two first-class instantiations:
 
@@ -92,6 +95,7 @@ quint typecheck spec/CrosslinkEvidenceGossip.qnt
 quint typecheck spec/CrosslinkHeightedEvidenceGossip.qnt
 quint typecheck spec/CrosslinkMessageAuth.qnt
 quint typecheck spec/CrosslinkHeightedMessageAuth.qnt
+quint typecheck spec/CrosslinkValidatorSetChange.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -113,6 +117,7 @@ quint test spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel 
 quint test spec/CrosslinkHeightedEvidenceGossip.qnt --main=CrosslinkHeightedEvidenceGossipModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --max-samples=100 --backend=rust
 
 quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -125,6 +130,7 @@ quint verify spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipMode
 quint verify spec/CrosslinkHeightedEvidenceGossip.qnt --main=CrosslinkHeightedEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 ```
 
 ## Source

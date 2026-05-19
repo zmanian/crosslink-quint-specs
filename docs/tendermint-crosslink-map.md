@@ -23,7 +23,7 @@ finality semantics.
 | Height/round/step machine | `round`, `step`, `Next` in `CrosslinkResampling.qnt`; `nextBftHeight`, `decision`, and `Next` in `CrosslinkMultiHeight.qnt`; `height`, per-height `round`/`step`, and `Next` in `CrosslinkHeightedRound.qnt` | The first height-indexed round-machine slice now exists, but it is not yet composed with every richer one-height rule. |
 | Proposer by round | `Proposer` constant | Currently explicit finite map; later should model weighted proposer selection or abstract it behind assumptions. |
 | Proposal with `validRound` | `Propose_t.validRound`, `ValidRoundJustified`, `AcceptableProposalFor`, `InsertProposal`; heighted equivalents in `CrosslinkHeightedRound.qnt` | A non-`-1` valid round must be below the proposal round and backed by a prevote quorum for the proposed value at the same BFT height. |
-| Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower` | Current main examples are equal-weight; `CrosslinkWeightedQuorumModel` checks non-uniform power. |
+| Voting power | `VotingPower`, `TotalVotingPower`, `FaultyVotingPowerBound`, `QuorumVotingPower`, `CrosslinkValidatorSetChange.qnt` | Current examples cover equal-weight, non-uniform power, and a first dynamic validator-set rotation slice. |
 | Prevote quorum | `LocalPrevoteQuorum` | Used for the value precommit transition and computed over delivered votes in the receiver's local view. |
 | Precommit quorum | `LocalPrecommitQuorum`, `LocalNilPrecommitCert`, `LocalAnyPrecommitQuorum` | Used for decision, nil-certificate recovery, and round advancement over delivered precommits. |
 | Local delivery | `seenPropose`, `seenPrevote`, `seenPrecommit`, `DeliverProposal`, `DeliverPrevote`, `DeliverPrecommit` | Main round receive guards now use local delivery state rather than global broadcast state. |
@@ -170,7 +170,7 @@ branch.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
   `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
 - Expand validator-set modeling beyond the current finite weighted examples to
-  dynamic set changes and production signer-set formats.
+  production signer-set formats and implementation-linked test vectors.
 - Connect the standalone evidence gossip model to production gossip messages
   and signature verification.
 - Expand bounded verification beyond `Safety` at depth 3.

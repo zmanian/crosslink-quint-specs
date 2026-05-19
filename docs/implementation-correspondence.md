@@ -25,6 +25,7 @@ implementation that each rule has a clear code counterpart.
 | Heighted `Timeout*` rules | Per-BFT-height timeout handling | The heighted round-machine slice scopes timeouts to the validator's active BFT height and checks that timeout-only round advancement does not clear heighted locks. |
 | `DeliverProposal` / `DeliverPrevote` / `DeliverPrecommit` | P2P receive path plus per-peer/per-validator message cache | Delivery is modeled separately from broadcast. A receiver-local quorum only exists after the signed messages have been delivered into that validator's local view, and active round transitions now consume that local view. |
 | `VotingPowerOf` / `QuorumVotingPower` | Validator-set voting power and quorum threshold | The current executable examples include both equal-weight and non-uniform-power instances. |
+| `CrosslinkValidatorSetChange.qnt` / `DecideAt` | Validator-set update at BFT-height boundaries | A decided value installs the next validator set; removed validators cannot contribute to quorum at the next BFT height. |
 
 ## Crosslink Finality
 
@@ -58,7 +59,7 @@ implementation that each rule has a clear code counterpart.
 ## Gaps To Close
 
 - Connect weighted signer sets to the concrete Tenderlink validator-set and
-  signature formats.
+  signature formats, including the dynamic validator-set rotation slice.
 - Connect the abstract message-authentication, evidence, and standalone gossip
   models to concrete signature verification, serialized message bytes, and
   production gossip.

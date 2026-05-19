@@ -31,7 +31,8 @@ Status terms:
 | Local receive/delivery semantics | `seenPropose`, `seenPrevote`, `seenPrecommit`, `Deliver*`; `test:local-delivery` | covered | Needs network scheduling/fairness assumptions. |
 | Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout`; `precommitTimeoutDoesNotClearHeightedLockTest` | partial | Needs fuller timeout scheduling and temporal properties. |
 | Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `test:heighted-round`; `verify:heighted-round-safety` | partial | First receive-reactive heighted slice; not yet composed with auth/evidence rules. |
-| Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Dynamic validator sets and production signer-set formats remain open. |
+| Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Production signer-set formats remain open. |
+| Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `test:validator-set-change`; `verify:validator-set-change-safety` | partial | Standalone validator-set rotation model; not yet linked to production signer-set formats. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
 | Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety` | partial | Abstract standalone models; not yet wired into production gossip. |
 | Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `test:message-auth`; `test:heighted-message-auth`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety` | partial | Abstract signature metadata; not yet linked to concrete serialization or crypto. |
@@ -58,7 +59,8 @@ message evidence, local delivery, timeout, liveness witnesses, proposal
 validity, valid-round evidence, fork finality, composed resampling/finality,
 composed liveness, multi-height finality, height-indexed round-machine
 behavior, heighted finality composition, evidence gossip, heighted evidence
-gossip, message authentication, and heighted message authentication.
+gossip, message authentication, heighted message authentication, and
+validator-set changes.
 
 `npm run verify` currently runs bounded Apalache safety checks at depth 3 for:
 
@@ -74,6 +76,7 @@ CrosslinkEvidenceGossipModel
 CrosslinkHeightedEvidenceGossipModel
 CrosslinkMessageAuthModel
 CrosslinkHeightedMessageAuthModel
+CrosslinkValidatorSetChangeModel
 ```
 
 ## Remaining Work
@@ -85,6 +88,6 @@ The goal is not complete yet. The strongest remaining gaps are:
 - link abstract proposal validity to concrete Crosslink block/header data;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
-- model dynamic validator-set changes and production signer-set formats;
+- link dynamic validator-set changes to production signer-set formats;
 - expand bounded verification depth and add targeted counterexample searches
   for the new standalone models.

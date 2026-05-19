@@ -117,6 +117,10 @@ For Crosslink, matching that quality means adding:
   instead of raw signer counts. The default examples remain equal-weight, and
   `CrosslinkWeightedQuorumModel` checks that two high-power validators can form
   a quorum when their summed power reaches the threshold.
+- `CrosslinkValidatorSetChange.qnt` adds the first dynamic validator-set
+  slice: a BFT decision records the active signer set for that height and
+  installs the decided next validator set for the following height. It rejects
+  removed validators signing at the next height and signer sets without quorum.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -186,6 +190,7 @@ For Crosslink, matching that quality means adding:
   prefix. The witnesses cover nil-precommit resampling followed by finality,
   rejection of undecided-height finality, and rejection of a later fork after
   an earlier BFT height is final.
-- The remaining multi-height work is to connect the heighted auth and evidence
-  models to production serialization, signatures, and gossip transport, and to
-  replace the scripted liveness witnesses with temporal properties.
+- The remaining multi-height work is to connect the heighted auth, evidence,
+  and validator-set models to production serialization, signatures, signer-set
+  formats, and gossip transport, and to replace the scripted liveness witnesses
+  with temporal properties.
