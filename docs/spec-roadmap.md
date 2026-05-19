@@ -167,6 +167,12 @@ For Crosslink, matching that quality means adding:
   quorum, rejects forged certified-power sidecars, and still checks the
   three-signature f = 1 quorum; larger validator-set packet fixtures remain
   future work.
+- `CrosslinkTenderlinkProposalPolTransport.qnt` adds the transport bridge for
+  that rule: the non-nil proposal chunk and the weighted or f = 1 POL prevote
+  packet must first be received as decrypted, exact compact Tenderlink
+  consensus packets before the decoded POL evidence can be accepted. Witnesses
+  reject missing proposal transport, missing POL transport, low-power POL,
+  wrong proposal packet type, wrong POL payload, and wrong packet bytes.
 - `CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the compact Tenderlink
   consensus packet envelopes around those payloads: a 16-byte little-endian
   `PacketHeader` tag/ack prefix, including a nonzero
@@ -571,7 +577,10 @@ For Crosslink, matching that quality means adding:
   unjustified valid-round state. `CrosslinkTenderlinkProposalPolEvidence.qnt`
   now pins the production-shaped bridge for this rule by requiring non-nil
   `validRound` proposal chunks to match canonical prevote-packet POL evidence
-  by height, round, and value id.
+  by height, round, value id, and packet-derived voting power.
+  `CrosslinkTenderlinkProposalPolTransport.qnt` then requires that proposal
+  chunk and POL packet to be received through exact decrypted compact
+  Tenderlink packet envelopes before transported POL evidence is accepted.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 - `docs/dynamic-sigma-telemetry-integration.md` maps the dynamic-sigma

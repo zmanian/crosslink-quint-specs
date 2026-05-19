@@ -72,6 +72,10 @@ non-nil `validRound` proposal chunks must be paired with canonical Tenderlink
 prevote packet evidence for the same height, valid round, value id, and
 packet-derived quorum power. The bounded bridge covers both a weighted
 two-signature quorum and a three-signature f = 1 quorum.
+`CrosslinkTenderlinkProposalPolTransport.qnt` adds the adjacent transport
+gate: transported POL evidence is accepted only after the matching proposal
+chunk and prevote packet have arrived as decrypted exact compact Tenderlink
+packets.
 
 ### Moving Values
 

@@ -56,6 +56,10 @@ the Zebra Crosslink working branch:
   `validRound` proposal chunks to production-shaped Tenderlink prevote packet
   evidence, deriving certified voting power from packet entries and requiring
   matching height, round, value id, and quorum power before acceptance.
+- `spec/CrosslinkTenderlinkProposalPolTransport.qnt` links that decoded POL
+  evidence to compact Tenderlink transport receipt: the non-nil proposal chunk
+  and prevote POL packet must first appear in decrypted, exact consensus
+  packet envelopes before accepted transported evidence is recorded.
 - `spec/CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the legacy
   Tenderlink compact consensus packet envelopes: the 16-byte `PacketHeader`
   tag/ack prefix, including nonzero `ack_latest`/`ack_field` bytes, proposal
@@ -430,6 +434,7 @@ quint typecheck spec/CrosslinkTenderlinkVoteSignBytes.qnt
 quint typecheck spec/CrosslinkTenderlinkProposalChunkSignBytes.qnt
 quint typecheck spec/CrosslinkTenderlinkVotePacketFormat.qnt
 quint typecheck spec/CrosslinkTenderlinkProposalPolEvidence.qnt
+quint typecheck spec/CrosslinkTenderlinkProposalPolTransport.qnt
 quint typecheck spec/CrosslinkTenderlinkConsensusPacketFormat.qnt
 quint typecheck spec/CrosslinkTenderlinkNonceAckTransport.qnt
 quint typecheck spec/CrosslinkTenderlinkStatusPacketFormat.qnt
@@ -547,6 +552,7 @@ quint test spec/CrosslinkTenderlinkVoteSignBytes.qnt --main=CrosslinkTenderlinkV
 quint test spec/CrosslinkTenderlinkProposalChunkSignBytes.qnt --main=CrosslinkTenderlinkProposalChunkSignBytesModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkVotePacketFormat.qnt --main=CrosslinkTenderlinkVotePacketFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkProposalPolEvidence.qnt --main=CrosslinkTenderlinkProposalPolEvidenceModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkTenderlinkProposalPolTransport.qnt --main=CrosslinkTenderlinkProposalPolTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTenderlinkConsensusPacketFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --max-samples=100 --backend=rust
@@ -580,6 +586,7 @@ quint verify spec/CrosslinkTenderlinkVoteSignBytes.qnt --main=CrosslinkTenderlin
 quint verify spec/CrosslinkTenderlinkProposalChunkSignBytes.qnt --main=CrosslinkTenderlinkProposalChunkSignBytesModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkVotePacketFormat.qnt --main=CrosslinkTenderlinkVotePacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkProposalPolEvidence.qnt --main=CrosslinkTenderlinkProposalPolEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkTenderlinkProposalPolTransport.qnt --main=CrosslinkTenderlinkProposalPolTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTenderlinkConsensusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --init=TransportInit --step=Next --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -671,6 +678,7 @@ quint verify spec/CrosslinkTenderlinkVoteSignBytes.qnt --main=CrosslinkTenderlin
 quint verify spec/CrosslinkTenderlinkProposalChunkSignBytes.qnt --main=CrosslinkTenderlinkProposalChunkSignBytesModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkVotePacketFormat.qnt --main=CrosslinkTenderlinkVotePacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkProposalPolEvidence.qnt --main=CrosslinkTenderlinkProposalPolEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkTenderlinkProposalPolTransport.qnt --main=CrosslinkTenderlinkProposalPolTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTenderlinkConsensusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --init=TransportInit --step=Next --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
