@@ -40,8 +40,8 @@ finality semantics.
 | Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink`, `CrosslinkHeightedRound.qnt` | A `2f + 1 PRECOMMIT nil` cert clears only same-height/same-round cached/lock/valid state. Mixed precommit quorums can advance waiting, but do not unlock. |
-| Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
-| Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt` | Wires a resampled BFT decision into Crosslink finality, including a first height-indexed composition. |
+| Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkFinalityProgressContract.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights; the progress contract adds a TLC-checked decision-to-finality handoff. |
+| Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkComposedProgressContract.qnt` | Wires a resampled BFT decision into Crosslink finality, including a first height-indexed composition and a TLC-sized nil-resampling/finality progress contract. |
 | Evidence gossip | `CrosslinkEvidenceGossip.qnt`, `CrosslinkHeightedEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence; the heighted variant requires gossip, observed precommits, and fat pointers to agree on BFT height. |
 | Message authentication | `CrosslinkMessageAuth.qnt`, `CrosslinkHeightedMessageAuth.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted; the heighted variant binds BFT height into the sign bytes. |
 
@@ -175,7 +175,8 @@ branch.
 - Connect the standalone evidence gossip model to production gossip messages
   and signature verification.
 - Expand bounded verification beyond `Safety` at depth 3.
-- Lift the bounded fair-scheduler liveness model into temporal liveness checks
-  parameterized by stream stability after GST, and calibrate the
-  `CrosslinkStreamChurnRisk.qnt` / `CrosslinkPowReorgStress.qnt` layers with
-  production or analysis-backed distributions.
+- Lift the current TLC-friendly progress contracts into temporal liveness
+  checks over the full imported protocol state, parameterized by stream
+  stability after GST, and calibrate the `CrosslinkStreamChurnRisk.qnt` /
+  `CrosslinkPowReorgStress.qnt` layers with production or analysis-backed
+  distributions.

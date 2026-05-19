@@ -40,8 +40,8 @@ Status terms:
 | Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `CrosslinkFatPointerFormat.qnt` duplicate-pubkey, removed-validator, wrong-payload, cross-height replay, low-power, wire-offset, trailing-byte, truncated-wire, and producer-round-data derivation witnesses; `CrosslinkFatPointerProductionVectors.qnt` `try_from_bytes` reversed-slice gap witness; `CrosslinkFatPointerAuthenticatedEvidence.qnt` gossip-before-observe, missing-signer, and trailing-byte wire witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
 | Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; production data/linkage remains abstract. |
-| Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:composed`; `test:heighted-finality`; `verify:composed-safety`; `verify:heighted-finality-safety` | partial | Heighted composition exists; production data/linkage remains abstract. |
-| Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel`, `CrosslinkSchedulerLivenessModel`, `CrosslinkSchedulerProgressContractModel`; `test:scheduler-liveness`; `test:scheduler-progress-contract`; `verify:scheduler-liveness-safety`; `verify:scheduler-progress-contract-safety`; `verify:temporal` | partial | Bounded scheduler-parametric checks and a TLC temporal scheduler contract now exist; no full composed protocol temporal liveness proof yet. |
+| Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `spec/CrosslinkComposedProgressContract.qnt`; `test:composed`; `test:heighted-finality`; `test:composed-progress-contract`; `verify:composed-safety`; `verify:heighted-finality-safety`; `verify:composed-progress-contract-safety` | partial | Heighted composition and a TLC-sized composed progress contract exist; production data/linkage and a temporal proof over the full imported protocol remain abstract. |
+| Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel`, `CrosslinkSchedulerLivenessModel`, `CrosslinkSchedulerProgressContractModel`, `CrosslinkFinalityProgressContractModel`, `CrosslinkComposedProgressContractModel`; `test:scheduler-liveness`; `test:scheduler-progress-contract`; `test:finality-progress-contract`; `test:composed-progress-contract`; `verify:scheduler-liveness-safety`; `verify:scheduler-progress-contract-safety`; `verify:finality-progress-contract-safety`; `verify:composed-progress-contract-safety`; `verify:temporal` | partial | Bounded scheduler-parametric checks and TLC temporal contracts now cover scheduler progress, decision-to-finality progress, and a self-contained composed nil-resampling/finality progress slice; no full imported round-machine temporal liveness proof yet. |
 | CI for checks | `package.json` scripts and `.github/workflows/quint.yml` | covered | Latest pushed commit may still be running until GitHub Actions completes. |
 | Documentation mapping to Tendermint | `docs/tendermint-crosslink-map.md`, `docs/implementation-correspondence.md`, `docs/spec-roadmap.md` | covered | Should keep updated as models become less abstract. |
 
@@ -59,8 +59,9 @@ npm run verify:temporal
 
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
 message evidence, local delivery, timeout, liveness witnesses, scheduler
-liveness, scheduler progress contract, stream-churn risk, PoW-reorg stress,
-head-sigma sampling, heighted head-sigma rounds, BFT-block header shape checks,
+liveness, scheduler progress contract, finality progress contract, composed
+progress contract, stream-churn risk, PoW-reorg stress, head-sigma sampling,
+heighted head-sigma rounds, BFT-block header shape checks,
 BFT-block validation-gap checks, BFT-block production-vector checks,
 fat-pointer signer-vector format checks, fat-pointer production-vector checks,
 fat-pointer
@@ -91,6 +92,8 @@ CrosslinkHeightedValidatorEvidenceModel
 CrosslinkHeightedAuthenticatedEvidenceModel
 CrosslinkSchedulerLivenessModel
 CrosslinkSchedulerProgressContractModel
+CrosslinkFinalityProgressContractModel
+CrosslinkComposedProgressContractModel
 CrosslinkStreamChurnRiskModel
 CrosslinkPowReorgStressModel
 CrosslinkHeadSigmaSamplingModel
@@ -104,14 +107,17 @@ CrosslinkFatPointerAuthenticatedEvidenceModel
 ```
 
 `npm run verify:extended` is a non-default deeper gate for the newest
-stream-churn, PoW-reorg stress, head-sigma stream, BFT-block-shape,
-BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
-fat-pointer production-vector, and evidence-composition models.
+finality-progress, composed-progress, stream-churn, PoW-reorg stress,
+head-sigma stream, BFT-block-shape, BFT-block validation-gap, BFT-block
+production-vector, fat-pointer-format, fat-pointer production-vector, and
+evidence-composition models.
 It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
 also checked at depth 8, for:
 
 ```text
 CrosslinkStreamChurnRiskModel
+CrosslinkFinalityProgressContractModel
+CrosslinkComposedProgressContractModel
 CrosslinkPowReorgStressModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
@@ -129,17 +135,21 @@ CrosslinkHeightedAuthenticatedEvidenceModel
 
 ```text
 CrosslinkSchedulerProgressContractModel / EventuallyStableDecision
+CrosslinkFinalityProgressContractModel / EventuallyFinalized
+CrosslinkComposedProgressContractModel / EventuallyFinalizesStableDecision
 ```
 
-This is a temporal progress contract for the scheduler envelope, not yet a
-temporal proof over the full imported protocol state.
+These are temporal progress contracts for the scheduler envelope, the
+scheduler-to-finality handoff, and a self-contained composed
+nil-resampling/finality slice. They are not yet temporal proofs over the full
+imported protocol state.
 
 ## Remaining Work
 
 The goal is not complete yet. The strongest remaining gaps are:
 
-- lift the TLC-checked scheduler progress contract into a general temporal
-  liveness proof over the composed protocol under post-GST stream stability;
+- lift the TLC-checked progress contracts into a general temporal liveness
+  proof over the imported composed protocol under post-GST stream stability;
 - calibrate the current parameterized stream-churn and PoW-reorg stress layers
   against measured or assumed distributions for PoW block arrivals,
   propagation races, GST/validator-set scaling, and long-tail reorg depth;

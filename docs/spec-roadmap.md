@@ -142,6 +142,13 @@ For Crosslink, matching that quality means adding:
   state from `CrosslinkSchedulerLiveness.qnt`, keeps only progress transitions
   before decision, and TLC checks eventual entry into the stable decision
   phase over the complete finite state graph.
+- `CrosslinkFinalityProgressContract.qnt` adds the next temporal handoff:
+  once the scheduler contract reaches a stable decision, a fair finality
+  applicator eventually advances the Crosslink finality cursor.
+- `CrosslinkComposedProgressContract.qnt` adds a stronger self-contained
+  temporal contract that combines nil-precommit-burned rounds, stable
+  proposal/vote/precommit delivery, finality-candidate validation, fork-prefix
+  safety, and eventual finality of the stable candidate.
 - `CrosslinkStreamChurnRisk.qnt` adds a bounded integer-risk model for the
   validator-set-size intuition behind nil-precommit resampling. It relates
   linear/quadratic GST growth, the prevote-to-precommit vulnerability window,
@@ -248,7 +255,8 @@ For Crosslink, matching that quality means adding:
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
-  the newest stream-churn-risk, PoW-reorg-stress, head-sigma,
+  the newest finality-progress, composed-progress, stream-churn-risk,
+  PoW-reorg-stress, head-sigma,
   BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
   fat-pointer-format, fat-pointer production-vector, heighted
   validator-evidence, and heighted authenticated-evidence models. It keeps
@@ -269,6 +277,13 @@ For Crosslink, matching that quality means adding:
   contract for that scheduler envelope. It is not yet a full composed protocol
   liveness proof, because current temporal backends have trouble with the full
   imported round-machine state.
+- `CrosslinkFinalityProgressContractModel` extends the same TLC-friendly
+  envelope from stable decision to finality cursor advancement.
+- `CrosslinkComposedProgressContractModel` adds a self-contained composed
+  nil-resampling/finality temporal check. It verifies that after finitely many
+  nil-precommit-burned rounds, a stable stream window can decide and eventually
+  finalize a valid `head - sigma` candidate while preserving a linear finalized
+  PoW prefix and rejecting the competing fork candidate.
 - `CrosslinkComposedLivenessModel` now has an executable end-to-end liveness
   script that includes explicit local delivery of the proposal, prevotes, and
   precommits before finalizing the fresh candidate.
@@ -309,7 +324,8 @@ For Crosslink, matching that quality means adding:
   validator-set, BFT-block-shape, fat-pointer-format, and production-shaped
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and gossip transport, and to lift the
-  scheduler temporal contract into a full composed protocol temporal proof.
+  current TLC-friendly progress contracts into a full imported-protocol
+  temporal proof.
   The current stream-churn and PoW-reorg stress models are parameterized but
   not calibrated; a later stochastic analysis should replace their integer
   risk numerators and finite fork witnesses with measured or assumed

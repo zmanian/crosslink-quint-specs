@@ -50,6 +50,13 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkSchedulerProgressContract.qnt` extracts the scheduler envelope
   into a verifier-friendly temporal contract. TLC checks that the progress-only
   scheduler envelope eventually reaches the stable decision phase.
+- `spec/CrosslinkFinalityProgressContract.qnt` extends that temporal scheduler
+  contract with a fair finality applicator, checking that a stable decision is
+  eventually reflected in the Crosslink finality cursor.
+- `spec/CrosslinkComposedProgressContract.qnt` adds a stronger TLC-friendly
+  composed progress contract: finitely many nil-precommit-burned rounds,
+  stable proposal/vote/precommit delivery, finality-candidate validation, and
+  eventual advancement of a linear finalized PoW prefix.
 - `spec/CrosslinkStreamChurnRisk.qnt` adds a parameterized integer-risk model
   for the liveness intuition behind resampling: GST grows with validator-set
   size, global distribution can add quadratic delay, normal PoW head arrivals
@@ -146,16 +153,18 @@ npm run verify:temporal
 ```
 
 `npm run verify:extended` is intentionally separate from the default CI gate.
-It runs deeper bounded Apalache checks for the newer stream-churn risk,
-PoW-reorg stress, head-sigma, BFT-block-shape, BFT-block validation-gap,
-BFT-block production-vector, fat-pointer-format, fat-pointer production-vector,
-fat-pointer
+It runs deeper bounded Apalache checks for the newer finality-progress,
+composed-progress, stream-churn risk, PoW-reorg stress, head-sigma,
+BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
+fat-pointer-format, fat-pointer production-vector, fat-pointer
 authenticated-evidence, validator-evidence, and authenticated evidence
 composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
-small scheduler progress contract, because TLC has mature temporal property
-support while Apalache's temporal support is still experimental.
+small scheduler progress contract, the scheduler-plus-finality contract, and
+the composed nil-resampling/finality progress contract, because TLC has mature
+temporal property support while Apalache's temporal support is still
+experimental.
 
 Or run the commands directly:
 
@@ -175,6 +184,8 @@ quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkHeightedAuthenticatedEvidence.qnt
 quint typecheck spec/CrosslinkSchedulerLiveness.qnt
 quint typecheck spec/CrosslinkSchedulerProgressContract.qnt
+quint typecheck spec/CrosslinkFinalityProgressContract.qnt
+quint typecheck spec/CrosslinkComposedProgressContract.qnt
 quint typecheck spec/CrosslinkStreamChurnRisk.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
@@ -196,6 +207,8 @@ quint test spec/CrosslinkResampling.qnt --main=CrosslinkTimeoutModel --max-sampl
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingStableWindowLiveness --max-samples=100 --backend=rust
 quint test spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkSchedulerProgressContractModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
@@ -238,6 +251,10 @@ quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeighte
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3
 quint verify spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkSchedulerProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
+quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
+quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -263,6 +280,8 @@ quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeighte
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 
 quint verify spec/CrosslinkSchedulerProgressContract.qnt --backend=tlc --main=CrosslinkSchedulerProgressContractModel --init=Init --step=Next --temporal=EventuallyStableDecision --max-steps=30
+quint verify spec/CrosslinkFinalityProgressContract.qnt --backend=tlc --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --temporal=EventuallyFinalized --max-steps=35
+quint verify spec/CrosslinkComposedProgressContract.qnt --backend=tlc --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --temporal=EventuallyFinalizesStableDecision --max-steps=35
 ```
 
 ## Source
