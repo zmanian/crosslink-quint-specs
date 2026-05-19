@@ -38,6 +38,7 @@ finality semantics.
 | PoW stream snapshot | `Snapshot_t`, `Stream(round)`, `CrosslinkHeadSigmaSampling.qnt` | Models the sampled `head - sigma` candidate and now has a standalone fork-tree-derived sampling slice. |
 | Static proposal validity | `StaticProposalValidity` | Splits validity into structural validity, PoW-chain validity, and finality-candidate validity. |
 | Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
+| PoW stochastic assumptions | `CrosslinkPowStochasticAssumptions.qnt`, `CrosslinkStreamChurnRisk.qnt`, `CrosslinkPowReorgStress.qnt` | Separates normal PoW-arrival exposure from long-reorg-tail exposure: the 75-second post-Blossom block target is the denominator, validator-set size and GST shape the vulnerable-window numerator, sigma reduces only the assumed long-reorg-tail numerator, and finite churn burns rounds under nil-precommit resampling. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink`, `CrosslinkHeightedRound.qnt` | A `2f + 1 PRECOMMIT nil` cert clears only same-height/same-round cached/lock/valid state. Mixed precommit quorums can advance waiting, but do not unlock. |
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkFinalityProgressContract.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights; the progress contract adds a TLC-checked decision-to-finality handoff. |
@@ -177,6 +178,8 @@ branch.
 - Expand bounded verification beyond `Safety` at depth 3.
 - Lift the current TLC-friendly progress contracts into temporal liveness
   checks over the full imported protocol state, parameterized by stream
-  stability after GST, and calibrate the `CrosslinkStreamChurnRisk.qnt` /
-  `CrosslinkPowReorgStress.qnt` layers with production or analysis-backed
-  distributions.
+  stability after GST.
+- Calibrate the `CrosslinkPowStochasticAssumptions.qnt`,
+  `CrosslinkStreamChurnRisk.qnt`, and `CrosslinkPowReorgStress.qnt` layers
+  with measured or analysis-backed block-arrival, propagation-race, GST-scaling,
+  and long-tail reorg-depth distributions.
