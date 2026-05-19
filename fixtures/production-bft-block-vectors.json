@@ -2,8 +2,9 @@
   "schema": 1,
   "source": {
     "repo": "zebra-crosslink",
-    "commit": "87a7205ab2d78dbb7e45955f552dc0c2824eb510",
-    "fixtureGlob": "crosslink-test-data/test_pos_block_*.bin"
+    "commit": "e0de4ca7a44ccc810f900e0e240805c8c6ec0c31",
+    "fixtureGlob": "crosslink-test-data/test_pos_block_*.bin",
+    "powFixtureGlob": "crosslink-test-data/test_pow_block_*.bin"
   },
   "layout": {
     "u32Bytes": 4,
@@ -617,6 +618,344 @@
           "voteSignDataHex": "f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c363d08781e025c94ea713d86b47270f8021cc11945d63f9abccbce852145c493d070000000000000003000080",
           "endOffset": 4761
         }
+      }
+    }
+  ],
+  "powBlockFixtures": [
+    {
+      "file": "test_pow_block_0.bin",
+      "height": 0,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 8,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_1.bin",
+      "height": 1,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 155,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_2.bin",
+      "height": 2,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 236,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_3.bin",
+      "height": 3,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 192,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_4.bin",
+      "height": 4,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 82,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_5.bin",
+      "height": 5,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 138,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_6.bin",
+      "height": 6,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 138,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_7.bin",
+      "height": 7,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 223,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_9.bin",
+      "height": 9,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 249,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_10.bin",
+      "height": 10,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 41,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_12.bin",
+      "height": 12,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 164,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_13.bin",
+      "height": 13,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 11,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_14.bin",
+      "height": 14,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 213,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_15.bin",
+      "height": 15,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 39,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_17.bin",
+      "height": 17,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 170,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_18.bin",
+      "height": 18,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 233,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_19.bin",
+      "height": 19,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 236,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_21.bin",
+      "height": 21,
+      "totalByteLen": 1592,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 105,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 9,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_22.bin",
+      "height": 22,
+      "totalByteLen": 1593,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 106,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 190,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_23.bin",
+      "height": 23,
+      "totalByteLen": 1593,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 106,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 248,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_25.bin",
+      "height": 25,
+      "totalByteLen": 1593,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 106,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 76,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_26.bin",
+      "height": 26,
+      "totalByteLen": 1593,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 106,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 198,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_28.bin",
+      "height": 28,
+      "totalByteLen": 1593,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 106,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 44,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
+      }
+    },
+    {
+      "file": "test_pow_block_29.bin",
+      "height": 29,
+      "totalByteLen": 1593,
+      "logicalVersion": 4,
+      "headerByteLen": 1487,
+      "bodyByteLen": 106,
+      "probe": {
+        "headerFirstByte": 4,
+        "headerLastByte": 52,
+        "bodyFirstByte": 1,
+        "bodyLastByte": 0
       }
     }
   ]

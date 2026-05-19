@@ -6,7 +6,7 @@ module CrosslinkBftBlockProductionVectors {
    zebra-crosslink/src/chain.rs::BftBlock::{zcash_serialize, zcash_deserialize}.
    The checked-in fixture constants are generated into
    fixtures/production-bft-block-vectors.json from zebra-crosslink's
-   crosslink-test-data/test_pos_block_*.bin files.
+   crosslink-test-data/test_pos_block_*.bin and test_pow_block_*.bin files.
    The block prefix is:
    - u32 version,
    - u32 BFT height,
@@ -302,6 +302,33 @@ module CrosslinkBftBlockProductionVectors {
       2,
     ) == FixtureLaterHeader2EndOffset
 
+  val CheckedInPowBlockFixturesPinned =
+    GeneratedPowBlockFixtureCount == 24 and
+    FixtureFirstPowBlockHeight == 0 and
+    FixtureLastPowBlockHeight == 29 and
+    FixtureFirstPowBlockLogicalVersion == 4 and
+    FixtureLaterPowBlockLogicalVersion == 4 and
+    FixtureFirstPowBlockHeaderByteLen ==
+      HeaderWireByteLen(FixtureFirstPowBlockLogicalVersion, 0) and
+    FixtureLaterPowBlockHeaderByteLen ==
+      HeaderWireByteLen(FixtureLaterPowBlockLogicalVersion, 0) and
+    FixtureFirstPowBlockBodyByteLen ==
+      FixtureFirstPowBlockByteLen - FixtureFirstPowBlockHeaderByteLen and
+    FixtureLaterPowBlockBodyByteLen ==
+      FixtureLaterPowBlockByteLen - FixtureLaterPowBlockHeaderByteLen and
+    FixtureFirstPowBlockByteLen == 1592 and
+    FixtureLaterPowBlockByteLen == 1593 and
+    FixtureFirstPowBlockBodyByteLen == 105 and
+    FixtureLaterPowBlockBodyByteLen == 106 and
+    FixtureFirstPowBlockHeaderFirstByte == 4 and
+    FixtureLaterPowBlockHeaderFirstByte == 4 and
+    FixtureFirstPowBlockHeaderLastByte == 8 and
+    FixtureLaterPowBlockHeaderLastByte == 190 and
+    FixtureFirstPowBlockBodyFirstByte == 1 and
+    FixtureLaterPowBlockBodyFirstByte == 1 and
+    FixtureFirstPowBlockBodyLastByte == 0 and
+    FixtureLaterPowBlockBodyLastByte == 0
+
   val Safety =
     FixedPrefixOffsetsMatchCode and
     PreviousFatPointerVectorsPinned and
@@ -311,7 +338,8 @@ module CrosslinkBftBlockProductionVectors {
     DeserializerCountCapMatchesImplementation and
     DeserializationSigmaBypassGapRecorded and
     CheckedInFirstFixtureEnvelopePinned and
-    CheckedInLaterFixtureEnvelopePinned
+    CheckedInLaterFixtureEnvelopePinned and
+    CheckedInPowBlockFixturesPinned
 
   var checked: bool
 
@@ -421,6 +449,29 @@ module CrosslinkBftBlockProductionVectorsTest {
         assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 1) == FixtureLaterHeader1StartOffset),
         assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 2) == FixtureLaterHeader2StartOffset),
         assert(HeaderEndOffsetForHeaderVersion(1, 0, 4, 2) == FixtureLaterHeader2EndOffset),
+        unchangedAll,
+      })
+  }
+
+  run checkedInPowBlockFixtureVectorsTest = {
+    Init
+      .then(all {
+        assert(GeneratedPowBlockFixtureCount == 24),
+        assert(FixtureFirstPowBlockHeight == 0),
+        assert(FixtureLastPowBlockHeight == 29),
+        assert(FixtureFirstPowBlockHeaderByteLen == HeaderWireByteLen(4, 0)),
+        assert(FixtureLaterPowBlockHeaderByteLen == HeaderWireByteLen(4, 0)),
+        assert(FixtureFirstPowBlockBodyByteLen == 105),
+        assert(FixtureLaterPowBlockBodyByteLen == 106),
+        assert(FixtureFirstPowBlockHeaderFirstByte == 4),
+        assert(FixtureLaterPowBlockHeaderFirstByte == 4),
+        assert(FixtureFirstPowBlockHeaderLastByte == 8),
+        assert(FixtureLaterPowBlockHeaderLastByte == 190),
+        assert(FixtureFirstPowBlockBodyFirstByte == 1),
+        assert(FixtureLaterPowBlockBodyFirstByte == 1),
+        assert(FixtureFirstPowBlockBodyLastByte == 0),
+        assert(FixtureLaterPowBlockBodyLastByte == 0),
+        assert(CheckedInPowBlockFixturesPinned),
         unchangedAll,
       })
   }

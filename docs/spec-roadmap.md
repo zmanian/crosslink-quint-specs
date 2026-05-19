@@ -402,11 +402,14 @@ For Crosslink, matching that quality means adding:
   prefix from `BftBlock::zcash_serialize`: u32 version, u32 BFT height,
   counted previous-block fat pointer, u32 finalization-candidate height, u32
   header count, and contiguous serialized PoW headers. The witnesses also pin
-  the generated `fixtures/production-bft-block-vectors.json` manifest for the
-  checked-in `test_pos_block_*.bin` envelopes: the first fixture has a
-  zero-signature previous fat pointer, later fixtures have one previous
-  signature, all current fixtures carry three version-4 PoW headers, and all
-  include one trailing fat-pointer signature. The manifest also pins
+  the generated `fixtures/production-bft-block-vectors.json` manifest for both
+  checked-in fixture classes. For `test_pos_block_*.bin` envelopes, the first
+  fixture has a zero-signature previous fat pointer, later fixtures have one
+  previous signature, all current fixtures carry three version-4 PoW headers,
+  and all include one trailing fat-pointer signature. For raw
+  `test_pow_block_*.bin` blocks, the manifest pins the 24 current samples
+  across heights 0..29, their version-4 serialized header length, body length
+  split, and header/body byte probes. The manifest also pins
   previous/trailing fat-pointer count bytes and first signer-entry byte probes.
   A generated Quint module imports those constants into the production-vector
   specs, and the generated artifacts pin the full payload, pubkey, vote

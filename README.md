@@ -194,14 +194,16 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkBftBlockProductionVectors.qnt` pins the production BFT-block
   wire layout: u32 version, u32 BFT height, counted previous-block fat pointer,
   u32 finalization-candidate height, u32 header count, and contiguous serialized
-  PoW headers. It also pins a generated manifest for the checked-in
-  `test_pos_block_*.bin` `BftBlockAndFatPointerToIt` envelopes: the first
-  fixture has a zero-signature previous fat pointer, later fixtures have one
-  previous fat-pointer signature, all current fixtures carry three version-4
-  PoW headers without header fat pointers, and all have one trailing fat
-  pointer signature. The manifest also pins previous/trailing fat-pointer count
-  bytes and first signer-entry byte probes. It records the current
-  deserialization sigma-bypass gap.
+  PoW headers. It also pins a generated manifest for both checked-in fixture
+  classes. For `test_pos_block_*.bin` `BftBlockAndFatPointerToIt` envelopes,
+  the first fixture has a zero-signature previous fat pointer, later fixtures
+  have one previous fat-pointer signature, all current fixtures carry three
+  version-4 PoW headers without header fat pointers, and all have one trailing
+  fat pointer signature. For raw `test_pow_block_*.bin` blocks, the manifest
+  pins the 24 current samples across heights 0..29, their version-4 serialized
+  header length, body length split, and header/body byte probes. The manifest
+  also pins previous/trailing fat-pointer count bytes and first signer-entry
+  byte probes. It records the current deserialization sigma-bypass gap.
 - `spec/CrosslinkProductionFixtureVectorsGenerated.qnt` is generated from that
   fixture manifest and is imported by the BFT-block and fat-pointer production
   vector specs so checked-in fixture constants do not have to be copied by hand.

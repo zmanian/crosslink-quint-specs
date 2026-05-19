@@ -154,6 +154,14 @@ function headerByteLen(version) {
   return layout.preCrosslinkHeaderBytes
 }
 
+function headerByteLenForFixture(file, version) {
+  try {
+    return headerByteLen(version)
+  } catch (error) {
+    throw new Error(`${file}: ${error.message}`)
+  }
+}
+
 function parseFixture(filePath) {
   const buffer = fs.readFileSync(filePath)
   const file = path.basename(filePath)
@@ -212,9 +220,42 @@ function parseFixture(filePath) {
   }
 }
 
+function parsePowBlockFixture(filePath) {
+  const buffer = fs.readFileSync(filePath)
+  const file = path.basename(filePath)
+  const height = Number(file.match(/test_pow_block_(\d+)\.bin$/)?.[1])
+  if (!Number.isFinite(height)) {
+    throw new Error(`${file}: cannot parse PoW height`)
+  }
+  if (buffer.length < layout.u32Bytes) {
+    throw new Error(`${file}: too short to contain a block version`)
+  }
+
+  const logicalVersion = buffer.readUInt32LE(0)
+  const headerByteLen = headerByteLenForFixture(file, logicalVersion)
+  if (headerByteLen > buffer.length) {
+    throw new Error(`${file}: header runs past end of block fixture`)
+  }
+
+  return {
+    file,
+    height,
+    totalByteLen: buffer.length,
+    logicalVersion,
+    headerByteLen,
+    bodyByteLen: buffer.length - headerByteLen,
+    probe: {
+      headerFirstByte: buffer.readUInt8(0),
+      headerLastByte: buffer.readUInt8(headerByteLen - 1),
+      bodyFirstByte: buffer.length > headerByteLen ? buffer.readUInt8(headerByteLen) : null,
+      bodyLastByte: buffer.length > headerByteLen ? buffer.readUInt8(buffer.length - 1) : null,
+    },
+  }
+}
+
 function numericFixtureSort(a, b) {
-  const ai = Number(a.match(/test_pos_block_(\d+)\.bin$/)?.[1] ?? 0)
-  const bi = Number(b.match(/test_pos_block_(\d+)\.bin$/)?.[1] ?? 0)
+  const ai = Number(a.match(/test_(?:pos|pow)_block_(\d+)\.bin$/)?.[1] ?? 0)
+  const bi = Number(b.match(/test_(?:pos|pow)_block_(\d+)\.bin$/)?.[1] ?? 0)
   return ai - bi
 }
 
@@ -234,9 +275,15 @@ function buildManifest(source) {
   const files = fs.readdirSync(fixtureDir)
     .filter(file => /^test_pos_block_\d+\.bin$/.test(file))
     .sort(numericFixtureSort)
+  const powFiles = fs.readdirSync(fixtureDir)
+    .filter(file => /^test_pow_block_\d+\.bin$/.test(file))
+    .sort(numericFixtureSort)
 
   if (files.length === 0) {
     throw new Error(`no test_pos_block_*.bin files found in ${fixtureDir}`)
+  }
+  if (powFiles.length === 0) {
+    throw new Error(`no test_pow_block_*.bin files found in ${fixtureDir}`)
   }
 
   return {
@@ -245,9 +292,11 @@ function buildManifest(source) {
       repo: 'zebra-crosslink',
       commit: gitHead(source),
       fixtureGlob: 'crosslink-test-data/test_pos_block_*.bin',
+      powFixtureGlob: 'crosslink-test-data/test_pow_block_*.bin',
     },
     layout,
     fixtures: files.map(file => parseFixture(path.join(fixtureDir, file))),
+    powBlockFixtures: powFiles.map(file => parsePowBlockFixture(path.join(fixtureDir, file))),
   }
 }
 
@@ -336,6 +385,10 @@ function validateManifest(manifest) {
     'unexpected fixture glob',
   )
   assert(
+    manifest.source?.powFixtureGlob === 'crosslink-test-data/test_pow_block_*.bin',
+    'unexpected PoW fixture glob',
+  )
+  assert(
     typeof manifest.source?.commit === 'string' || manifest.source?.commit === null,
     'unexpected source commit',
   )
@@ -357,6 +410,10 @@ function validateManifest(manifest) {
     'unexpected pre-Crosslink header length',
   )
   assert(Array.isArray(manifest.fixtures) && manifest.fixtures.length > 0, 'fixtures missing')
+  assert(
+    Array.isArray(manifest.powBlockFixtures) && manifest.powBlockFixtures.length > 0,
+    'PoW block fixtures missing',
+  )
 
   let hasZeroPreviousSignatureFixture = false
   let hasOnePreviousSignatureFixture = false
@@ -421,6 +478,37 @@ function validateManifest(manifest) {
 
   assert(hasZeroPreviousSignatureFixture, 'missing first-height fixture with zero previous signatures')
   assert(hasOnePreviousSignatureFixture, 'missing later fixture with one previous signature')
+
+  for (const fixture of manifest.powBlockFixtures) {
+    const prefix = `${fixture.file}: `
+    assert(Number.isInteger(fixture.height), `${prefix}height missing`)
+    assert(fixture.totalByteLen >= layout.preCrosslinkHeaderBytes, `${prefix}total length too short`)
+    assert(
+      Number.isInteger(fixture.logicalVersion) && fixture.logicalVersion >= 0,
+      `${prefix}logical version missing`,
+    )
+    assert(
+      fixture.headerByteLen === headerByteLen(fixture.logicalVersion),
+      `${prefix}header length mismatch`,
+    )
+    assert(
+      fixture.bodyByteLen === fixture.totalByteLen - fixture.headerByteLen,
+      `${prefix}body length mismatch`,
+    )
+    assert(
+      fixture.probe?.headerFirstByte === (fixture.logicalVersion & 0xff),
+      `${prefix}header first byte should expose little-endian version low byte`,
+    )
+    assert(typeof fixture.probe?.headerLastByte === 'number', `${prefix}header byte probe missing`)
+    assert(
+      fixture.bodyByteLen === 0 || typeof fixture.probe?.bodyFirstByte === 'number',
+      `${prefix}body first byte probe missing`,
+    )
+    assert(
+      fixture.bodyByteLen === 0 || typeof fixture.probe?.bodyLastByte === 'number',
+      `${prefix}body last byte probe missing`,
+    )
+  }
 }
 
 function readManifest() {
@@ -440,12 +528,39 @@ function renderGeneratedQuintModule(manifest) {
 
   const first = manifest.fixtures[0]
   const later = manifest.fixtures.find(fixture => fixture.previousFatPointerSignatureCount === 1)
+  const firstPow = manifest.powBlockFixtures[0]
+  const laterPow =
+    manifest.powBlockFixtures.find(fixture => fixture.totalByteLen !== firstPow.totalByteLen) ??
+    manifest.powBlockFixtures[manifest.powBlockFixtures.length - 1]
+  const lastPow = manifest.powBlockFixtures[manifest.powBlockFixtures.length - 1]
   assert(later !== undefined, 'missing one-signature fixture for generated Quint constants')
+  assert(firstPow !== undefined, 'missing first PoW block fixture for generated Quint constants')
+  assert(laterPow !== undefined, 'missing later PoW block fixture for generated Quint constants')
+  assert(lastPow !== undefined, 'missing last PoW block fixture for generated Quint constants')
 
   const constants = [
     ['GeneratedFixtureCount', manifest.fixtures.length],
+    ['GeneratedPowBlockFixtureCount', manifest.powBlockFixtures.length],
     ['FixtureHeaderLogicalVersion', later.headers[0].logicalVersion],
     ['FixtureHeaderCount', later.headerCount],
+    ['FixtureFirstPowBlockHeight', firstPow.height],
+    ['FixtureLastPowBlockHeight', lastPow.height],
+    ['FixtureFirstPowBlockLogicalVersion', firstPow.logicalVersion],
+    ['FixtureLaterPowBlockLogicalVersion', laterPow.logicalVersion],
+    ['FixtureFirstPowBlockByteLen', firstPow.totalByteLen],
+    ['FixtureLaterPowBlockByteLen', laterPow.totalByteLen],
+    ['FixtureFirstPowBlockHeaderByteLen', firstPow.headerByteLen],
+    ['FixtureLaterPowBlockHeaderByteLen', laterPow.headerByteLen],
+    ['FixtureFirstPowBlockBodyByteLen', firstPow.bodyByteLen],
+    ['FixtureLaterPowBlockBodyByteLen', laterPow.bodyByteLen],
+    ['FixtureFirstPowBlockHeaderFirstByte', firstPow.probe.headerFirstByte],
+    ['FixtureFirstPowBlockHeaderLastByte', firstPow.probe.headerLastByte],
+    ['FixtureFirstPowBlockBodyFirstByte', firstPow.probe.bodyFirstByte],
+    ['FixtureFirstPowBlockBodyLastByte', firstPow.probe.bodyLastByte],
+    ['FixtureLaterPowBlockHeaderFirstByte', laterPow.probe.headerFirstByte],
+    ['FixtureLaterPowBlockHeaderLastByte', laterPow.probe.headerLastByte],
+    ['FixtureLaterPowBlockBodyFirstByte', laterPow.probe.bodyFirstByte],
+    ['FixtureLaterPowBlockBodyLastByte', laterPow.probe.bodyLastByte],
     ['FixtureFirstPreviousFatPointerSignatureCount', first.previousFatPointerSignatureCount],
     ['FixtureLaterPreviousFatPointerSignatureCount', later.previousFatPointerSignatureCount],
     ['FixtureTrailingFatPointerSignatureCount', later.trailingFatPointerSignatureCount],
@@ -494,7 +609,7 @@ function renderGeneratedQuintModule(manifest) {
     '  /*',
     '   Generated by scripts/extract-bft-block-vectors.mjs --write-quint.',
     `   Source: ${manifest.source.repo}@${manifest.source.commit}`,
-    `   Fixtures: ${manifest.source.fixtureGlob}`,
+    `   Fixtures: ${manifest.source.fixtureGlob}; ${manifest.source.powFixtureGlob}`,
     '   */',
     '',
     ...constants.map(([name, value]) => `  pure val ${name} = ${quintValue(value)}`),
