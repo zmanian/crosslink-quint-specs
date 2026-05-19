@@ -48,9 +48,8 @@ the Zebra Crosslink working branch:
   nil-precommit certificates, then a stable stream window can deliver the
   proposal/vote duties in nondeterministic validator order and decide.
 - `spec/CrosslinkSchedulerProgressContract.qnt` extracts the scheduler envelope
-  into a verifier-friendly temporal contract. TLC checks that explicit weak
-  fairness for progress steps implies eventual entry into the stable decision
-  phase.
+  into a verifier-friendly temporal contract. TLC checks that the progress-only
+  scheduler envelope eventually reaches the stable decision phase.
 - `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
   explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
   locally observed PoW head, including same-branch progress, fork switches, and
