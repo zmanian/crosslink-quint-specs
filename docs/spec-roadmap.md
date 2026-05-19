@@ -137,6 +137,11 @@ For Crosslink, matching that quality means adding:
   can burn nil-precommit certificates and advance correct validators in
   nondeterministic order, then a stable round can deliver proposal, prevote,
   and precommit duties until a correct validator decides.
+- `CrosslinkSchedulerProgressContract.qnt` adds the first explicit temporal
+  liveness check for the scheduler envelope. It abstracts away the protocol
+  state from `CrosslinkSchedulerLiveness.qnt`, keeps only progress transitions
+  before decision, and TLC checks eventual entry into the stable decision
+  phase over the complete finite state graph.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
@@ -214,6 +219,10 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkSchedulerLivenessModel` strengthens that liveness track with a
   bounded fair-scheduler model and a `SchedulerSafety` invariant. It remains a
   bounded scheduler-parametric check, not a full temporal proof.
+- `CrosslinkSchedulerProgressContractModel` now supplies a TLC-checked temporal
+  contract for that scheduler envelope. It is not yet a full composed protocol
+  liveness proof, because current temporal backends have trouble with the full
+  imported round-machine state.
 - `CrosslinkComposedLivenessModel` now has an executable end-to-end liveness
   script that includes explicit local delivery of the proposal, prevotes, and
   precommits before finalizing the fresh candidate.
@@ -242,4 +251,5 @@ For Crosslink, matching that quality means adding:
 - The remaining multi-height work is to connect the heighted auth, evidence,
   validator-set, and BFT-block-shape models to production serialization,
   signatures, signer-set formats, header validity checks, and gossip transport,
-  and to replace the scripted liveness witnesses with temporal properties.
+  and to lift the scheduler temporal contract into a full composed protocol
+  temporal proof.

@@ -31,3 +31,6 @@ jobs:
 
       - name: Bounded safety verification
         run: npm run verify
+
+      - name: Temporal progress verification
+        run: npm run verify:temporal

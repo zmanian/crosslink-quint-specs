@@ -1,43 +1,22 @@
-module CrosslinkSchedulerLivenessModel {
+module CrosslinkSchedulerProgressContractModel {
   /*
-   Bounded fair-scheduler liveness for nil-precommit resampling.
+   Temporal progress contract for the nil-precommit resampling scheduler.
 
-   The earlier liveness witnesses hard-code one validator/action sequence. This
-   model keeps the same concrete Crosslink round machine underneath, but adds a
-   small scheduler layer whose validator duties can occur in different orders.
-
-   The scheduler assumption is intentionally explicit: before the stream is
-   stable, it eventually obtains a 2f + 1 nil-precommit certificate and advances
-   every correct validator to the next round. Once the stream is stable, it
-   fairly delivers the proposal, prevotes, and precommits needed for one correct
-   validator to decide.
+   CrosslinkSchedulerLiveness.qnt composes this scheduler shape with the
+   protocol round machine. Current Quint/TLC and Quint/Apalache temporal
+   backends have trouble with that full imported state. This small contract
+   keeps only the scheduler envelope, so the temporal liveness obligation can
+   be checked directly while the composed model keeps the protocol safety
+   obligations.
    */
 
-  import CrosslinkResampling(
-    Corr = Set("p1", "p2", "p3"),
-    Faulty = Set("p4"),
-    N = 4,
-    T = 1,
-    VotingPower = Map("p1" -> 1, "p2" -> 1, "p3" -> 1, "p4" -> 1),
-    TotalVotingPower = 4,
-    FaultyVotingPowerBound = 1,
-    QuorumVotingPower = 3,
-    MaxRound = 3,
-    Proposer = Map(0 -> "p1", 1 -> "p2", 2 -> "p3", 3 -> "p1"),
-    Stream = Map(0 -> "s0", 1 -> "s1", 2 -> "s2", 3 -> "s2"),
-    Snapshots = Set("s0", "s1", "s2"),
-    StructurallyValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
-    PowChainValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
-    FinalityCandidateValid = Map("s0" -> true, "s1" -> true, "s2" -> true),
-    ResampleOnNilPrecommit = true,
-  ).* from "./CrosslinkResampling"
+  type Proc_t = str
 
-  pure val StableRound = 2
-  pure val StableValue = "s2"
-  pure val Decider = "p1"
+  pure val Corr = Set("p1", "p2", "p3")
   pure val NilCertSigners = Set("p1", "p2", "p4")
+  pure val StableRound = 2
 
-  var burnRound: Round_t
+  var burnRound: int
   var nilSeeded: Set[Proc_t]
   var advanced: Set[Proc_t]
   var stableProposalInserted: bool
@@ -47,9 +26,9 @@ module CrosslinkSchedulerLivenessModel {
   var stablePrecommitted: Set[Proc_t]
   var stablePrecommitsDelivered: bool
   var schedulerDone: bool
+  var progress: int
 
-  action SchedulerInit = all {
-    Init,
+  action Init = all {
     burnRound' = 0,
     nilSeeded' = Set(),
     advanced' = Set(),
@@ -60,32 +39,10 @@ module CrosslinkSchedulerLivenessModel {
     stablePrecommitted' = Set(),
     stablePrecommitsDelivered' = false,
     schedulerDone' = false,
+    progress' = 0,
   }
 
-  action ProtocolUnchanged = all {
-    round' = round,
-    step' = step,
-    decision' = decision,
-    lockedValue' = lockedValue,
-    lockedRound' = lockedRound,
-    validValue' = validValue,
-    validRound' = validRound,
-    cachedProposal' = cachedProposal,
-    cachedProposalRound' = cachedProposalRound,
-    msgsPropose' = msgsPropose,
-    msgsPrevote' = msgsPrevote,
-    msgsPrecommit' = msgsPrecommit,
-    evidencePropose' = evidencePropose,
-    evidencePrevote' = evidencePrevote,
-    evidencePrecommit' = evidencePrecommit,
-    evidenceFatPointer' = evidenceFatPointer,
-    seenPropose' = seenPropose,
-    seenPrevote' = seenPrevote,
-    seenPrecommit' = seenPrecommit,
-    firedAction' = firedAction,
-  }
-
-  action SchedulerUnchanged = all {
+  action Unchanged = all {
     burnRound' = burnRound,
     nilSeeded' = nilSeeded,
     advanced' = advanced,
@@ -96,6 +53,7 @@ module CrosslinkSchedulerLivenessModel {
     stablePrecommitted' = stablePrecommitted,
     stablePrecommitsDelivered' = stablePrecommitsDelivered,
     schedulerDone' = schedulerDone,
+    progress' = progress,
   }
 
   def NilSeedComplete: bool =
@@ -109,11 +67,6 @@ module CrosslinkSchedulerLivenessModel {
       burnRound < StableRound,
       NilCertSigners.contains(p),
       not(nilSeeded.contains(p)),
-      if (Corr.contains(p)) {
-        SeedValidNilPrecommitStateAt(p, burnRound)
-      } else {
-        SeedFaultyNilPrecommitAt(p, burnRound)
-      },
       burnRound' = burnRound,
       nilSeeded' = nilSeeded.union(Set(p)),
       advanced' = advanced,
@@ -124,6 +77,7 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
 
   action AdvanceAfterNilCert(p: Proc_t): bool = {
@@ -134,7 +88,6 @@ module CrosslinkSchedulerLivenessModel {
       NilSeedComplete,
       Corr.contains(p),
       not(advanced.contains(p)),
-      StartNextRoundAfterPrecommitQuorum(p),
       burnRound' = if (roundDone) { burnRound + 1 } else { burnRound },
       nilSeeded' = if (roundDone) { Set() } else { nilSeeded },
       advanced' = if (roundDone) { Set() } else { advancedNow },
@@ -145,6 +98,7 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
   }
 
@@ -152,7 +106,6 @@ module CrosslinkSchedulerLivenessModel {
     all {
       StableRoundReached,
       not(stableProposalInserted),
-      InsertProposal("p3"),
       burnRound' = burnRound,
       nilSeeded' = nilSeeded,
       advanced' = advanced,
@@ -163,13 +116,13 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
 
   action DeliverStableProposal: bool =
     all {
       stableProposalInserted,
       not(stableProposalDelivered),
-      DeliverProposalToAllCorrect("p3", StableRound, StableValue, NilRound),
       burnRound' = burnRound,
       nilSeeded' = nilSeeded,
       advanced' = advanced,
@@ -180,6 +133,7 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
 
   action PrevoteStableValue(p: Proc_t): bool =
@@ -187,7 +141,6 @@ module CrosslinkSchedulerLivenessModel {
       stableProposalDelivered,
       Corr.contains(p),
       not(stablePrevoted.contains(p)),
-      UponProposalPrevote(p, StableValue),
       burnRound' = burnRound,
       nilSeeded' = nilSeeded,
       advanced' = advanced,
@@ -198,6 +151,7 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
 
   action DeliverStablePrevotes(p: Proc_t): bool =
@@ -205,7 +159,6 @@ module CrosslinkSchedulerLivenessModel {
       Corr.subseteq(stablePrevoted),
       Corr.contains(p),
       not(stablePrevotesDelivered.contains(p)),
-      DeliverPrevotesTo(p, StableRound, StableValue, Corr),
       burnRound' = burnRound,
       nilSeeded' = nilSeeded,
       advanced' = advanced,
@@ -216,6 +169,7 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
 
   action PrecommitStableValue(p: Proc_t): bool =
@@ -223,7 +177,6 @@ module CrosslinkSchedulerLivenessModel {
       stablePrevotesDelivered.contains(p),
       Corr.contains(p),
       not(stablePrecommitted.contains(p)),
-      UponValuePrevoteQuorum(p, StableValue),
       burnRound' = burnRound,
       nilSeeded' = nilSeeded,
       advanced' = advanced,
@@ -234,13 +187,13 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted.union(Set(p)),
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
 
-  action DeliverStablePrecommitsToDecider: bool =
+  action DeliverStablePrecommits: bool =
     all {
       Corr.subseteq(stablePrecommitted),
       not(stablePrecommitsDelivered),
-      DeliverPrecommitsTo(Decider, StableRound, StableValue, Corr),
       burnRound' = burnRound,
       nilSeeded' = nilSeeded,
       advanced' = advanced,
@@ -251,13 +204,13 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = true,
       schedulerDone' = schedulerDone,
+      progress' = progress + 1,
     }
 
   action DecideStableValue: bool =
     all {
       stablePrecommitsDelivered,
       not(schedulerDone),
-      Decide(Decider, StableRound, StableValue),
       burnRound' = burnRound,
       nilSeeded' = nilSeeded,
       advanced' = advanced,
@@ -268,16 +221,16 @@ module CrosslinkSchedulerLivenessModel {
       stablePrecommitted' = stablePrecommitted,
       stablePrecommitsDelivered' = stablePrecommitsDelivered,
       schedulerDone' = true,
+      progress' = progress + 1,
     }
 
-  action SchedulerStutter: bool =
+  action StutterAfterDone: bool =
     all {
       schedulerDone,
-      ProtocolUnchanged,
-      SchedulerUnchanged,
+      Unchanged,
     }
 
-  action SchedulerStep: bool =
+  action Next: bool =
     any {
       nondet p = oneOf(NilCertSigners)
       SeedNilSigner(p),
@@ -291,25 +244,21 @@ module CrosslinkSchedulerLivenessModel {
       DeliverStablePrevotes(p),
       nondet p = oneOf(Corr)
       PrecommitStableValue(p),
-      DeliverStablePrecommitsToDecider,
+      DeliverStablePrecommits,
       DecideStableValue,
-      SchedulerStutter,
+      StutterAfterDone,
     }
 
-  val SchedulerStateWellFormed =
+  val StateWellFormed =
     0.to(StableRound).contains(burnRound) and
+    0.to(25).contains(progress) and
     nilSeeded.subseteq(NilCertSigners) and
     advanced.subseteq(Corr) and
     stablePrevoted.subseteq(Corr) and
     stablePrevotesDelivered.subseteq(Corr) and
     stablePrecommitted.subseteq(Corr)
 
-  val BurnedRoundsHaveNilCert =
-    0.to(StableRound - 1).forall(r =>
-      r >= burnRound or NilPrecommitCert(r)
-    )
-
-  val SchedulerPhaseOrder =
+  val PhaseOrder =
     (stableProposalInserted implies StableRoundReached) and
     (stableProposalDelivered implies stableProposalInserted) and
     (stablePrevoted != Set() implies stableProposalDelivered) and
@@ -318,32 +267,14 @@ module CrosslinkSchedulerLivenessModel {
     (stablePrecommitsDelivered implies Corr.subseteq(stablePrecommitted)) and
     (schedulerDone implies stablePrecommitsDelivered)
 
-  val NoDecisionBeforeStableWindow =
-    Corr.forall(p =>
-      decision.get(p) == NilSnapshot or (
-        stablePrecommitsDelivered and decision.get(p) == StableValue
-      )
-    )
+  val Safety =
+    StateWellFormed and PhaseOrder
 
-  val SchedulerDoneMeansStableDecision =
-    not(schedulerDone) or decision.get(Decider) == StableValue
-
-  val SchedulerSafety =
-    Safety and
-    SchedulerStateWellFormed and
-    BurnedRoundsHaveNilCert and
-    SchedulerPhaseOrder and
-    NoDecisionBeforeStableWindow and
-    SchedulerDoneMeansStableDecision
-
-  // The composed model exposes this temporal obligation, but current temporal
-  // backends struggle with the full imported protocol state. The smaller
-  // CrosslinkSchedulerProgressContractModel is the TLC-checked temporal slice.
   temporal EventuallyStableDecision =
-    eventually(schedulerDone)
+    Next.weakFair(Set(progress)).implies(eventually(schedulerDone))
 
-  run fairSchedulerBurnsUnstableRoundsUntilStableDecisionTest = {
-    SchedulerInit
+  run fairSchedulerProgressContractTest = {
+    Init
       .then(SeedNilSigner("p1"))
       .then(SeedNilSigner("p2"))
       .then(SeedNilSigner("p4"))
@@ -367,17 +298,12 @@ module CrosslinkSchedulerLivenessModel {
       .then(PrecommitStableValue("p1"))
       .then(PrecommitStableValue("p3"))
       .then(PrecommitStableValue("p2"))
-      .then(DeliverStablePrecommitsToDecider)
+      .then(DeliverStablePrecommits)
       .then(DecideStableValue)
       .then(all {
         assert(schedulerDone),
-        assert(NilPrecommitCert(0)),
-        assert(NilPrecommitCert(1)),
-        assert(not(StreamChangedAfter(StableRound))),
-        assert(decision.get(Decider) == StableValue),
-        assert(SchedulerSafety),
-        ProtocolUnchanged,
-        SchedulerUnchanged,
+        assert(Safety),
+        Unchanged,
       })
   }
 }
