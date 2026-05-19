@@ -526,6 +526,14 @@ For Crosslink, matching that quality means adding:
   monotone rollback-risk estimates across the sigma ladder, and forces the
   selected sigma to satisfy rollback-risk and expected-loss budgets whenever
   the bounded ladder can satisfy them.
+- `CrosslinkDynamicSigmaProposalEvidenceFormat.qnt` pins the concrete
+  proposal-carried dynamic-sigma evidence payload implemented in
+  `zebra-crosslink/src/dynamic_sigma.rs`: raw telemetry counters, conservative
+  margins, and selected sigma serialized as a 123-byte little-endian payload.
+  It uses split u128 high/low words to keep Rust-backed Quint tests finite
+  while still checking the wide-counter fixture from Zebra's serialization
+  test, exact degraded-participation hex, trailing-byte rejection, wrong-byte
+  rejection, and selected-sigma-below-floor rejection.
 - `CrosslinkDynamicSigmaForkSchedule.qnt` composes the dynamic controller with
   the derived PoW fork schedule, replacing a supplied observed-reorg map with
   rollback depth computed from best-tip transitions.
@@ -778,7 +786,7 @@ For Crosslink, matching that quality means adding:
   validator-scale finality progress contract, PoW stochastic-assumption,
   PoW fixture measured-distribution, PoW fork-schedule, PoW branch-competition,
   PoW-reorg-stress, dynamic-sigma, dynamic-sigma calibration,
-  dynamic-sigma telemetry,
+  dynamic-sigma telemetry, dynamic-sigma proposal-evidence-format,
   dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
   dynamic-sigma resampling, dynamic-sigma finality,
   dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
@@ -886,6 +894,11 @@ For Crosslink, matching that quality means adding:
   conservatively upper-bound those samples, that rollback-risk estimates are
   monotone across the sigma ladder, and that expected-loss budgets can raise
   sigma even when rollback probability is within the PPM target.
+- `CrosslinkDynamicSigmaProposalEvidenceFormatModel` checks the concrete
+  Zebra proposal-evidence byte boundary: 123-byte payload length, u128 field
+  offsets, exact degraded-participation and wide-counter hex vectors, and
+  acceptance only when decoded telemetry plus margins require no higher sigma
+  than the carried selected sigma.
 - `CrosslinkDynamicSigmaCalibrationModel` checks the simpler measured-window
   calibration harness that feeds that production-shaped telemetry contract.
 - `CrosslinkDynamicSigmaForkScheduleModel` composes the controller with a
@@ -980,11 +993,11 @@ For Crosslink, matching that quality means adding:
   verifier-friendly router safety slice compose the proposal/liveness/sync
   channel namespaces, the production gossip registry checks cross-protocol
   Tenderlink/Malachite/dynamic-sigma topic-channel separation, and the dynamic-sigma
-  consensus-param/format/transport/heighted-round/
+  proposal-evidence-format/consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
-  bytes, quorum-signed production-byte gossip, node-config application,
-  proposals, precommits, fat-pointer evidence, and finality over
-  `head - sigma(h)`, but not the broader production message
+  bytes, Zebra's proposal-carried evidence bytes, quorum-signed production-byte
+  gossip, node-config application, proposals, precommits, fat-pointer evidence,
+  and finality over `head - sigma(h)`, but not the broader production message
   transport or real implementation vectors for dynamic-sigma consensus params.
   The heighted progress projection now gives TLC a finite temporal bridge for
   mixed-precommit waiting, nil-certificate recovery, two ordered BFT heights,
