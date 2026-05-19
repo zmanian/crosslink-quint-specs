@@ -66,9 +66,10 @@ Required pieces:
 - Deterministic updates from committed nil-round failure telemetry and a
   quorum-backed network coverage model.
 - The percentage of PoW hash power participating in Crosslink as a separate
-  committed telemetry input; low participation should make sigma updates more
-  conservative because the sampled PoW stream is less representative of total
-  block production.
+  committed telemetry input. Participation below the target should block sigma
+  relaxation; participation below a critical floor should raise sigma directly
+  because the sampled PoW stream is less representative of total block
+  production.
 - A classification boundary between sigma-relevant
   long-reorg/low-coverage/low-participation failures and ordinary same-branch
   block-arrival churn, since larger sigma does not mitigate normal head
@@ -209,8 +210,9 @@ For Crosslink, matching that quality means adding:
   sigma, updates sigma only at height boundaries from committed telemetry and a
   coverage model, includes Crosslink-participating PoW hash-power percentage as
   a separate input, refuses to treat same-branch head arrivals as
-  sigma-relevant, and applies hysteresis so long-reorg/low-coverage/low-hash
-  participation failures can raise sigma while stable covered,
+  sigma-relevant by themselves, and applies hysteresis so
+  long-reorg/low-coverage/low-hash participation failures can raise sigma,
+  critically low participation can raise sigma directly, and stable covered
   high-participation windows lower it slowly.
 - `CrosslinkDynamicSigmaHeadSampling.qnt` connects that controller to concrete
   proposal-stream sampling. It imports the dynamic-sigma schedule, samples
@@ -400,9 +402,11 @@ For Crosslink, matching that quality means adding:
   variant set. The model checks that the dynamic controller is distinct from
   baseline and fixed-sigma resampling, that nil-precommit round burns do not
   rewrite same-height sigma, that long-reorg or ambiguous low-coverage
-  telemetry can raise future-height sigma, that same-branch failures do not,
-  that low Crosslink-participating hash power prevents sigma relaxation, and
-  that stable covered high-participation windows lower sigma at most one step.
+  telemetry can raise future-height sigma, that same-branch failures do not
+  raise sigma by themselves, that low Crosslink-participating hash power
+  prevents sigma relaxation, that critically low participation raises sigma
+  directly, and that stable covered high-participation windows lower sigma at
+  most one step.
 - `CrosslinkDynamicSigmaHeadSamplingModel` composes that controller with
   `head - sigma(h)` sampling. It verifies that height 0 samples with the
   initial sigma, a nil-round burn leaves that sample and same-height sigma

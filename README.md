@@ -78,7 +78,9 @@ the Zebra Crosslink working branch:
   schedule. Sigma is fixed for an active BFT height, then updated at height
   boundaries from committed round-failure telemetry and a quorum-backed network
   coverage model, including the percentage of PoW hash power participating in
-  Crosslink.
+  Crosslink. Participation has two thresholds: the target required before sigma
+  may relax, and a lower floor where participation is itself enough to raise
+  sigma.
 - `spec/CrosslinkDynamicSigmaHeadSampling.qnt` composes that third variant with
   concrete `head - sigma(h)` sampling: already-sampled same-height candidates
   survive nil-precommit round burns, while committed telemetry changes the
@@ -162,7 +164,8 @@ The current spec surface has three first-class Crosslink variants:
   schedule updated only from committed telemetry at BFT-height boundaries.
   Low Crosslink-participating PoW hash power is modeled separately from
   validator/network coverage: it contributes to sigma-relevant pressure for
-  long-reorg or ambiguous low-coverage failures and prevents sigma relaxation.
+  long-reorg or ambiguous low-coverage failures, prevents sigma relaxation below
+  the target, and raises sigma directly below the critical participation floor.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling.

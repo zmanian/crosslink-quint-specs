@@ -340,6 +340,7 @@ module CrosslinkDynamicSigmaHeadSamplingModel {
     CoverageTarget = 3,
     MaxCoverageScore = 4,
     HashPowerParticipationTargetPercent = 67,
+    HashPowerParticipationFloorPercent = 25,
     MaxHashPowerParticipationPercent = 100,
     CommittedFailureKind = Map(
       0 -> "long-reorg-tail",

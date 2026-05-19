@@ -26,6 +26,7 @@ module CrosslinkDynamicSigmaHeightedRound {
   const CoverageTarget: int
   const MaxCoverageScore: int
   const HashPowerParticipationTargetPercent: int
+  const HashPowerParticipationFloorPercent: int
   const MaxHashPowerParticipationPercent: int
   const SigmaAtHeight: Height_t -> int
   const CommittedFailureKind: Height_t -> FailureKind_t
@@ -59,6 +60,8 @@ module CrosslinkDynamicSigmaHeightedRound {
     CoverageTarget > 0 and
     MaxCoverageScore >= CoverageTarget and
     HashPowerParticipationTargetPercent > 0 and
+    HashPowerParticipationFloorPercent > 0 and
+    HashPowerParticipationFloorPercent <= HashPowerParticipationTargetPercent and
     MaxHashPowerParticipationPercent == 100 and
     MaxHashPowerParticipationPercent >= HashPowerParticipationTargetPercent
   assume snapshot_pow_heights_are_in_range =
@@ -119,6 +122,10 @@ module CrosslinkDynamicSigmaHeightedRound {
     CommittedHashPowerParticipationPercent.get(h) >=
       HashPowerParticipationTargetPercent
 
+  pure def HashPowerParticipationFloorBreachedAt(h: Height_t): bool =
+    CommittedHashPowerParticipationPercent.get(h) <
+      HashPowerParticipationFloorPercent
+
   pure def HashPowerParticipationDeficitAt(h: Height_t): int =
     if (HashPowerParticipationCompleteAt(h)) {
       0
@@ -143,7 +150,8 @@ module CrosslinkDynamicSigmaHeightedRound {
     }
 
   pure def ShouldRaiseSigma(h: Height_t): bool =
-    SigmaRelevantFailurePressure(h) >= FailureThreshold
+    SigmaRelevantFailurePressure(h) >= FailureThreshold or
+    HashPowerParticipationFloorBreachedAt(h)
 
   pure def ShouldLowerSigma(h: Height_t): bool =
     not(ShouldRaiseSigma(h)) and
@@ -222,11 +230,26 @@ module CrosslinkDynamicSigmaHeightedRound {
       SigmaForHeight(h + 1) == NextSigmaForHeight(SigmaForHeight(h), h)
     )
 
-  val SameBranchFailuresDoNotRaiseFutureSigma =
+  val SameBranchFailuresDoNotRaiseFutureSigmaByThemselves =
     TransitionHeights.forall(h =>
-      if (CommittedFailureKind.get(h) == SameBranchArrivalFailure) {
+      if (
+        CommittedFailureKind.get(h) == SameBranchArrivalFailure and
+        not(HashPowerParticipationFloorBreachedAt(h))
+      ) {
         not(ShouldRaiseSigma(h)) and
         SigmaForHeight(h + 1) <= SigmaForHeight(h)
+      } else {
+        true
+      }
+    )
+
+  val CriticalHashPowerParticipationCanRaiseFutureSigma =
+    TransitionHeights.forall(h =>
+      if (
+        HashPowerParticipationFloorBreachedAt(h) and
+        SigmaForHeight(h) < MaxSigma
+      ) {
+        SigmaForHeight(h + 1) == SigmaForHeight(h) + 1
       } else {
         true
       }
@@ -283,7 +306,8 @@ module CrosslinkDynamicSigmaHeightedRound {
   val DynamicHeightedHeadSigmaSafety =
     Safety and
     SigmaScheduleMatchesTelemetry and
-    SameBranchFailuresDoNotRaiseFutureSigma and
+    SameBranchFailuresDoNotRaiseFutureSigmaByThemselves and
+    CriticalHashPowerParticipationCanRaiseFutureSigma and
     StreamMatchesDynamicHeadSigma and
     DynamicHeadSigmaCandidatesAreValid and
     CorrectFreshProposalMessagesCarryDynamicHeadSigma and
@@ -452,6 +476,7 @@ module CrosslinkDynamicSigmaHeightedRoundModel {
     CoverageTarget = 3,
     MaxCoverageScore = 4,
     HashPowerParticipationTargetPercent = 67,
+    HashPowerParticipationFloorPercent = 25,
     MaxHashPowerParticipationPercent = 100,
     SigmaAtHeight = Map(
       1 -> 1,

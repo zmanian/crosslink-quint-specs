@@ -8,7 +8,9 @@ module CrosslinkDynamicSigma {
    validators use one sigma value for the entire active height, then compute
    the next height's sigma from committed round-failure telemetry, a
    quorum-backed network coverage model, and the observed percentage of PoW
-   hash power participating in Crosslink.
+   hash power participating in Crosslink. The participation target gates sigma
+   relaxation, while a lower participation floor is a direct risk signal that
+   raises sigma even before a classified long-reorg failure appears.
 
    The important safety shape is:
    - nil-precommit failures can burn rounds without changing same-height sigma,
@@ -16,7 +18,9 @@ module CrosslinkDynamicSigma {
    - the update is deterministic from committed evidence,
    - ordinary same-branch head-arrival churn is not treated as sigma-relevant,
    - long-reorg-tail or ambiguous low-coverage/low-hash-participation failures
-     can raise sigma, and
+     can raise sigma,
+   - critically low Crosslink-participating hash power can raise sigma by
+     itself, and
    - stable, well-covered, high-participation windows lower sigma slowly.
    */
 
@@ -33,6 +37,7 @@ module CrosslinkDynamicSigma {
   const CoverageTarget: int
   const MaxCoverageScore: int
   const HashPowerParticipationTargetPercent: int
+  const HashPowerParticipationFloorPercent: int
   const MaxHashPowerParticipationPercent: int
   const CommittedFailureKind: Height_t -> FailureKind_t
   const CommittedFailureCount: Height_t -> int
@@ -68,6 +73,8 @@ module CrosslinkDynamicSigma {
     CoverageTarget > 0 and
     MaxCoverageScore >= CoverageTarget and
     HashPowerParticipationTargetPercent > 0 and
+    HashPowerParticipationFloorPercent > 0 and
+    HashPowerParticipationFloorPercent <= HashPowerParticipationTargetPercent and
     MaxHashPowerParticipationPercent == 100 and
     MaxHashPowerParticipationPercent >= HashPowerParticipationTargetPercent
 
@@ -125,6 +132,10 @@ module CrosslinkDynamicSigma {
     CommittedHashPowerParticipationPercent.get(h) >=
       HashPowerParticipationTargetPercent
 
+  pure def HashPowerParticipationFloorBreachedAt(h: Height_t): bool =
+    CommittedHashPowerParticipationPercent.get(h) <
+      HashPowerParticipationFloorPercent
+
   pure def HashPowerParticipationDeficitAt(h: Height_t): int =
     if (HashPowerParticipationCompleteAt(h)) {
       0
@@ -149,7 +160,8 @@ module CrosslinkDynamicSigma {
     }
 
   pure def ShouldRaiseSigma(h: Height_t): bool =
-    SigmaRelevantFailurePressure(h) >= FailureThreshold
+    SigmaRelevantFailurePressure(h) >= FailureThreshold or
+    HashPowerParticipationFloorBreachedAt(h)
 
   pure def ShouldLowerSigma(h: Height_t): bool =
     not(ShouldRaiseSigma(h)) and
@@ -269,9 +281,12 @@ module CrosslinkDynamicSigma {
       true
     }
 
-  val SameBranchFailuresAreNotSigmaRelevant =
+  val SameBranchFailuresDoNotRaiseSigmaByThemselves =
     Heights.forall(h =>
-      if (CommittedFailureKind.get(h) == SameBranchArrivalFailure) {
+      if (
+        CommittedFailureKind.get(h) == SameBranchArrivalFailure and
+        not(HashPowerParticipationFloorBreachedAt(h))
+      ) {
         not(ShouldRaiseSigma(h))
       } else {
         true
@@ -308,6 +323,20 @@ module CrosslinkDynamicSigma {
       } else {
         true
       }
+    )
+
+  val CriticalHashPowerParticipationCanRaiseSigma =
+    SigmaValues.forall(currentSigma =>
+      Heights.forall(h =>
+        if (
+          HashPowerParticipationFloorBreachedAt(h) and
+          currentSigma < MaxSigma
+        ) {
+          NextSigmaForHeight(currentSigma, h) == currentSigma + 1
+        } else {
+          true
+        }
+      )
     )
 
   val SigmaStepIsAtMostOne =
@@ -371,10 +400,11 @@ module CrosslinkDynamicSigma {
     SigmaChangesOnlyAtHeightBoundary and
     SameHeightSigmaStable and
     CommitUsesDeterministicTelemetry and
-    SameBranchFailuresAreNotSigmaRelevant and
+    SameBranchFailuresDoNotRaiseSigmaByThemselves and
     IncompleteCoverageCannotLowerSigma and
     LowHashPowerParticipationCannotLowerSigma and
     HashPowerParticipationFactorsIntoSigmaPressure and
+    CriticalHashPowerParticipationCanRaiseSigma and
     SigmaStepIsAtMostOne and
     LongReorgFailureCanRaiseSigma and
     StableCoveredWindowLowersSigmaSlowly and
@@ -438,6 +468,7 @@ module CrosslinkDynamicSigmaTest {
       .then(all {
         assert(height == 2),
         assert(CommittedFailureKind.get(1) == SameBranchArrivalFailure),
+        assert(not(HashPowerParticipationFloorBreachedAt(1))),
         assert(not(ShouldRaiseSigma(1))),
         assert(sigma == 3),
         assert(Safety),
@@ -515,6 +546,26 @@ module CrosslinkDynamicSigmaTest {
       })
   }
 
+  run criticalLowHashPowerParticipationRaisesSigmaTest = {
+    Init
+      .then(CommitHeightWithTelemetry)
+      .then(CommitHeightWithTelemetry)
+      .then(CommitHeightWithTelemetry)
+      .then(CommitHeightWithTelemetry)
+      .then(CommitHeightWithTelemetry)
+      .then(CommitHeightWithTelemetry)
+      .then(CommitHeightWithTelemetry)
+      .then(all {
+        assert(height == 7),
+        assert(CommittedFailureKind.get(6) == NoFailure),
+        assert(HashPowerParticipationFloorBreachedAt(6)),
+        assert(ShouldRaiseSigma(6)),
+        assert(sigma == 4),
+        assert(Safety),
+        unchangedAll,
+      })
+  }
+
   run dynamicSigmaSafetyTest = {
     Init
       .then(all {
@@ -526,7 +577,7 @@ module CrosslinkDynamicSigmaTest {
 
 module CrosslinkDynamicSigmaModel {
   import CrosslinkDynamicSigmaTest(
-    MaxHeight = 6,
+    MaxHeight = 7,
     MinSigma = 1,
     MaxSigma = 4,
     InitialSigma = 2,
@@ -535,6 +586,7 @@ module CrosslinkDynamicSigmaModel {
     CoverageTarget = 3,
     MaxCoverageScore = 4,
     HashPowerParticipationTargetPercent = 67,
+    HashPowerParticipationFloorPercent = 25,
     MaxHashPowerParticipationPercent = 100,
     CommittedFailureKind = Map(
       0 -> "long-reorg-tail",
@@ -544,6 +596,7 @@ module CrosslinkDynamicSigmaModel {
       4 -> "ambiguous-low-coverage",
       5 -> "none",
       6 -> "none",
+      7 -> "none",
     ),
     CommittedFailureCount = Map(
       0 -> 2,
@@ -553,6 +606,7 @@ module CrosslinkDynamicSigmaModel {
       4 -> 2,
       5 -> 0,
       6 -> 0,
+      7 -> 0,
     ),
     CommittedStableWindowCount = Map(
       0 -> 0,
@@ -562,6 +616,7 @@ module CrosslinkDynamicSigmaModel {
       4 -> 0,
       5 -> 0,
       6 -> 0,
+      7 -> 0,
     ),
     CommittedCoverageScore = Map(
       0 -> 4,
@@ -571,6 +626,7 @@ module CrosslinkDynamicSigmaModel {
       4 -> 1,
       5 -> 4,
       6 -> 4,
+      7 -> 4,
     ),
     CommittedHashPowerParticipationPercent = Map(
       0 -> 80,
@@ -579,7 +635,8 @@ module CrosslinkDynamicSigmaModel {
       3 -> 80,
       4 -> 30,
       5 -> 30,
-      6 -> 80,
+      6 -> 10,
+      7 -> 80,
     ),
   ).*
 }
