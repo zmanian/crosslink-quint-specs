@@ -45,7 +45,7 @@ finality semantics.
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkBftHeights.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkFinalityProgressContract.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights; the compact BFT-height harness rejects skipped consensus heights, and the progress contract adds a TLC-checked decision-to-finality handoff. |
 | Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkDynamicSigmaHeightedFinality.qnt`, `CrosslinkDynamicSigmaAuthenticatedFinality.qnt`, `CrosslinkComposedProgressContract.qnt`, `CrosslinkComposedImportedProgressBridge.qnt`, `CrosslinkHeightedProgressProjectionContract.qnt`, `CrosslinkHeightedAuthenticatedProgressProjectionContract.qnt`, `CrosslinkRotatingAuthenticatedProgressProjectionContract.qnt`, `CrosslinkProductionFinalityProjectionContract.qnt`, `CrosslinkValidatorScaleFinalityProgressContract.qnt` | Wires a resampled BFT decision into Crosslink finality, including fixed-sigma, dynamic-sigma, authenticated dynamic-sigma height-indexed compositions, a TLC-sized nil-resampling/finality progress contract, an imported-predicate bridge to the composed quorum/lock-scope/finality/fork-prefix checks, a two-height heighted progress projection, authenticated and rotating-validator authenticated two-height progress projections, a production-fixture proposal/finality gate with generated serialized prefix-field checks, and a validator-scale stress-to-finality contract. |
 | Evidence gossip | `CrosslinkEvidenceGossip.qnt`, `CrosslinkHeightedEvidenceGossip.qnt`, `CrosslinkHeightedAuthenticatedProgressProjectionContract.qnt`, `CrosslinkRotatingAuthenticatedProgressProjectionContract.qnt`, `CrosslinkFixtureGossipTransport.qnt`, `CrosslinkProductionFinalityProjectionContract.qnt` | Separates gossiped evidence from observer-local accepted evidence; the heighted variant requires gossip, observed precommits, and fat pointers to agree on BFT height. The authenticated progress projections gate two-height finality on observed quorum precommits plus matching fat-pointer signatures, with the rotating projection also checking signer authorization against the validator set active at the evidence height. The fixture transport bridge requires canonical Crosslink-topic envelopes before accepting the generated fixture wire, and the production-finality projection requires proposal transport for the generated BFT-block candidate with matching serialized version/height/finalization/header-prefix fields plus the transported fat-pointer wire before finality advances. |
-| Message authentication | `CrosslinkMessageAuth.qnt`, `CrosslinkHeightedMessageAuth.qnt`, `CrosslinkFixtureGossipTransport.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted; the heighted variant binds BFT height into the sign bytes. The fixture transport bridge checks the generated fixture sign-bytes token and relies on the fixture-manifest gate for real Ed25519 verification. |
+| Message authentication | `CrosslinkMessageAuth.qnt`, `CrosslinkHeightedMessageAuth.qnt`, `CrosslinkTenderlinkGossipRouter.qnt`, `CrosslinkTenderlinkGossipRouterSafety.qnt`, `CrosslinkFixtureGossipTransport.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted; the heighted variant binds BFT height into the sign bytes. The Tenderlink router contract keeps proposal/POL packets, accountability evidence, known-peer consensus packets, and status packets on separate channel/kind namespaces under the shared Crosslink consensus topic. The fixture transport bridge checks the generated fixture sign-bytes token and relies on the fixture-manifest gate for real Ed25519 verification. |
 
 ## Deliberate Deviations From Tendermint
 
@@ -76,6 +76,10 @@ two-signature quorum and a three-signature f = 1 quorum.
 gate: transported POL evidence is accepted only after the matching proposal
 chunk and prevote packet have arrived as decrypted exact compact Tenderlink
 packets.
+`CrosslinkTenderlinkGossipRouter.qnt` and
+`CrosslinkTenderlinkGossipRouterSafety.qnt` then add the shared Tenderlink
+router namespace contract for the proposal/POL, accountability-evidence,
+known-peer, and status lanes.
 
 ### Moving Values
 
@@ -211,7 +215,10 @@ config.
 ## Remaining Work To Match Upstream Quality
 
 - Connect the heighted authentication and evidence-gossip models to production
-  serialization, signatures, and full production gossip transport.
+  serialization, signatures, and full production gossip transport. The
+  Tenderlink router contract now covers the current compact transport lanes,
+  but the fully stateful imported composition still needs namespaced transport
+  state.
 - Connect the dynamic-sigma consensus-param format/transport models to real
   implementation serialization and gossip vectors once the production format
   exists.

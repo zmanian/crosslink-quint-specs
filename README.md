@@ -96,6 +96,15 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkTenderlinkStatusPacketFormat.qnt` pins the status-flagged
   `PacketHeader` plus inline `PacketStatus` body: height, round, proposal
   chunk request range, prevote request range, and precommit request range.
+- `spec/CrosslinkTenderlinkGossipRouter.qnt` records the shared Tenderlink
+  router contract for the current compact transport lanes: proposal/POL
+  packets, accountability evidence, known-peer consensus packets, and status
+  packets all stay on the Crosslink consensus topic but occupy separate
+  channel/kind namespaces.
+- `spec/CrosslinkTenderlinkGossipRouterSafety.qnt` is the verifier-friendly
+  direct safety slice for that Tenderlink router contract. It keeps the
+  channel/topic/kind invariant in Apalache while the fully stateful alias
+  composition waits on namespaced transport state.
 - `spec/CrosslinkMalachiteProposalProtobufFormat.qnt` pins the Malachite
   protobuf proposal boundary for `Value`, `Proposal`,
   `SignedMessage::Proposal`, and streamed proposal parts, including exact
@@ -501,6 +510,7 @@ production-finality projection, heighted message gossip transport,
 Tenderlink vote/proposal bytes, vote packets,
 proposal/POL evidence, consensus packets, accountability evidence, transport, and observer,
 nonce/ack transport, status packets,
+tenderlink router and router safety,
 heighted authenticated gossip transport, Malachite proposal/liveness/sync
 protobuf certificates and
 messages, Malachite proposal/liveness/sync gossip transport and router,
