@@ -37,6 +37,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
+- `spec/CrosslinkHeightedValidatorEvidence.qnt` composes validator-set
+  rotation with heighted evidence, so observed precommits and fat pointers are
+  authorized by the validator set active at their BFT height.
 - `spec/CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler
   liveness model for nil-precommit resampling: unstable rounds burn
   nil-precommit certificates, then a stable stream window can deliver the
@@ -51,7 +54,8 @@ the Zebra Crosslink working branch:
   fork-tree-derived candidate for the BFT height and round.
 - `spec/CrosslinkBftBlockShape.qnt` models the production BFT-block header
   vector shape from `FindBlockHeaders(candidate)`, separating the declared
-  `head - sigma` candidate from the descendant headers carried in the proposal.
+  `head - sigma` candidate from the descendant headers carried in the proposal
+  and checking stateless version, ordering, and PoW-validation guards.
 
 The round-recovery model has two first-class instantiations:
 
@@ -111,6 +115,7 @@ quint typecheck spec/CrosslinkHeightedEvidenceGossip.qnt
 quint typecheck spec/CrosslinkMessageAuth.qnt
 quint typecheck spec/CrosslinkHeightedMessageAuth.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
+quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkSchedulerLiveness.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
@@ -141,6 +146,7 @@ quint test spec/CrosslinkHeightedEvidenceGossip.qnt --main=CrosslinkHeightedEvid
 quint test spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --max-samples=100 --backend=rust
 
 quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -154,6 +160,7 @@ quint verify spec/CrosslinkHeightedEvidenceGossip.qnt --main=CrosslinkHeightedEv
 quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3

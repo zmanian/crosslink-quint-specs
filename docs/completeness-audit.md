@@ -21,7 +21,7 @@ Status terms:
 | Nil-precommit resampling spec | `NilPrecommitResamplingCrosslink`; `test:resampling`; `verify:resampling-safety`; `CrosslinkHeightedRound.qnt` | covered | Heighted round-machine coverage is currently a separate model. |
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
 | Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`, `CrosslinkBftBlockShapeModel`; `test:head-sigma`; `test:heighted-head-sigma`; `test:bft-block-shape`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety`; `verify:bft-block-shape-safety` | partial | Abstract, heighted, and first production-shape `head - sigma` models exist; need captured production data vectors. |
-| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `test:proposal-validity`; `test:bft-block-shape` | partial | Abstract validity split exists; the first concrete BFT-block header-vector shape is modeled, but full header validity and PoW checks remain open. |
+| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `test:proposal-validity`; `test:bft-block-shape` | partial | Abstract validity split exists; the first concrete BFT-block header-vector shape and stateless version/order/PoW guards are modeled, but production header validation remains abstract. |
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
@@ -32,7 +32,7 @@ Status terms:
 | Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout`; `precommitTimeoutDoesNotClearHeightedLockTest` | partial | Needs fuller timeout scheduling and temporal properties. |
 | Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedHeadSigmaRound.qnt`; `test:heighted-round`; `test:heighted-head-sigma`; `verify:heighted-round-safety`; `verify:heighted-head-sigma-safety` | partial | First receive-reactive heighted slice now has concrete head-sigma stream linkage; not yet composed with auth/evidence rules. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Production signer-set formats remain open. |
-| Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `test:validator-set-change`; `verify:validator-set-change-safety` | partial | Standalone validator-set rotation model; not yet linked to production signer-set formats. |
+| Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `spec/CrosslinkHeightedValidatorEvidence.qnt`; `test:validator-set-change`; `test:heighted-validator-evidence`; `verify:validator-set-change-safety`; `verify:heighted-validator-evidence-safety` | partial | Validator-set rotation is now linked to heighted evidence signer authorization; production signer-set formats remain open. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
 | Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety` | partial | Abstract standalone models; not yet wired into production gossip. |
 | Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `test:message-auth`; `test:heighted-message-auth`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety` | partial | Abstract signature metadata; not yet linked to concrete serialization or crypto. |
@@ -61,7 +61,7 @@ shape checks, proposal validity, valid-round evidence, fork
 finality, composed resampling/finality, composed liveness, multi-height finality,
 height-indexed round-machine behavior, heighted finality composition, evidence
 gossip, heighted evidence gossip, message authentication, heighted message
-authentication, and validator-set changes.
+authentication, validator-set changes, and heighted validator evidence.
 
 `npm run verify` currently runs bounded Apalache safety checks at depth 3 for:
 
@@ -78,6 +78,7 @@ CrosslinkHeightedEvidenceGossipModel
 CrosslinkMessageAuthModel
 CrosslinkHeightedMessageAuthModel
 CrosslinkValidatorSetChangeModel
+CrosslinkHeightedValidatorEvidenceModel
 CrosslinkSchedulerLivenessModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
@@ -91,7 +92,7 @@ The goal is not complete yet. The strongest remaining gaps are:
 - replace bounded scheduler-parametric liveness checks with a general temporal
   liveness proof under post-GST stream stability;
 - expand the BFT-block header-shape model into captured production data vectors
-  and full header validity checks;
+  and concrete header-validation checks;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
 - link dynamic validator-set changes to production signer-set formats;

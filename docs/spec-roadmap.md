@@ -121,6 +121,10 @@ For Crosslink, matching that quality means adding:
   slice: a BFT decision records the active signer set for that height and
   installs the decided next validator set for the following height. It rejects
   removed validators signing at the next height and signer sets without quorum.
+- `CrosslinkHeightedValidatorEvidence.qnt` composes that validator-set rotation
+  with heighted evidence. Observed precommits and fat pointers are authorized
+  by the validator set active at the evidence height, so old-height evidence
+  still uses the old set while next-height evidence uses the rotated set.
 - `CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler liveness
   slice for nil-precommit resampling. It still assumes a bounded post-GST
   window, but it no longer fixes a single validator ordering: unstable rounds
@@ -141,7 +145,9 @@ For Crosslink, matching that quality means adding:
   payload model. It captures the fact that Zebra's `FindBlockHeaders` response
   starts after the known candidate hash, so a locally produced proposal can
   carry exactly sigma descendant headers while the finality candidate remains
-  the declared `head - sigma` ancestor.
+  the declared `head - sigma` ancestor. It also models the stateless validation
+  guards documented on `BftBlock::try_from`: expected version, sigma header
+  count, consecutive header order, and valid PoW solutions.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
