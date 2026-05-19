@@ -26,6 +26,23 @@ jobs:
       - name: Install
         run: npm install
 
+      - name: Install Quint Rust evaluator
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVALUATOR_VERSION: v0.5.0
+          EVALUATOR_ASSET: quint_evaluator-x86_64-unknown-linux-gnu.tar.gz
+        run: |
+          evaluator_dir="$HOME/.quint/rust-evaluator-$EVALUATOR_VERSION"
+          mkdir -p "$evaluator_dir"
+          gh release download "evaluator/$EVALUATOR_VERSION" \
+            --repo informalsystems/quint \
+            --pattern "$EVALUATOR_ASSET" \
+            --dir "$evaluator_dir" \
+            --clobber
+          tar -xzf "$evaluator_dir/$EVALUATOR_ASSET" -C "$evaluator_dir"
+          chmod +x "$evaluator_dir/quint_evaluator"
+          rm "$evaluator_dir/$EVALUATOR_ASSET"
+
       - name: Check specs
         run: npm test
 
