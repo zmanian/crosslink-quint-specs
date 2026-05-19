@@ -347,6 +347,14 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkDynamicSigmaBranchCompetition.qnt` feeds generated published-tip
   work competition into the same dynamic controller, including the adversarial
   branch-release witness that raises sigma from a derived rollback signal.
+- `CrosslinkDynamicSigmaResampling.qnt` composes the derived fork signal with
+  nil-precommit resampling. It checks that sigma can rise before validators
+  advance the abandoned Tenderlink round and that the resampling path can still
+  decide the fresh stream value.
+- `CrosslinkDynamicSigmaFinality.qnt` composes dynamic sigma, nil-precommit
+  resampling, generated branch competition, and Crosslink finality. It uses
+  the live dynamic sigma as the finality tail-confirmation depth and checks
+  that low participation or fork-derived sigma increases can delay finality.
 - `CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
   boundary for the dynamic controller. It checks that committed per-height
   `bc_confirmation_depth_sigma` wires decode to the deterministic active sigma,
@@ -534,6 +542,7 @@ For Crosslink, matching that quality means adding:
   PoW stochastic-assumption, PoW fork-schedule, PoW branch-competition,
   PoW-reorg-stress, dynamic-sigma, dynamic-sigma telemetry,
   dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
+  dynamic-sigma resampling, dynamic-sigma finality,
   dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
   dynamic-sigma consensus-param-transport, dynamic-sigma head-sampling,
   dynamic-sigma heighted-round,
@@ -618,6 +627,13 @@ For Crosslink, matching that quality means adding:
   generated published-tip work competition, checking that released
   adversarial work can become the best tip and raise sigma through the derived
   rollback-depth path.
+- `CrosslinkDynamicSigmaResamplingModel` composes that derived signal with
+  nil-precommit recovery, checking that a fork-derived sigma raise happens
+  before the next round resamples and decides the fresh stream value.
+- `CrosslinkDynamicSigmaFinalityModel` extends the same composition through
+  Crosslink finality, checking tail confirmation under live dynamic sigma,
+  skipped-BFT-height rejection, generated branch competition, and
+  low-participation sigma delaying finality.
 - `CrosslinkDynamicSigmaHeadSamplingModel` composes that controller with
   `head - sigma(h)` sampling. It verifies that height 0 samples with the
   initial sigma, a nil-round burn leaves that sample and same-height sigma
