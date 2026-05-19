@@ -178,7 +178,10 @@ For Crosslink, matching that quality means adding:
   `PacketHeader` tag/ack prefix, including a nonzero
   `ack_latest`/`ack_field` vector, complete proposal chunk packet bytes with
   the proposer signature outside the signed payload, and complete
-  prevote/precommit vote batch packet bytes. The witnesses also reject
+  prevote/precommit vote batch packet bytes. It now records the variable-length
+  vote-batch envelope sizes used by POL evidence: 112-byte one-signature,
+  178-byte weighted two-signature, and 244-byte three-signature payloads. The
+  witnesses also reject
   status-flag compact consensus packets, wrong packet types, malformed ack/tag
   fields, missing proposal signatures, and trailing vote bytes.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport

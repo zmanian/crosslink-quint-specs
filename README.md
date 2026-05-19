@@ -63,7 +63,8 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the legacy
   Tenderlink compact consensus packet envelopes: the 16-byte `PacketHeader`
   tag/ack prefix, including nonzero `ack_latest`/`ack_field` bytes, proposal
-  chunk packet bytes, and prevote/precommit vote batch packet bytes.
+  chunk packet bytes, and prevote/precommit vote batch packet bytes, including
+  the variable-length 112/178/244-byte vote batches used by POL evidence.
 - `spec/CrosslinkTenderlinkNonceAckTransport.qnt` models the known-peer
   stateless Noise transport boundary around those packets: little-endian outer
   nonce prefixes, decrypted canonical consensus packets, `nonce_is_ok`
