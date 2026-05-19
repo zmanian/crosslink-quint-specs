@@ -112,12 +112,23 @@ The model names these predicates:
 ```text
 ObservedPrecommitQuorum
 ObservedNilPrecommitCert
+CorrectSignerValueValueEquivocationEvidence
+CorrectSignerNilValueEquivocationEvidence
 CorrectSameRoundEquivocationEvidence
 CorrectNilValueEquivocationEvidence
 CorrectValueSwitchWithoutUnlock
 ConflictHasAccountabilityEvidence
 ConflictingCommitsAccountable
 ```
+
+The abstract model intentionally separates signer-level slashing facts from
+quorum/certificate context. A value/value precommit equivocation from one
+correct signer is enough to witness same-round equivocation. A nil/value
+precommit equivocation from one correct signer is recorded as signer evidence,
+but `CorrectNilValueEquivocationEvidence` still requires both the nil
+certificate and the conflicting value quorum for the round. This keeps the
+Tendermint value-lock rule from treating a lone nil precommit as unlock
+evidence.
 
 The executable witnesses are:
 
@@ -133,6 +144,9 @@ The bookkeeping-specific witnesses are:
 ```text
 observedEvidenceDoesNotMutateProtocolMessagesTest
 evidenceOnlyConflictStillHasAccountabilityWitnessTest
+signerValueValueEquivocationEvidenceWitnessTest
+signerNilValueEvidenceAloneDoesNotImplyNilValueAccountabilityTest
+nilValueSignerEvidenceWithQuorumContextTest
 validFatPointerEvidenceWitnessTest
 fatPointerRequiresSignerPrecommitEvidenceTest
 fatPointerRequiresQuorumVotingPowerTest

@@ -298,6 +298,12 @@ For Crosslink, matching that quality means adding:
   `Observed*` quorum helpers drive conflicting-commit accountability, and
   `CrosslinkEvidenceBookkeepingModel` checks that evidence can be recorded
   without mutating protocol precommit state.
+- Accountability also separates signer-level equivocation facts from the
+  quorum/certificate context used to explain conflicting commits.
+  Value/value same-round equivocation by one correct signer directly witnesses
+  `CorrectSameRoundEquivocationEvidence`, while nil/value signer evidence is
+  only promoted to `CorrectNilValueEquivocationEvidence` when the round also
+  has an observed nil certificate and conflicting value quorum.
 - Quorum checks now use `VotingPowerOf` over explicit validator voting power
   instead of raw signer counts. The default examples remain equal-weight, and
   `CrosslinkWeightedQuorumModel` checks that two high-power validators can form

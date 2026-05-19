@@ -1241,6 +1241,30 @@ module CrosslinkResampling {
       KeepSeenMessages,
     }
 
+  action SeedCorrectNilPrecommitEvidence(p: Proc_t, r: Round_t): bool =
+    all {
+      p.in(Corr),
+      r.in(Rounds),
+      ObservePrecommitEvidence(p, r, NilSnapshot),
+      firedAction' = "SeedCorrectNilPrecommitEvidence",
+      round' = round,
+      step' = step,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrevote' = evidencePrevote,
+      evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
+    }
+
   action SeedFaultyPrecommitEvidence(p: Proc_t, r: Round_t, v: Snapshot_t): bool =
     all {
       p.in(Faulty),
@@ -1248,6 +1272,30 @@ module CrosslinkResampling {
       IsValidSnapshot(v),
       ObservePrecommitEvidence(p, r, v),
       firedAction' = "SeedFaultyPrecommitEvidence",
+      round' = round,
+      step' = step,
+      decision' = decision,
+      lockedValue' = lockedValue,
+      lockedRound' = lockedRound,
+      validValue' = validValue,
+      validRound' = validRound,
+      cachedProposal' = cachedProposal,
+      cachedProposalRound' = cachedProposalRound,
+      msgsPropose' = msgsPropose,
+      msgsPrevote' = msgsPrevote,
+      msgsPrecommit' = msgsPrecommit,
+      evidencePropose' = evidencePropose,
+      evidencePrevote' = evidencePrevote,
+      evidenceFatPointer' = evidenceFatPointer,
+      KeepSeenMessages,
+    }
+
+  action SeedFaultyNilPrecommitEvidence(p: Proc_t, r: Round_t): bool =
+    all {
+      p.in(Faulty),
+      r.in(Rounds),
+      ObservePrecommitEvidence(p, r, NilSnapshot),
+      firedAction' = "SeedFaultyNilPrecommitEvidence",
       round' = round,
       step' = step,
       decision' = decision,
@@ -1439,24 +1487,43 @@ module CrosslinkResampling {
     ObservedPrecommitQuorum(r1, v1) and
     ObservedPrecommitQuorum(r2, v2)
 
+  def CorrectSignerValueValueEquivocationEvidence(
+    p: Proc_t,
+    r: Round_t,
+    v1: Snapshot_t,
+    v2: Snapshot_t,
+  ): bool =
+    p.in(Corr) and
+    r.in(Rounds) and
+    IsValidSnapshot(v1) and
+    IsValidSnapshot(v2) and
+    v1 != v2 and
+    ObservedValuePrecommitFrom(p, r, v1) and
+    ObservedValuePrecommitFrom(p, r, v2)
+
+  def CorrectSignerNilValueEquivocationEvidence(
+    p: Proc_t,
+    r: Round_t,
+    v: Snapshot_t,
+  ): bool =
+    p.in(Corr) and
+    r.in(Rounds) and
+    IsValidSnapshot(v) and
+    ObservedNilPrecommitFrom(p, r) and
+    ObservedValuePrecommitFrom(p, r, v)
+
   def CorrectSameRoundEquivocationEvidence(
     r: Round_t,
     v1: Snapshot_t,
     v2: Snapshot_t,
   ): bool =
-    v1 != v2 and
-    Corr.exists(p =>
-      ObservedValuePrecommitFrom(p, r, v1) and
-      ObservedValuePrecommitFrom(p, r, v2)
-    )
+    Corr.exists(p => CorrectSignerValueValueEquivocationEvidence(p, r, v1, v2))
 
   def CorrectNilValueEquivocationEvidence(r: Round_t, v: Snapshot_t): bool =
     IsValidSnapshot(v) and
     ObservedNilPrecommitCert(r) and
     ObservedPrecommitQuorum(r, v) and
-    Corr.exists(p =>
-      ObservedNilPrecommitFrom(p, r) and ObservedValuePrecommitFrom(p, r, v)
-    )
+    Corr.exists(p => CorrectSignerNilValueEquivocationEvidence(p, r, v))
 
   def CorrectValueSwitchWithoutUnlock(
     p: Proc_t,
@@ -1878,6 +1945,51 @@ module CrosslinkEvidenceBookkeepingModel {
         assert(CorrectValueSwitchWithoutUnlock("p2", 0, "s0", 1, "s1")),
         assert(ConflictHasAccountabilityEvidence(0, "s0", 1, "s1")),
         assert(ConflictingCommitsAccountable),
+        unchangedAll,
+      })
+  }
+
+  run signerValueValueEquivocationEvidenceWitnessTest = {
+    Init
+      .then(SeedCorrectPrecommitEvidence("p1", 0, "s0"))
+      .then(SeedCorrectPrecommitEvidence("p1", 0, "s1"))
+      .then(all {
+        assert(CorrectSignerValueValueEquivocationEvidence("p1", 0, "s0", "s1")),
+        assert(CorrectSameRoundEquivocationEvidence(0, "s0", "s1")),
+        assert(not(ObservedPrecommitQuorum(0, "s0"))),
+        assert(not(ObservedPrecommitQuorum(0, "s1"))),
+        unchangedAll,
+      })
+  }
+
+  run signerNilValueEvidenceAloneDoesNotImplyNilValueAccountabilityTest = {
+    Init
+      .then(SeedCorrectNilPrecommitEvidence("p1", 0))
+      .then(SeedCorrectPrecommitEvidence("p1", 0, "s0"))
+      .then(all {
+        assert(CorrectSignerNilValueEquivocationEvidence("p1", 0, "s0")),
+        assert(not(ObservedNilPrecommitCert(0))),
+        assert(not(ObservedPrecommitQuorum(0, "s0"))),
+        assert(not(CorrectNilValueEquivocationEvidence(0, "s0"))),
+        unchangedAll,
+      })
+  }
+
+  run nilValueSignerEvidenceWithQuorumContextTest = {
+    Init
+      .then(SeedCorrectNilPrecommitEvidence("p1", 0))
+      .then(SeedCorrectNilPrecommitEvidence("p2", 0))
+      .then(SeedFaultyNilPrecommitEvidence("p4", 0))
+      .then(SeedCorrectPrecommitEvidence("p1", 0, "s0"))
+      .then(SeedCorrectPrecommitEvidence("p2", 0, "s0"))
+      .then(SeedFaultyPrecommitEvidence("p4", 0, "s0"))
+      .then(all {
+        assert(ObservedNilPrecommitCert(0)),
+        assert(ObservedPrecommitQuorum(0, "s0")),
+        assert(CorrectSignerNilValueEquivocationEvidence("p1", 0, "s0")),
+        assert(CorrectNilValueEquivocationEvidence(0, "s0")),
+        assert(not(PrecommitQuorum(0, NilSnapshot))),
+        assert(not(PrecommitQuorum(0, "s0"))),
         unchangedAll,
       })
   }
