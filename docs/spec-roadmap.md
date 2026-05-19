@@ -335,6 +335,11 @@ For Crosslink, matching that quality means adding:
   before their matching ingress records, that finality waits for both projected
   records, and that Tenderlink precommit traffic cannot stand in for a
   production-finality proposal envelope.
+- `CrosslinkProductionFinalityIngressProjectionBridge.qnt` composes the actual
+  production ingress actions with the production finality projection actions.
+  It exercises the integrated imported-action graph under the Rust backend,
+  while the scalar ingress bridge remains the Apalache/TLC proof target because
+  the imported composition still hits Quint's flattening limits.
 
 ### 2026-05-18
 
@@ -676,6 +681,11 @@ For Crosslink, matching that quality means adding:
   finality without both the transported checked-in BFT-block candidate and
   transported fat-pointer wire; the scalar TLC projection proves eventual
   fixture finality under fair progress through the same gates.
+- `CrosslinkProductionFinalityIngressProjectionBridge.qnt` adds an
+  imported-action composition from production ingress acceptance into that
+  projection contract. Rust tests cover both the happy path and raw projection
+  skips; Apalache/TLC coverage stays on `CrosslinkProductionFinalityIngressBridge.qnt`
+  until the direct imported graph is flattened cleanly.
 - `CrosslinkHeightedAuthenticatedGossipTransport.qnt` adds the corresponding
   non-fixture transport bridge for heighted authenticated evidence. It keeps
   bytes compact but prevents authenticated precommits or fat-pointer signatures

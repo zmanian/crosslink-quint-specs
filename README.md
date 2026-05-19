@@ -160,6 +160,12 @@ the Zebra Crosslink working branch:
   checked-in BFT-block proposal and fat-pointer wire cannot become
   projection-ready, or finalizable, until the matching production-finality
   ingress records have been accepted.
+- `spec/CrosslinkProductionFinalityIngressProjectionBridge.qnt` composes the
+  node-local production ingress machine with the richer production finality
+  projection contract. It is kept in the Rust test/typecheck lane because
+  Apalache currently trips over this imported-action shape; the scalar ingress
+  bridge carries the verifier-friendly safety and TLC coverage for the same
+  gate.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
@@ -482,6 +488,10 @@ The current spec surface has three first-class Crosslink variants:
   `CrosslinkProductionFinalityIngressBridgeModel` then checks that those
   accepted production-finality ingress records are the prerequisite for
   projection-ready proposal/fat-pointer evidence and finality.
+  `CrosslinkProductionFinalityIngressProjectionBridgeModel` also composes the
+  actual production ingress and finality projection actions in the Rust
+  backend, so the integrated action graph is exercised while the scalar bridge
+  remains the Apalache/TLC proof target.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
@@ -620,6 +630,7 @@ quint typecheck spec/CrosslinkMalachiteGossipRouterSafety.qnt
 quint typecheck spec/CrosslinkProductionGossipRegistry.qnt
 quint typecheck spec/CrosslinkProductionGossipIngress.qnt
 quint typecheck spec/CrosslinkProductionFinalityIngressBridge.qnt
+quint typecheck spec/CrosslinkProductionFinalityIngressProjectionBridge.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
 quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkHeightedAuthenticatedEvidence.qnt
@@ -769,6 +780,7 @@ quint test spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachi
 quint test spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionFinalityIngressBridge.qnt --main=CrosslinkProductionFinalityIngressBridgeModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkProductionFinalityIngressProjectionBridge.qnt --main=CrosslinkProductionFinalityIngressProjectionBridgeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --max-samples=100 --backend=rust
