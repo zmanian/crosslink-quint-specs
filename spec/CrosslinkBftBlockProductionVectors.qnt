@@ -37,6 +37,12 @@ module CrosslinkBftBlockProductionVectors {
     HeaderNonceByteLen +
     CompactCommonSolutionLenByteLen +
     CommonSolutionByteLen
+  pure val FixtureHeaderLogicalVersion = 4
+  pure val FixturePreviousFatPointerSignatureCount = 1
+  pure val FixtureTrailingFatPointerSignatureCount = 1
+  pure val FixtureHeaderCount = 3
+  pure val FixtureBftBlockByteLen = 4619
+  pure val FixtureBftBlockAndFatPointerByteLen = 4761
 
   pure val VersionOffset = 0
   pure val BftHeightOffset = VersionOffset + U32ByteLen
@@ -74,6 +80,16 @@ module CrosslinkBftBlockProductionVectors {
     HeaderWithoutCrosslinkFatPointerByteLen +
     PreviousFatPointerByteLen(headerFatPointerSignatureCount)
 
+  pure def HeaderWireByteLen(
+    logicalVersion: int,
+    headerFatPointerSignatureCount: int,
+  ): int =
+    if (logicalVersion >= 5) {
+      CrosslinkHeaderWireByteLen(headerFatPointerSignatureCount)
+    } else {
+      HeaderWithoutCrosslinkFatPointerByteLen
+    }
+
   pure def BftBlockWireByteLen(
     previousFatPointerSignatureCount: int,
     headerCount: int,
@@ -81,6 +97,31 @@ module CrosslinkBftBlockProductionVectors {
   ): int =
     HeadersStartOffset(previousFatPointerSignatureCount) +
     headerCount * CrosslinkHeaderWireByteLen(headerFatPointerSignatureCount)
+
+  pure def BftBlockWireByteLenForHeaderVersion(
+    previousFatPointerSignatureCount: int,
+    headerCount: int,
+    headerFatPointerSignatureCount: int,
+    logicalVersion: int,
+  ): int =
+    HeadersStartOffset(previousFatPointerSignatureCount) +
+    headerCount *
+      HeaderWireByteLen(logicalVersion, headerFatPointerSignatureCount)
+
+  pure def BftBlockAndFatPointerWireByteLenForHeaderVersion(
+    previousFatPointerSignatureCount: int,
+    headerCount: int,
+    headerFatPointerSignatureCount: int,
+    logicalVersion: int,
+    trailingFatPointerSignatureCount: int,
+  ): int =
+    BftBlockWireByteLenForHeaderVersion(
+      previousFatPointerSignatureCount,
+      headerCount,
+      headerFatPointerSignatureCount,
+      logicalVersion,
+    ) +
+    PreviousFatPointerByteLen(trailingFatPointerSignatureCount)
 
   pure def HeaderStartOffset(
     previousFatPointerSignatureCount: int,
@@ -101,6 +142,30 @@ module CrosslinkBftBlockProductionVectors {
       headerIndex,
     ) +
     CrosslinkHeaderWireByteLen(headerFatPointerSignatureCount)
+
+  pure def HeaderStartOffsetForHeaderVersion(
+    previousFatPointerSignatureCount: int,
+    headerFatPointerSignatureCount: int,
+    logicalVersion: int,
+    headerIndex: int,
+  ): int =
+    HeadersStartOffset(previousFatPointerSignatureCount) +
+    headerIndex *
+      HeaderWireByteLen(logicalVersion, headerFatPointerSignatureCount)
+
+  pure def HeaderEndOffsetForHeaderVersion(
+    previousFatPointerSignatureCount: int,
+    headerFatPointerSignatureCount: int,
+    logicalVersion: int,
+    headerIndex: int,
+  ): int =
+    HeaderStartOffsetForHeaderVersion(
+      previousFatPointerSignatureCount,
+      headerFatPointerSignatureCount,
+      logicalVersion,
+      headerIndex,
+    ) +
+    HeaderWireByteLen(logicalVersion, headerFatPointerSignatureCount)
 
   def SerializerHeaderCountMatchesVector(headerCount: int): bool =
     HeaderCounts.contains(headerCount)
@@ -136,6 +201,12 @@ module CrosslinkBftBlockProductionVectors {
       CrosslinkHeaderWireByteLen(n) == 1533 + n * 96
     )
 
+  val HeaderVersionVectorsPinned =
+    HeaderWireByteLen(4, 0) == 1487 and
+    HeaderWireByteLen(4, 1) == 1487 and
+    HeaderWireByteLen(5, 0) == 1533 and
+    HeaderWireByteLen(5, 1) == 1629
+
   val HeaderVectorsAreContiguous =
     PreviousFatPointerSignatureCounts.forall(previousSigCount =>
       PreviousFatPointerSignatureCounts.forall(headerSigCount =>
@@ -153,13 +224,54 @@ module CrosslinkBftBlockProductionVectors {
     DeserializationBypassesTryFromSigma(0) and
     DeserializationBypassesTryFromSigma(Sigma + 1)
 
+  val CheckedInFixtureEnvelopePinned =
+    BftBlockWireByteLenForHeaderVersion(
+      FixturePreviousFatPointerSignatureCount,
+      FixtureHeaderCount,
+      0,
+      FixtureHeaderLogicalVersion,
+    ) == FixtureBftBlockByteLen and
+    BftBlockAndFatPointerWireByteLenForHeaderVersion(
+      FixturePreviousFatPointerSignatureCount,
+      FixtureHeaderCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      FixtureTrailingFatPointerSignatureCount,
+    ) == FixtureBftBlockAndFatPointerByteLen and
+    HeaderStartOffsetForHeaderVersion(
+      FixturePreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      0,
+    ) == 158 and
+    HeaderStartOffsetForHeaderVersion(
+      FixturePreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      1,
+    ) == 1645 and
+    HeaderStartOffsetForHeaderVersion(
+      FixturePreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      2,
+    ) == 3132 and
+    HeaderEndOffsetForHeaderVersion(
+      FixturePreviousFatPointerSignatureCount,
+      0,
+      FixtureHeaderLogicalVersion,
+      2,
+    ) == FixtureBftBlockByteLen
+
   val Safety =
     FixedPrefixOffsetsMatchCode and
     PreviousFatPointerVectorsPinned and
     CommonCrosslinkHeaderVectorsPinned and
+    HeaderVersionVectorsPinned and
     HeaderVectorsAreContiguous and
     DeserializerCountCapMatchesImplementation and
-    DeserializationSigmaBypassGapRecorded
+    DeserializationSigmaBypassGapRecorded and
+    CheckedInFixtureEnvelopePinned
 
   var checked: bool
 
@@ -205,6 +317,8 @@ module CrosslinkBftBlockProductionVectorsTest {
   run crosslinkHeaderLengthsForFatPointerSignatureCountsTest = {
     Init
       .then(all {
+        assert(HeaderWithoutCrosslinkFatPointerByteLen == 1487),
+        assert(HeaderWireByteLen(4, 0) == 1487),
         assert(CrosslinkHeaderWireByteLen(0) == 1533),
         assert(CrosslinkHeaderWireByteLen(1) == 1629),
         assert(CrosslinkHeaderWireByteLen(2) == 1725),
@@ -229,6 +343,25 @@ module CrosslinkBftBlockProductionVectorsTest {
         assert(HeaderEndOffset(0, 0, 0) == 1595),
         assert(HeaderStartOffset(0, 0, 1) == 1595),
         assert(HeaderStartOffset(0, 1, 1) == 1691),
+        unchangedAll,
+      })
+  }
+
+  run checkedInBftBlockAndFatPointerFixtureEnvelopeTest = {
+    Init
+      .then(all {
+        assert(BftBlockWireByteLenForHeaderVersion(1, 3, 0, 4) == 4619),
+        assert(BftBlockAndFatPointerWireByteLenForHeaderVersion(
+          1,
+          3,
+          0,
+          4,
+          1,
+        ) == 4761),
+        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 0) == 158),
+        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 1) == 1645),
+        assert(HeaderStartOffsetForHeaderVersion(1, 0, 4, 2) == 3132),
+        assert(HeaderEndOffsetForHeaderVersion(1, 0, 4, 2) == 4619),
         unchangedAll,
       })
   }

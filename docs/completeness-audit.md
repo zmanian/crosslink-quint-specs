@@ -20,12 +20,12 @@ Status terms:
 | Baseline Crosslink spec | `BaselineCrosslink` in `spec/CrosslinkResampling.qnt`; `test:baseline`; `verify:baseline-safety` | covered | Heighted round-machine coverage is currently a separate model. |
 | Nil-precommit resampling spec | `NilPrecommitResamplingCrosslink`; `test:resampling`; `verify:resampling-safety`; `CrosslinkHeightedRound.qnt` | covered | Heighted round-machine coverage is currently a separate model. |
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
-| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`, `CrosslinkBftBlockShapeModel`, `CrosslinkBftBlockValidationGapModel`, `CrosslinkBftBlockProductionVectorsModel`; `test:head-sigma`; `test:heighted-head-sigma`; `test:bft-block-shape`; `test:bft-block-validation-gap`; `test:bft-block-production-vectors`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety`; `verify:bft-block-shape-safety`; `verify:bft-block-validation-gap-safety`; `verify:bft-block-production-vectors-safety` | partial | Abstract, heighted, production-shape `head - sigma`, constructor-gap, and first BFT-block wire-vector models exist; still need generated fixtures from real serialized production blocks. |
-| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `CrosslinkBftBlockValidationGap.qnt`; `CrosslinkBftBlockProductionVectors.qnt`; `test:proposal-validity`; `test:bft-block-shape`; `test:bft-block-validation-gap`; `test:bft-block-production-vectors` | partial | Abstract validity split exists, and the specs now record that current `BftBlock::try_from` only enforces header count while documented version/order/PoW checks remain unimplemented. Production wire offsets and deserialization sigma-bypass are pinned; concrete production header validation still needs implementation. |
+| Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`, `CrosslinkBftBlockShapeModel`, `CrosslinkBftBlockValidationGapModel`, `CrosslinkBftBlockProductionVectorsModel`; `test:head-sigma`; `test:heighted-head-sigma`; `test:bft-block-shape`; `test:bft-block-validation-gap`; `test:bft-block-production-vectors`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety`; `verify:bft-block-shape-safety`; `verify:bft-block-validation-gap-safety`; `verify:bft-block-production-vectors-safety` | partial | Abstract, heighted, production-shape `head - sigma`, constructor-gap, and BFT-block wire-vector models exist, including the checked-in `test_pos_block_*.bin` envelope; still need generated fixture regeneration and broader validation from production serialized blocks. |
+| Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `CrosslinkBftBlockValidationGap.qnt`; `CrosslinkBftBlockProductionVectors.qnt`; `test:proposal-validity`; `test:bft-block-shape`; `test:bft-block-validation-gap`; `test:bft-block-production-vectors` | partial | Abstract validity split exists, and the specs now record that current `BftBlock::try_from` only enforces header count while documented version/order/PoW checks remain unimplemented. Production wire offsets, the checked-in version-4 fixture envelope, and deserialization sigma-bypass are pinned; concrete production header validation still needs implementation. |
 | Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; `ProposalFor` reuses only real `validValue`/`validRound` state; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
-| Stochastic PoW production and long reorgs | `CrosslinkHeadSigmaSampling.qnt`, `CrosslinkPowReorgStress.qnt`, `CrosslinkStreamChurnRisk.qnt`, `CrosslinkForkFinality.qnt`, and `CrosslinkHeightedHeadSigmaRound.qnt`; `test:pow-reorg-stress`; `test:stream-churn-risk`; `verify:pow-reorg-stress-safety`; `verify:stream-churn-risk-safety` | partial | Safety is modeled against adversarial bounded fork-tree evolution. The new stress models cover long reorg and same-branch block-arrival churn, plus validator-set size, linear/quadratic GST, sigma, and reorg-depth tails with bounded integer risk numerators. They are not yet calibrated to measured PoW block-arrival, propagation-race, GST, or reorg distributions. |
+| Stochastic PoW production and long reorgs | `CrosslinkHeadSigmaSampling.qnt`, `CrosslinkPowStochasticAssumptions.qnt`, `CrosslinkPowReorgStress.qnt`, `CrosslinkStreamChurnRisk.qnt`, `CrosslinkForkFinality.qnt`, and `CrosslinkHeightedHeadSigmaRound.qnt`; `test:pow-stochastic-assumptions`; `test:pow-reorg-stress`; `test:stream-churn-risk`; `verify:pow-stochastic-assumptions-safety`; `verify:pow-reorg-stress-safety`; `verify:stream-churn-risk-safety` | partial | Safety is modeled against adversarial bounded fork-tree evolution. The stress models cover long reorg and same-branch block-arrival churn, plus validator-set size, linear/quadratic GST, sigma, and reorg-depth tails with bounded integer risk numerators. `CrosslinkPowStochasticAssumptions.qnt` now pins Zebra's 75-second post-Blossom target spacing and makes the assumed arrival-window and reorg-tail numerators executable, but the numerators are still assumptions rather than measured distributions. |
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
 | Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
@@ -60,8 +60,9 @@ npm run verify:temporal
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
 message evidence, local delivery, timeout, liveness witnesses, scheduler
 liveness, scheduler progress contract, finality progress contract, composed
-progress contract, stream-churn risk, PoW-reorg stress, head-sigma sampling,
-heighted head-sigma rounds, BFT-block header shape checks,
+progress contract, stream-churn risk, PoW stochastic assumptions,
+PoW-reorg stress, head-sigma sampling, heighted head-sigma rounds,
+BFT-block header shape checks,
 BFT-block validation-gap checks, BFT-block production-vector checks,
 fat-pointer signer-vector format checks, fat-pointer production-vector checks,
 fat-pointer
@@ -95,6 +96,7 @@ CrosslinkSchedulerProgressContractModel
 CrosslinkFinalityProgressContractModel
 CrosslinkComposedProgressContractModel
 CrosslinkStreamChurnRiskModel
+CrosslinkPowStochasticAssumptionsModel
 CrosslinkPowReorgStressModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
@@ -107,10 +109,10 @@ CrosslinkFatPointerAuthenticatedEvidenceModel
 ```
 
 `npm run verify:extended` is a non-default deeper gate for the newest
-finality-progress, composed-progress, stream-churn, PoW-reorg stress,
-head-sigma stream, BFT-block-shape, BFT-block validation-gap, BFT-block
-production-vector, fat-pointer-format, fat-pointer production-vector, and
-evidence-composition models.
+finality-progress, composed-progress, stream-churn, PoW stochastic-assumption,
+PoW-reorg stress, head-sigma stream, BFT-block-shape, BFT-block
+validation-gap, BFT-block production-vector, fat-pointer-format, fat-pointer
+production-vector, and evidence-composition models.
 It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
 also checked at depth 8, for:
 
@@ -118,6 +120,7 @@ also checked at depth 8, for:
 CrosslinkFinalityProgressContractModel
 CrosslinkComposedProgressContractModel
 CrosslinkStreamChurnRiskModel
+CrosslinkPowStochasticAssumptionsModel
 CrosslinkPowReorgStressModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
@@ -156,12 +159,11 @@ The goal is not complete yet. The strongest remaining gaps are:
 
 - lift the TLC-checked progress contracts into a general temporal liveness
   proof over the imported composed protocol under post-GST stream stability;
-- calibrate the current parameterized stream-churn and PoW-reorg stress layers
-  against measured or assumed distributions for PoW block arrivals,
-  propagation races, GST/validator-set scaling, and long-tail reorg depth;
-- turn the BFT-block production-vector model into generated fixtures from real
-  serialized production blocks, and add production code coverage for version,
-  header-order, and PoW-solution checks;
+- replace the current assumed PoW-arrival, propagation-race, GST scaling, and
+  long-tail reorg numerators with measured or analysis-backed distributions;
+- replace the manually pinned BFT-block fixture envelope with generated
+  fixtures from real serialized production blocks, and add production code
+  coverage for version, header-order, and PoW-solution checks;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
 - extend the fat-pointer byte-vector model into generated production fixtures

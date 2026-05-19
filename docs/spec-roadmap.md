@@ -154,6 +154,11 @@ For Crosslink, matching that quality means adding:
   linear/quadratic GST growth, the prevote-to-precommit vulnerability window,
   normal PoW head arrivals, sigma's long-reorg-tail mitigation, and the number
   of rounds resampling burns before a stable stream window appears.
+- `CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs to that
+  risk model into an executable assumption profile. It pins Zebra's
+  post-Blossom 75-second PoW target spacing, models prevote/precommit window
+  growth as an arrival-risk numerator, and keeps the long-reorg tail as an
+  explicit monotone table by sigma.
 - `CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree witness for
   that risk. A long reorg between prevote and precommit changes the sampled
   `head - sigma` candidate, and an ordinary same-branch block arrival can do
@@ -186,7 +191,8 @@ For Crosslink, matching that quality means adding:
   prefix from `BftBlock::zcash_serialize`: u32 version, u32 BFT height,
   counted previous-block fat pointer, u32 finalization-candidate height, u32
   header count, and contiguous serialized PoW headers. The witnesses also pin
-  the deserialization sigma-bypass gap.
+  the checked-in `test_pos_block_*.bin` envelope with version-4 PoW headers
+  and the deserialization sigma-bypass gap.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
@@ -256,7 +262,7 @@ For Crosslink, matching that quality means adding:
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
-  PoW-reorg-stress, head-sigma,
+  PoW stochastic-assumption, PoW-reorg-stress, head-sigma,
   BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
   fat-pointer-format, fat-pointer production-vector, heighted
   validator-evidence, and heighted authenticated-evidence models. It keeps
@@ -298,6 +304,11 @@ For Crosslink, matching that quality means adding:
   the vulnerable window through GST, global distribution can add quadratic
   delay, sigma lowers only long-reorg-tail exposure, and resampling converts a
   finite number of churn windows into round increments before decision.
+- `CrosslinkPowStochasticAssumptionsModel` adds the first executable
+  calibration profile for that bridge. It uses Zebra's post-Blossom target
+  spacing as the denominator for normal PoW-arrival exposure, checks that
+  global validator distribution raises the vulnerable window, and isolates
+  sigma's effect to an explicit long-reorg-tail numerator table.
 - `CrosslinkPowReorgStressModel` adds the corresponding concrete fork-tree
   stress trace: a long reorg and a same-branch PoW block arrival both burn
   nil-precommit rounds before a stable head-sigma window decides.
@@ -329,8 +340,7 @@ For Crosslink, matching that quality means adding:
   blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC path, so
   this likely needs either a TLC-oriented imported-state refactor or improved
   backend support.
-  The current stream-churn and PoW-reorg stress models are parameterized but
-  not calibrated; a later stochastic analysis should replace their integer
-  risk numerators and finite fork witnesses with measured or assumed
-  distributions for PoW arrivals, propagation races, GST/validator-set
-  scaling, and reorg-depth tails.
+  The current stream-churn and PoW-reorg stress models now have an executable
+  assumption profile, but the arrival, propagation-race, GST-scaling, and
+  long-reorg numerators still need to be replaced by measured or
+  analysis-backed distributions.

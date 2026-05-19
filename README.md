@@ -63,6 +63,11 @@ the Zebra Crosslink working branch:
   create prevote-to-precommit churn exposure, larger sigma only mitigates
   long-tail reorg churn, and nil-precommit resampling burns rounds until a
   stable stream window appears.
+- `spec/CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs for
+  that risk layer into an executable assumption profile. It pins Zebra's
+  post-Blossom 75-second PoW target spacing as the arrival-risk denominator,
+  models validator-set/GST growth as the vulnerable window, and keeps
+  long-reorg tails as explicit monotone integer numerators by sigma.
 - `spec/CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree stress
   witness for that risk: a long reorg and a same-branch block arrival both
   change `head - sigma` between prevote and precommit, causing nil-precommit
@@ -88,7 +93,10 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkBftBlockProductionVectors.qnt` pins the production BFT-block
   wire layout: u32 version, u32 BFT height, counted previous-block fat pointer,
   u32 finalization-candidate height, u32 header count, and contiguous serialized
-  PoW headers. It records the current deserialization sigma-bypass gap.
+  PoW headers. It also pins the checked-in `test_pos_block_*.bin`
+  `BftBlockAndFatPointerToIt` envelope: one previous fat-pointer signature,
+  three version-4 PoW headers without header fat pointers, and one trailing fat
+  pointer signature. It records the current deserialization sigma-bypass gap.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -154,7 +162,7 @@ npm run verify:temporal
 
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
-composed-progress, stream-churn risk, PoW-reorg stress, head-sigma,
+composed-progress, stream-churn risk, PoW stochastic-assumption, PoW-reorg stress, head-sigma,
 BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
 fat-pointer-format, fat-pointer production-vector, fat-pointer
 authenticated-evidence, validator-evidence, and authenticated evidence
@@ -187,6 +195,7 @@ quint typecheck spec/CrosslinkSchedulerProgressContract.qnt
 quint typecheck spec/CrosslinkFinalityProgressContract.qnt
 quint typecheck spec/CrosslinkComposedProgressContract.qnt
 quint typecheck spec/CrosslinkStreamChurnRisk.qnt
+quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
@@ -210,6 +219,7 @@ quint test spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkScheduler
 quint test spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
@@ -254,6 +264,7 @@ quint verify spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkSchedul
 quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
@@ -267,6 +278,7 @@ quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkF
 quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
