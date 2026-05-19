@@ -157,6 +157,13 @@ For Crosslink, matching that quality means adding:
   from the variable-length `write_to` bytes and checks that nil prevote and
   value precommit packet entries reconstruct the canonical 76-byte vote sign
   payload before signature verification.
+- `CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the compact Tenderlink
+  consensus packet envelopes around those payloads: a 16-byte little-endian
+  `PacketHeader` tag/ack prefix, complete proposal chunk packet bytes with
+  the proposer signature outside the signed payload, and complete
+  prevote/precommit vote batch packet bytes. The witnesses also reject
+  status-flag compact consensus packets, wrong packet types, missing proposal
+  signatures, and trailing vote bytes.
 
 ### 2026-05-18
 
