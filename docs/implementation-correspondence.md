@@ -32,6 +32,7 @@ implementation that each rule has a clear code counterpart.
 | Quint rule | Implementation counterpart | Notes |
 | --- | --- | --- |
 | `ValidFinalityCandidate` | Crosslink BFT block/finality candidate validation | Should check branch extension, sigma/tail confirmation, and declared candidate height. |
+| `CrosslinkHeadSigmaSampling.qnt` / `HeadSigmaCandidate` | Crosslink proposal construction from the locally observed PoW head | The model derives the proposal stream as the ancestor at `headHeight - sigma`, including same-branch progress, fork switches, and stable-head windows. |
 | `FinalizeCandidate` | Push/accept decided Crosslink BFT block | The model allows skipped PoW heights on the same branch. |
 | `DecideAt` / `DecisionCursorIsSequential` | BFT-height progression and duplicate-decision rejection | The first multi-height model requires sequential BFT heights while permitting skipped PoW heights inside a valid candidate. |
 | `height` / `HeightCursorSequential` / `FutureHeightsRemainPristine` | Validator-local BFT-height cursor and per-height round state | The heighted round-machine slice checks that future heights stay untouched until reached and that a validator cannot decide height `h + 1` before height `h`. |
@@ -66,5 +67,5 @@ implementation that each rule has a clear code counterpart.
 - Connect the height-indexed authentication and evidence-gossip slices to
   concrete signature verification, serialized message bytes, and production
   gossip.
-- Add implementation-linked test vectors once the Tenderlink message format and
-  Crosslink BFT block encoding stabilize.
+- Add implementation-linked test vectors once the Tenderlink message format,
+  Crosslink BFT block encoding, and PoW head/candidate sampling data stabilize.

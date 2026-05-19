@@ -35,7 +35,7 @@ finality semantics.
 
 | Crosslink concept | Model location | Notes |
 | --- | --- | --- |
-| PoW stream snapshot | `Snapshot_t`, `Stream(round)` | Models the sampled `head - sigma` candidate abstractly. |
+| PoW stream snapshot | `Snapshot_t`, `Stream(round)`, `CrosslinkHeadSigmaSampling.qnt` | Models the sampled `head - sigma` candidate and now has a standalone fork-tree-derived sampling slice. |
 | Static proposal validity | `StaticProposalValidity` | Splits validity into structural validity, PoW-chain validity, and finality-candidate validity. |
 | Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
@@ -168,7 +168,8 @@ branch.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
-  `FinalityCandidateValid` predicates to concrete Crosslink block/header data.
+  `FinalityCandidateValid` predicates, plus the standalone `head - sigma`
+  sampler, to concrete Crosslink block/header data.
 - Expand validator-set modeling beyond the current finite weighted examples to
   production signer-set formats and implementation-linked test vectors.
 - Connect the standalone evidence gossip model to production gossip messages

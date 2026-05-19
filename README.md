@@ -41,6 +41,10 @@ the Zebra Crosslink working branch:
   liveness model for nil-precommit resampling: unstable rounds burn
   nil-precommit certificates, then a stable stream window can deliver the
   proposal/vote duties in nondeterministic validator order and decide.
+- `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
+  explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
+  locally observed PoW head, including same-branch progress, fork switches, and
+  stable-head windows.
 
 The round-recovery model has two first-class instantiations:
 
@@ -101,6 +105,7 @@ quint typecheck spec/CrosslinkMessageAuth.qnt
 quint typecheck spec/CrosslinkHeightedMessageAuth.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
 quint typecheck spec/CrosslinkSchedulerLiveness.qnt
+quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -111,6 +116,7 @@ quint test spec/CrosslinkResampling.qnt --main=CrosslinkLocalDeliveryModel --max
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkTimeoutModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingStableWindowLiveness --max-samples=100 --backend=rust
 quint test spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkProposalValidityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkValidRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --max-samples=100 --backend=rust
@@ -138,6 +144,7 @@ quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --in
 quint verify spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3
+quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 ```
 
 ## Source

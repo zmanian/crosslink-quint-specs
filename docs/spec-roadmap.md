@@ -127,6 +127,10 @@ For Crosslink, matching that quality means adding:
   can burn nil-precommit certificates and advance correct validators in
   nondeterministic order, then a stable round can deliver proposal, prevote,
   and precommit duties until a correct validator decides.
+- `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
+  explicit. It samples the `head - sigma` ancestor of each locally observed
+  PoW head and checks same-branch progress, fork-switch churn, stable-head
+  windows, and tail-confirmed candidate validity.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -180,6 +184,9 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkComposedLivenessModel` now has an executable end-to-end liveness
   script that includes explicit local delivery of the proposal, prevotes, and
   precommits before finalizing the fresh candidate.
+- `CrosslinkHeadSigmaSamplingModel` closes the first part of the
+  `head - sigma` sampling gap by replacing arbitrary stream values with a
+  concrete fork-tree-derived stream witness.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
