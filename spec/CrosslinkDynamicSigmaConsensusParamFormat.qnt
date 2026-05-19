@@ -52,6 +52,18 @@ module CrosslinkDynamicSigmaConsensusParamFormat {
       wire.bcConfirmationDepthSigma,
     )
 
+  pure def EncodeProductionConsensusParamWire(
+    activationHeight: Height_t,
+    telemetryHeight: Height_t,
+    bcConfirmationDepthSigma: Sigma_t,
+  ): ProductionConsensusParamWire_t = {
+    byteLen: ConsensusParamWireByteLen,
+    keyTag: BcConfirmationDepthSigmaKeyTag,
+    activationHeight: activationHeight,
+    telemetryHeight: telemetryHeight,
+    bcConfirmationDepthSigma: bcConfirmationDepthSigma,
+  }
+
   pure def ProductionConsensusParamWireEnvelopeExact(
     wire: ProductionConsensusParamWire_t,
   ): bool =

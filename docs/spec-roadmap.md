@@ -230,10 +230,10 @@ For Crosslink, matching that quality means adding:
   wrong-key, stale-activation, trailing-byte, and out-of-range-sigma envelopes.
 - `CrosslinkDynamicSigmaConsensusParamTransport.qnt` adds the authenticated
   gossip/config-application boundary for those params. It requires quorum-signed
-  canonical param bytes on the Crosslink consensus topic before node config
-  follows a committed next-height sigma, while rejecting wrong-topic,
-  wrong-kind, wrong-byte, wrong-signature, no-quorum, and nondeterministic sigma
-  updates.
+  canonical production param bytes on the Crosslink consensus topic before node
+  config follows a committed next-height sigma after format decoding, while
+  rejecting wrong-topic, wrong-kind, wrong-byte, wrong-signature, wrong-key
+  production envelopes, no-quorum, and nondeterministic sigma updates.
 - `CrosslinkDynamicSigmaHeadSampling.qnt` connects that controller to concrete
   proposal-stream sampling. It imports the dynamic-sigma schedule, samples
   `head - sigma(h)` for the active BFT height, checks that nil-precommit round
@@ -474,10 +474,12 @@ For Crosslink, matching that quality means adding:
   bytes, nil-round byte stability, and rejection of wrong-key, stale,
   trailing-byte, and out-of-range envelopes.
 - `CrosslinkDynamicSigmaConsensusParamTransportModel` adds a signed gossip and
-  node-config application boundary. It verifies quorum-gossiped low-participation
-  sigma raises, recovered-participation lowering, nil-round config stability,
-  and rejection of wrong-topic, wrong-kind, wrong-byte, wrong-signature,
-  no-quorum, and nondeterministic-sigma updates.
+  node-config application boundary over the production byte format. It verifies
+  quorum-gossiped low-participation sigma raises, recovered-participation
+  lowering, nil-round config stability, exact production-wire config storage
+  beside decoded consensus params, and rejection of wrong-topic, wrong-kind,
+  wrong-byte, wrong-signature, wrong-key production envelopes, no-quorum, and
+  nondeterministic-sigma updates.
 - `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel` composes the
   dynamic-sigma candidate boundary with the heighted authenticated-evidence
   pipeline. It verifies accepted height-1 and telemetry-raised height-2
@@ -513,9 +515,10 @@ For Crosslink, matching that quality means adding:
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
   and the dynamic-sigma consensus-param/format/transport/heighted-round/
-  finality/authenticated evidence bridges cover parameter bytes, signed gossip,
-  node-config application, proposals, precommits, fat-pointer evidence, and
-  finality over `head - sigma(h)`, but not the broader production message
+  finality/authenticated evidence bridges cover production-shaped parameter
+  bytes, quorum-signed production-byte gossip, node-config application,
+  proposals, precommits, fat-pointer evidence, and finality over
+  `head - sigma(h)`, but not the broader production message
   transport or real implementation vectors for dynamic-sigma consensus params.
   The remaining work is also to lift the current TLC-friendly progress contracts
   into a full imported-protocol

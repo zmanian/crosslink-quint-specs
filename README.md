@@ -93,8 +93,9 @@ the Zebra Crosslink working branch:
   stale-activation, and out-of-range-sigma rejection.
 - `spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt` adds the
   authenticated gossip and node-config boundary for those bytes: a node only
-  installs a next-height sigma param after quorum-signed canonical param bytes
-  are gossiped on the Crosslink consensus topic.
+  installs a next-height sigma param after quorum-signed canonical production
+  param bytes are gossiped on the Crosslink consensus topic and decoded through
+  the format bridge.
 - `spec/CrosslinkDynamicSigmaHeadSampling.qnt` composes that third variant with
   concrete `head - sigma(h)` sampling: already-sampled same-height candidates
   survive nil-precommit round burns, while committed telemetry changes the
@@ -200,8 +201,9 @@ The current spec surface has three first-class Crosslink variants:
   byte layout for those wires and routes accepted bytes through the same
   controller.
   `CrosslinkDynamicSigmaConsensusParamTransportModel` requires quorum-signed
-  canonical param bytes on the Crosslink gossip topic before the node config
-  follows a committed next-height sigma.
+  canonical production param bytes on the Crosslink gossip topic before the
+  node config follows a committed next-height sigma, and stores both the exact
+  production wire and its decoded consensus-param wire.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality

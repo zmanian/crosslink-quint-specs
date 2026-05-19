@@ -2,22 +2,23 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
   /*
    Dynamic-sigma consensus-parameter transport boundary.
 
-   CrosslinkDynamicSigmaConsensusParams.qnt models the deterministic
-   `bc_confirmation_depth_sigma` envelope that is committed at BFT-height
-   boundaries. This slice adds the production-facing transport/authentication
-   obligation around that envelope: before a node installs a next-height sigma
-   parameter, it must see quorum-signed canonical param bytes on the Crosslink
-   consensus gossip topic.
+   CrosslinkDynamicSigmaConsensusParamFormat.qnt pins the production-shaped
+   `bc_confirmation_depth_sigma` byte envelope that is committed at BFT-height
+   boundaries. This slice adds the transport/authentication obligation around
+   that envelope: before a node installs a next-height sigma parameter, it must
+   see quorum-signed canonical production param bytes on the Crosslink consensus
+   gossip topic.
 
    Crypto and bytes remain compact tokens, following the other authentication
    models in this repo. The important shape is that the signature signs the
-   exact canonical payload for the claimed param wire, and the node config only
-   follows wires that were both gossiped with quorum and committed by the
-   deterministic controller.
+   exact canonical payload for the claimed production param wire, and the node
+   config only follows production wires that were both gossiped with quorum and
+   committed by the deterministic controller after format decoding.
    */
 
-  import CrosslinkDynamicSigmaConsensusParams.* from "./CrosslinkDynamicSigmaConsensusParams"
-  export CrosslinkDynamicSigmaConsensusParams.*
+  import CrosslinkDynamicSigmaConsensusParamFormat.* from
+    "./CrosslinkDynamicSigmaConsensusParamFormat"
+  export CrosslinkDynamicSigmaConsensusParamFormat.*
 
   type ParamSigner_t = str
   type ParamBytes_t = str
@@ -29,7 +30,7 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
     topic: ParamTopic_t,
     kind: ParamEnvelopeKind_t,
     signer: ParamSigner_t,
-    wire: ConsensusParamWire_t,
+    wire: ProductionConsensusParamWire_t,
     bytes: ParamBytes_t,
     signature: ParamSignature_t,
   }
@@ -41,14 +42,24 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
   const ParamSignatures: Set[ParamSignature_t]
   const ParamSignatureOwner: ParamSignature_t -> ParamSigner_t
   const ParamSignatureBytes: ParamSignature_t -> ParamBytes_t
-  const ConsensusParamPayload:
-    Height_t -> Height_t -> Sigma_t -> ParamBytes_t
+  const ProductionConsensusParamPayload:
+    int -> int -> Height_t -> Height_t -> Sigma_t -> ParamBytes_t
 
   pure val CrosslinkConsensusParamTopic = "crosslink-consensus-v1"
   pure val ConsensusParamEnvelopeKind = "consensus-param"
 
   pure def ParamVotingPowerOf(signers: Set[ParamSigner_t]): int =
     signers.fold(0, (acc, p) => acc + ParamVotingPower.get(p))
+
+  pure def ParamPayloadBytes(
+    wire: ProductionConsensusParamWire_t,
+  ): ParamBytes_t =
+    ProductionConsensusParamPayload
+      .get(wire.byteLen)
+      .get(wire.keyTag)
+      .get(wire.activationHeight)
+      .get(wire.telemetryHeight)
+      .get(wire.bcConfirmationDepthSigma)
 
   assume param_signer_power_is_positive =
     ParamSigners.forall(p => ParamVotingPower.get(p) > 0)
@@ -63,25 +74,16 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
     )
 
   assume consensus_param_payloads_are_bytes =
-    ConsensusParamWires.forall(wire =>
-      ParamBytes.contains(
-        ConsensusParamPayload
-          .get(wire.activationHeight)
-          .get(wire.telemetryHeight)
-          .get(wire.bcConfirmationDepthSigma)
-      )
+    ProductionConsensusParamWires.forall(wire =>
+      ParamBytes.contains(ParamPayloadBytes(wire))
     )
 
   var gossipedConsensusParamEnvelope: Set[ConsensusParamTransportEnvelope_t]
   var nodeConfiguredConsensusParamWire: Height_t -> ConsensusParamWire_t
+  var nodeConfiguredProductionConsensusParamWire:
+    Height_t -> ProductionConsensusParamWire_t
   var nodeConfiguredSigmaAtHeight: Height_t -> Sigma_t
   var paramTransportFiredAction: str
-
-  pure def ParamPayloadBytes(wire: ConsensusParamWire_t): ParamBytes_t =
-    ConsensusParamPayload
-      .get(wire.activationHeight)
-      .get(wire.telemetryHeight)
-      .get(wire.bcConfirmationDepthSigma)
 
   pure def VerifyParamSignature(
     signer: ParamSigner_t,
@@ -98,27 +100,33 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
     env.topic == CrosslinkConsensusParamTopic and
     env.kind == ConsensusParamEnvelopeKind and
     ParamSigners.contains(env.signer) and
-    ConsensusParamWires.contains(env.wire) and
-    ConsensusParamWireWellFormed(env.wire) and
+    ProductionConsensusParamWires.contains(env.wire) and
+    ProductionConsensusParamWireWellFormed(env.wire) and
     env.bytes == ParamPayloadBytes(env.wire) and
     VerifyParamSignature(env.signer, env.bytes, env.signature)
 
   def GossipedParamSignersFor(
-    wire: ConsensusParamWire_t,
+    wire: ProductionConsensusParamWire_t,
   ): Set[ParamSigner_t] =
     gossipedConsensusParamEnvelope
       .filter(env => env.wire == wire and ConsensusParamEnvelopeAuthentic(env))
       .map(env => env.signer)
 
-  def GossipedParamQuorumFor(wire: ConsensusParamWire_t): bool =
+  def GossipedParamQuorumFor(
+    wire: ProductionConsensusParamWire_t,
+  ): bool =
     ParamVotingPowerOf(GossipedParamSignersFor(wire)) >=
       ParamQuorumVotingPower
 
   action ParamTransportInit = all {
-    ConsensusParamInit,
+    ProductionParamInit,
     gossipedConsensusParamEnvelope' = Set(),
     nodeConfiguredConsensusParamWire' =
       Heights.mapBy(h => EncodeConsensusParams(h, 0, InitialSigma)),
+    nodeConfiguredProductionConsensusParamWire' =
+      Heights.mapBy(h =>
+        EncodeProductionConsensusParamWire(h, 0, InitialSigma)
+      ),
     nodeConfiguredSigmaAtHeight' = Heights.mapBy(_ => InitialSigma),
     paramTransportFiredAction' = "ParamTransportInit",
   }
@@ -143,6 +151,8 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
   action KeepParamTransportState = all {
     gossipedConsensusParamEnvelope' = gossipedConsensusParamEnvelope,
     nodeConfiguredConsensusParamWire' = nodeConfiguredConsensusParamWire,
+    nodeConfiguredProductionConsensusParamWire' =
+      nodeConfiguredProductionConsensusParamWire,
     nodeConfiguredSigmaAtHeight' = nodeConfiguredSigmaAtHeight,
   }
 
@@ -155,19 +165,27 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
       gossipedConsensusParamEnvelope' =
         gossipedConsensusParamEnvelope.union(Set(env)),
       nodeConfiguredConsensusParamWire' = nodeConfiguredConsensusParamWire,
+      nodeConfiguredProductionConsensusParamWire' =
+        nodeConfiguredProductionConsensusParamWire,
       nodeConfiguredSigmaAtHeight' = nodeConfiguredSigmaAtHeight,
       paramTransportFiredAction' = "GossipConsensusParamEnvelope",
     }
 
   action CommitHeightFromGossipedConsensusParam(
-    wire: ConsensusParamWire_t,
+    wire: ProductionConsensusParamWire_t,
   ): bool =
     all {
       GossipedParamQuorumFor(wire),
-      CommitHeightWithConsensusParams(wire),
+      CommitHeightWithProductionConsensusParamWire(wire),
       gossipedConsensusParamEnvelope' = gossipedConsensusParamEnvelope,
       nodeConfiguredConsensusParamWire' =
-        nodeConfiguredConsensusParamWire.set(wire.activationHeight, wire),
+        nodeConfiguredConsensusParamWire.set(wire.activationHeight,
+          DecodeProductionConsensusParamWire(wire)),
+      nodeConfiguredProductionConsensusParamWire' =
+        nodeConfiguredProductionConsensusParamWire.set(
+          wire.activationHeight,
+          wire
+        ),
       nodeConfiguredSigmaAtHeight' =
         nodeConfiguredSigmaAtHeight.set(
           wire.activationHeight,
@@ -195,7 +213,13 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
 
   val CommittedParamsHaveTransportQuorum =
     committedConsensusParamHeights.forall(h =>
-      GossipedParamQuorumFor(acceptedConsensusParamWire.get(h))
+      ProductionConsensusParamWires.exists(wire =>
+        ProductionWireMatchesConsensusParam(
+          wire,
+          acceptedConsensusParamWire.get(h),
+        ) and
+        GossipedParamQuorumFor(wire)
+      )
     )
 
   val NodeConfigMatchesAcceptedConsensusParams =
@@ -203,6 +227,10 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
       if (h <= height) {
         nodeConfiguredConsensusParamWire.get(h) ==
           acceptedConsensusParamWire.get(h) and
+        ProductionWireMatchesConsensusParam(
+          nodeConfiguredProductionConsensusParamWire.get(h),
+          acceptedConsensusParamWire.get(h),
+        ) and
         nodeConfiguredSigmaAtHeight.get(h) == sigmaAtHeight.get(h)
       } else {
         true
@@ -213,14 +241,20 @@ module CrosslinkDynamicSigmaConsensusParamTransport {
     Heights.forall(h =>
       if (h <= height and h != 0) {
         committedConsensusParamHeights.contains(h) and
-        GossipedParamQuorumFor(nodeConfiguredConsensusParamWire.get(h))
+        ProductionWireMatchesConsensusParam(
+          nodeConfiguredProductionConsensusParamWire.get(h),
+          nodeConfiguredConsensusParamWire.get(h),
+        ) and
+        GossipedParamQuorumFor(
+          nodeConfiguredProductionConsensusParamWire.get(h)
+        )
       } else {
         true
       }
     )
 
   val ParamTransportSafety =
-    ConsensusParamSafety and
+    ProductionConsensusParamFormatSafety and
     GossipedConsensusParamEnvelopesAuthentic and
     CommittedParamsHaveTransportQuorum and
     NodeConfigMatchesAcceptedConsensusParams and
@@ -235,12 +269,23 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
   pure val WrongConsensusParamTopic = "zcash-blocks-v1"
   pure val WrongConsensusParamKind = "headers"
 
-  pure val H1LowParticipationWire = EncodeConsensusParams(1, 0, 3)
-  pure val H1WrongSigmaWire = EncodeConsensusParams(1, 0, 2)
-  pure val H2RecoveredParticipationWire = EncodeConsensusParams(2, 1, 2)
+  pure val H1LowParticipationWire =
+    EncodeProductionConsensusParamWire(1, 0, 3)
+  pure val H1WrongSigmaWire =
+    EncodeProductionConsensusParamWire(1, 0, 2)
+  pure val H2RecoveredParticipationWire =
+    EncodeProductionConsensusParamWire(2, 1, 2)
+  pure val H1WrongKeyWire = {
+    byteLen: 11,
+    keyTag: 99,
+    activationHeight: 1,
+    telemetryHeight: 0,
+    bcConfirmationDepthSigma: 3,
+  }
 
   pure val H1ParamBytes = "param-bytes-h1-sigma-3"
   pure val H1WrongSigmaParamBytes = "param-bytes-h1-sigma-2"
+  pure val H1WrongKeyParamBytes = "param-bytes-h1-wrong-key"
   pure val H2ParamBytes = "param-bytes-h2-sigma-2"
   pure val WrongParamBytes = "wrong-param-bytes"
 
@@ -251,7 +296,7 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     topic: ParamTopic_t,
     kind: ParamEnvelopeKind_t,
     signer: ParamSigner_t,
-    wire: ConsensusParamWire_t,
+    wire: ProductionConsensusParamWire_t,
     bytes: ParamBytes_t,
     signature: ParamSignature_t,
   ): ConsensusParamTransportEnvelope_t = {
@@ -363,6 +408,16 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
       "sig-alice-wrong-bytes",
     )
 
+  pure val WrongKeyProductionEnvelope =
+    Env(
+      CrosslinkConsensusParamTopic,
+      ConsensusParamEnvelopeKind,
+      Alice,
+      H1WrongKeyWire,
+      H1WrongKeyParamBytes,
+      "sig-alice-h1-wrong-key",
+    )
+
   pure val TestParamTransportEnvelopes = Set(
     H1AliceEnvelope,
     H1BobEnvelope,
@@ -374,6 +429,7 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     WrongKindEnvelope,
     WrongBytesEnvelope,
     WrongSignatureEnvelope,
+    WrongKeyProductionEnvelope,
   )
 
   pure val ModelParamTransportEnvelopes = Set(
@@ -383,7 +439,7 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     H2BobEnvelope,
   )
 
-  pure val ModelConsensusParamWires = Set(
+  pure val ModelProductionConsensusParamWires = Set(
     H1LowParticipationWire,
     H2RecoveredParticipationWire,
   )
@@ -392,7 +448,7 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     any {
       nondet env = oneOf(ModelParamTransportEnvelopes)
       GossipConsensusParamEnvelope(env),
-      nondet wire = oneOf(ModelConsensusParamWires)
+      nondet wire = oneOf(ModelProductionConsensusParamWires)
       CommitHeightFromGossipedConsensusParam(wire),
       BurnNilPrecommitRoundWithTransport,
       ParamTransportStutter,
@@ -415,6 +471,8 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
     lastConsensusParamWireBefore' = lastConsensusParamWireBefore,
     gossipedConsensusParamEnvelope' = gossipedConsensusParamEnvelope,
     nodeConfiguredConsensusParamWire' = nodeConfiguredConsensusParamWire,
+    nodeConfiguredProductionConsensusParamWire' =
+      nodeConfiguredProductionConsensusParamWire,
     nodeConfiguredSigmaAtHeight' = nodeConfiguredSigmaAtHeight,
     paramTransportFiredAction' = paramTransportFiredAction,
   }
@@ -429,8 +487,10 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
         assert(HashPowerParticipationFloorBreachedAt(0)),
         assert(sigma == 3),
         assert(nodeConfiguredSigmaAtHeight.get(1) == 3),
-        assert(nodeConfiguredConsensusParamWire.get(1) ==
+        assert(nodeConfiguredProductionConsensusParamWire.get(1) ==
           H1LowParticipationWire),
+        assert(nodeConfiguredConsensusParamWire.get(1) ==
+          DecodeProductionConsensusParamWire(H1LowParticipationWire)),
         assert(ParamTransportSafety),
         transportUnchangedAll,
       })
@@ -449,6 +509,8 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
         assert(HashPowerParticipationCompleteAt(1)),
         assert(ShouldLowerSigma(1)),
         assert(sigma == 2),
+        assert(nodeConfiguredProductionConsensusParamWire.get(2) ==
+          H2RecoveredParticipationWire),
         assert(nodeConfiguredSigmaAtHeight.get(2) == 2),
         assert(ParamTransportSafety),
         transportUnchangedAll,
@@ -483,6 +545,12 @@ module CrosslinkDynamicSigmaConsensusParamTransportTest {
   run wrongSignatureParamEnvelopeRejectedTest = {
     ParamTransportInit
       .then(GossipConsensusParamEnvelope(WrongSignatureEnvelope))
+      .fail()
+  }
+
+  run wrongKeyProductionParamEnvelopeRejectedTest = {
+    ParamTransportInit
+      .then(GossipConsensusParamEnvelope(WrongKeyProductionEnvelope))
       .fail()
   }
 
@@ -579,6 +647,36 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
         bcConfirmationDepthSigma: 2,
       },
     ),
+    ProductionConsensusParamWires = Set(
+      {
+        byteLen: 11,
+        keyTag: 1,
+        activationHeight: 0,
+        telemetryHeight: 0,
+        bcConfirmationDepthSigma: 2,
+      },
+      {
+        byteLen: 11,
+        keyTag: 1,
+        activationHeight: 1,
+        telemetryHeight: 0,
+        bcConfirmationDepthSigma: 3,
+      },
+      {
+        byteLen: 11,
+        keyTag: 1,
+        activationHeight: 1,
+        telemetryHeight: 0,
+        bcConfirmationDepthSigma: 2,
+      },
+      {
+        byteLen: 11,
+        keyTag: 1,
+        activationHeight: 2,
+        telemetryHeight: 1,
+        bcConfirmationDepthSigma: 2,
+      },
+    ),
     ParamSigners = Set("alice", "bob"),
     ParamVotingPower = Map(
       "alice" -> 1,
@@ -589,6 +687,7 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "param-bytes-h0-sigma-2",
       "param-bytes-h1-sigma-3",
       "param-bytes-h1-sigma-2",
+      "param-bytes-h1-wrong-key",
       "param-bytes-h2-sigma-2",
       "wrong-param-bytes",
     ),
@@ -599,6 +698,7 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "sig-bob-h2",
       "sig-alice-h1-wrong-sigma",
       "sig-bob-h1-wrong-sigma",
+      "sig-alice-h1-wrong-key",
       "sig-alice-wrong-bytes",
     ),
     ParamSignatureOwner = Map(
@@ -608,6 +708,7 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "sig-bob-h2" -> "bob",
       "sig-alice-h1-wrong-sigma" -> "alice",
       "sig-bob-h1-wrong-sigma" -> "bob",
+      "sig-alice-h1-wrong-key" -> "alice",
       "sig-alice-wrong-bytes" -> "alice",
     ),
     ParamSignatureBytes = Map(
@@ -617,23 +718,35 @@ module CrosslinkDynamicSigmaConsensusParamTransportModel {
       "sig-bob-h2" -> "param-bytes-h2-sigma-2",
       "sig-alice-h1-wrong-sigma" -> "param-bytes-h1-sigma-2",
       "sig-bob-h1-wrong-sigma" -> "param-bytes-h1-sigma-2",
+      "sig-alice-h1-wrong-key" -> "param-bytes-h1-wrong-key",
       "sig-alice-wrong-bytes" -> "wrong-param-bytes",
     ),
-    ConsensusParamPayload = Map(
-      0 -> Map(
-        0 -> Map(
-          2 -> "param-bytes-h0-sigma-2",
-        ),
-      ),
-      1 -> Map(
-        0 -> Map(
-          2 -> "param-bytes-h1-sigma-2",
-          3 -> "param-bytes-h1-sigma-3",
-        ),
-      ),
-      2 -> Map(
+    ProductionConsensusParamPayload = Map(
+      11 -> Map(
         1 -> Map(
-          2 -> "param-bytes-h2-sigma-2",
+          0 -> Map(
+            0 -> Map(
+              2 -> "param-bytes-h0-sigma-2",
+            ),
+          ),
+          1 -> Map(
+            0 -> Map(
+              2 -> "param-bytes-h1-sigma-2",
+              3 -> "param-bytes-h1-sigma-3",
+            ),
+          ),
+          2 -> Map(
+            1 -> Map(
+              2 -> "param-bytes-h2-sigma-2",
+            ),
+          ),
+        ),
+        99 -> Map(
+          1 -> Map(
+            0 -> Map(
+              3 -> "param-bytes-h1-wrong-key",
+            ),
+          ),
         ),
       ),
     ),
