@@ -145,14 +145,16 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkMalachiteGossipRouterSafety.qnt` is the verifier-friendly
   router safety slice for the same channel/topic/kind registry contract.
 - `spec/CrosslinkProductionGossipRegistry.qnt` adds a direct production-level
-  registry above Tenderlink, Malachite, and dynamic-sigma router families,
-  checking that Tenderlink consensus lanes, Malachite proposal/liveness/sync
-  lanes, and dynamic-sigma consensus-param lanes cannot be cross-routed by
+  registry above Tenderlink, Malachite, dynamic-sigma, and production-finality
+  router families, checking that Tenderlink consensus lanes, Malachite
+  proposal/liveness/sync lanes, dynamic-sigma consensus-param lanes, and
+  production-finality proposal/fat-pointer lanes cannot be cross-routed by
   protocol, topic, channel, kind, or byte label.
 - `spec/CrosslinkProductionGossipIngress.qnt` adds the node-local ingress gate
   above that registry: even a registry-valid envelope must be accepted only by
-  its matching downstream Tenderlink, Malachite, or dynamic-sigma lane, and raw
-  wrong-lane or cross-protocol injections violate ingress safety.
+  its matching downstream Tenderlink, Malachite, dynamic-sigma, or
+  production-finality lane, and raw wrong-lane or cross-protocol injections
+  violate ingress safety.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
@@ -464,11 +466,14 @@ The current spec surface has three first-class Crosslink variants:
   quorum-signed stale activation at the transport boundary.
   `CrosslinkProductionGossipRegistryModel` and
   `CrosslinkProductionGossipIngressModel` now route those dynamic-sigma
-  consensus-param envelopes through a dedicated production lane, checking that
-  they cannot be accepted as Tenderlink consensus traffic or Malachite liveness
-  traffic. The dynamic-sigma lane uses the same exact production-shaped hex
-  vectors pinned by the consensus-param format model for raised and recovered
-  sigma updates.
+  consensus-param envelopes through a dedicated production lane and route
+  production-finality proposal/fat-pointer fixture envelopes through their own
+  lanes, checking that none can be accepted as Tenderlink consensus traffic or
+  Malachite liveness traffic. The dynamic-sigma lane uses the same exact
+  production-shaped hex vectors pinned by the consensus-param format model for
+  raised and recovered sigma updates, while the finality lanes use compact byte
+  labels tied to the generated fixture metadata validated by
+  `CrosslinkProductionFinalityProjectionContractModel`.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality

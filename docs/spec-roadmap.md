@@ -309,20 +309,25 @@ For Crosslink, matching that quality means adding:
   the channel/topic/kind invariant without flattening alias-imported transport
   modules.
 - `CrosslinkProductionGossipRegistry.qnt` adds a production-level registry
-  safety slice above the Tenderlink, Malachite, and dynamic-sigma routers. It
-  records the combined protocol/topic/channel/kind contract, routes Tenderlink
-  mixed precommit and certificate/evidence/status lanes alongside Malachite
-  proposal/liveness/sync lanes and dynamic-sigma consensus-param lanes, and
-  rejects cross-protocol routing such as Malachite proposals on the Tenderlink
-  consensus channel, Tenderlink precommits on the Malachite liveness channel,
-  or consensus-param bytes on a Tenderlink/Malachite lane. The dynamic-sigma
-  lane now pins the exact raised/recovered consensus-param hex vectors from
-  the production-shaped format model rather than a placeholder byte token.
+  safety slice above the Tenderlink, Malachite, dynamic-sigma, and
+  production-finality routers. It records the combined
+  protocol/topic/channel/kind contract, routes Tenderlink mixed precommit and
+  certificate/evidence/status lanes alongside Malachite proposal/liveness/sync
+  lanes, dynamic-sigma consensus-param lanes, and production-finality
+  proposal/fat-pointer lanes, and rejects cross-protocol routing such as
+  Malachite proposals on the Tenderlink consensus channel, Tenderlink
+  precommits on the Malachite liveness channel, consensus-param bytes on a
+  Tenderlink/Malachite lane, or finality proposal bytes on unrelated lanes.
+  The dynamic-sigma lane pins the exact raised/recovered consensus-param hex
+  vectors from the production-shaped format model, while the finality lanes
+  use compact byte labels tied to the generated fixture metadata validated by
+  the production-finality projection.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to
   the Tenderlink consensus lane, Malachite proposal traffic handed to Tenderlink
-  ingress, dynamic-sigma consensus params handed to Tenderlink ingress, and
+  ingress, dynamic-sigma consensus params handed to Tenderlink ingress,
+  production-finality records handed to unrelated ingress lanes, and
   cross-protocol raw injections.
 
 ### 2026-05-18
