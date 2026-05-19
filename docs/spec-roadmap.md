@@ -368,6 +368,12 @@ For Crosslink, matching that quality means adding:
   temporal contract that combines nil-precommit-burned rounds, stable
   proposal/vote/precommit delivery, finality-candidate validation, fork-prefix
   safety, and eventual finality of the stable candidate.
+- `CrosslinkComposedImportedProgressBridge.qnt` imports the composed
+  Crosslink finality and fork-prefix predicates into a TLC-sized scalar
+  temporal graph. It checks that the nil-certificate resampling path finalizes
+  the stable candidate only through imported candidate validation, while the
+  full imported round-machine action graph remains a separate temporal-proof
+  target.
 - `CrosslinkBftHeights.qnt` adds a compact scheduled BFT-height finality
   harness. It checks that consecutive consensus-height decisions can advance
   the Crosslink finality cursor, while skipped BFT heights and fork decisions
@@ -743,6 +749,10 @@ For Crosslink, matching that quality means adding:
   nil-precommit-burned rounds, a stable stream window can decide and eventually
   finalize a valid `head - sigma` candidate while preserving a linear finalized
   PoW prefix and rejecting the competing fork candidate.
+- `CrosslinkComposedImportedProgressBridgeModel` keeps that temporal check
+  close to the imported composed spec by calling `CrosslinkComposed.qnt`
+  predicates for candidate validity, height, tail confirmation, and prefix
+  extension inside a TLC-friendly scalar graph.
 - `CrosslinkComposedLivenessModel` now has an executable end-to-end liveness
   script that includes explicit local delivery of the proposal, prevotes, and
   precommits before finalizing the fresh candidate.
@@ -902,12 +912,13 @@ For Crosslink, matching that quality means adding:
   The heighted progress projection now gives TLC a finite temporal bridge for
   mixed-precommit waiting, nil-certificate recovery, two ordered BFT heights,
   same-height nil-resampling, and pristine future-height obligations.
-  The remaining work is also to lift the current TLC-friendly progress contracts
-  into a full imported-protocol
-  temporal proof. A direct TLC run over the current imported composed model is
-  blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC path, so
-  this likely needs either a TLC-oriented imported-state refactor or improved
-  backend support.
+  The imported-predicate bridge now checks the composed finality predicates
+  inside a TLC temporal progress graph. The remaining work is to lift that
+  bridge all the way into a full imported-protocol temporal proof over the
+  imported action graph. A direct TLC run over the current imported composed
+  model is blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC
+  path, so this likely needs either a TLC-oriented imported-state refactor or
+  improved backend support.
   The current stream-churn, fork-schedule, branch-competition, and PoW-reorg
   stress models now have an executable analytic assumption profile plus a
   checked-in fixture interval contract, but the arrival, propagation-race,

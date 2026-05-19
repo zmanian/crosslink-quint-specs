@@ -356,6 +356,14 @@ module CrosslinkComposedLivenessModel {
   val LivenessSafety =
     ComposedSafety and FreshFinalityByEnd
 
+  // This is the imported-state temporal obligation. It typechecks and the
+  // scripted Rust-backend witness below exercises the path, but current TLC
+  // translation fails before exploration on the map-heavy imported action graph.
+  // CrosslinkComposedImportedProgressBridge.qnt is the TLC-checked bridge for
+  // the imported composed predicates until that backend boundary is refactored.
+  temporal EventuallyImportedComposedFinalizes =
+    LivenessStep.weakFair(Set(phase)).implies(eventually(finalized.contains("a2")))
+
   run livenessScriptReachesFreshFinalityTest = {
     LivenessInit
       .then(LivenessStep)
