@@ -368,6 +368,12 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkHeightedMessageAuth.qnt` adds the same boundary for height-indexed
   messages. Canonical proposal, vote, and fat-pointer bytes bind the claimed
   BFT height, preventing cross-height replay at the model boundary.
+- `CrosslinkHeightedMessageGossipTransport.qnt` adds the transport side of that
+  boundary. Proposals, prevotes, precommits, and fat-pointer signatures must
+  arrive in Crosslink-topic envelopes with the expected kind before the heighted
+  authentication model accepts them; witnesses reject raw acceptance without a
+  transport envelope, wrong topic/kind, extra valid-round sidecars on votes,
+  forged signatures, wrong bytes, and cross-height replay.
 - The model now has a first local-delivery slice: `seenPropose`,
   `seenPrevote`, and `seenPrecommit` track receiver-local messages,
   `DeliverProposal`/`DeliverPrevote`/`DeliverPrecommit` refuse messages that
@@ -405,8 +411,9 @@ For Crosslink, matching that quality means adding:
   dynamic-sigma heighted-authenticated-evidence,
   dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
   BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
-  fat-pointer production-vector, heighted validator-evidence, heighted
-  authenticated-evidence, and heighted authenticated gossip transport models.
+  fat-pointer production-vector, heighted message gossip transport, heighted
+  validator-evidence, heighted authenticated-evidence, and heighted
+  authenticated gossip transport models.
   It keeps default CI at bounded depth while
   giving reviewers depth-5 Apalache checks, plus a depth-8 PoW-reorg stress
   check, for the models most likely to hide cross-component state-space
@@ -532,9 +539,11 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
-  the heighted authenticated gossip transport bridge covers the abstract
-  precommit/fat-pointer-signature transport envelope boundary, and the
-  dynamic-sigma consensus-param/format/transport/heighted-round/
+  the heighted message gossip transport bridge covers the abstract
+  proposal/vote/fat-pointer-signature envelope boundary, the heighted
+  authenticated gossip transport bridge covers the observer-evidence precommit
+  and fat-pointer-signature envelope boundary, and the dynamic-sigma
+  consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
   bytes, quorum-signed production-byte gossip, node-config application,
   proposals, precommits, fat-pointer evidence, and finality over
