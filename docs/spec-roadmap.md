@@ -125,6 +125,12 @@ For Crosslink, matching that quality means adding:
   with heighted evidence. Observed precommits and fat pointers are authorized
   by the validator set active at the evidence height, so old-height evidence
   still uses the old set while next-height evidence uses the rotated set.
+- `CrosslinkHeightedAuthenticatedEvidence.qnt` adds the first composed
+  authenticated evidence pipeline. A heighted precommit must have canonical
+  signed bytes before it can enter gossip or observer evidence, observation
+  requires prior gossip, and fat pointers require quorum signer precommits plus
+  authenticated fat-pointer signatures authorized by that height's validator
+  set.
 - `CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler liveness
   slice for nil-precommit resampling. It still assumes a bounded post-GST
   window, but it no longer fixes a single validator ordering: unstable rounds
