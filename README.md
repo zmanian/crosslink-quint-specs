@@ -201,9 +201,12 @@ the Zebra Crosslink working branch:
   version-4 PoW headers without header fat pointers, and all have one trailing
   fat pointer signature. For raw `test_pow_block_*.bin` blocks, the manifest
   pins the 24 current samples across heights 0..29, their version-4 serialized
-  header length, body length split, and header/body byte probes. The manifest
-  also pins previous/trailing fat-pointer count bytes and first signer-entry
-  byte probes. It records the current deserialization sigma-bypass gap.
+  header length, body length split, and header/body byte probes. The same
+  generator links each embedded BFT-envelope header to matching raw PoW fixture
+  header bytes, so the production-vector invariant now checks that the BFT
+  header vectors are backed by checked-in raw blocks. The manifest also pins
+  previous/trailing fat-pointer count bytes and first signer-entry byte probes.
+  It records the current deserialization sigma-bypass gap.
 - `spec/CrosslinkProductionFixtureVectorsGenerated.qnt` is generated from that
   fixture manifest and is imported by the BFT-block and fat-pointer production
   vector specs so checked-in fixture constants do not have to be copied by hand.

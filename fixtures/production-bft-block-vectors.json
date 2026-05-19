@@ -2,7 +2,7 @@
   "schema": 1,
   "source": {
     "repo": "zebra-crosslink",
-    "commit": "e0de4ca7a44ccc810f900e0e240805c8c6ec0c31",
+    "commit": "92e3ead1c2ff3d8db68c8c84cda2345532ebeb87",
     "fixtureGlob": "crosslink-test-data/test_pos_block_*.bin",
     "powFixtureGlob": "crosslink-test-data/test_pow_block_*.bin"
   },
@@ -46,21 +46,30 @@
           "logicalVersion": 4,
           "startOffset": 62,
           "endOffset": 1549,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            1
+          ]
         },
         {
           "index": 1,
           "logicalVersion": 4,
           "startOffset": 1549,
           "endOffset": 3036,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            3
+          ]
         },
         {
           "index": 2,
           "logicalVersion": 4,
           "startOffset": 3036,
           "endOffset": 4523,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            4
+          ]
         }
       ],
       "bftBlockByteLen": 4523,
@@ -134,21 +143,31 @@
           "logicalVersion": 4,
           "startOffset": 158,
           "endOffset": 1645,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            4
+          ]
         },
         {
           "index": 1,
           "logicalVersion": 4,
           "startOffset": 1645,
           "endOffset": 3132,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            5,
+            6
+          ]
         },
         {
           "index": 2,
           "logicalVersion": 4,
           "startOffset": 3132,
           "endOffset": 4619,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            7
+          ]
         }
       ],
       "bftBlockByteLen": 4619,
@@ -222,21 +241,30 @@
           "logicalVersion": 4,
           "startOffset": 158,
           "endOffset": 1645,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            7
+          ]
         },
         {
           "index": 1,
           "logicalVersion": 4,
           "startOffset": 1645,
           "endOffset": 3132,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            9
+          ]
         },
         {
           "index": 2,
           "logicalVersion": 4,
           "startOffset": 3132,
           "endOffset": 4619,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            10
+          ]
         }
       ],
       "bftBlockByteLen": 4619,
@@ -310,21 +338,30 @@
           "logicalVersion": 4,
           "startOffset": 158,
           "endOffset": 1645,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            13
+          ]
         },
         {
           "index": 1,
           "logicalVersion": 4,
           "startOffset": 1645,
           "endOffset": 3132,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            14
+          ]
         },
         {
           "index": 2,
           "logicalVersion": 4,
           "startOffset": 3132,
           "endOffset": 4619,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            15
+          ]
         }
       ],
       "bftBlockByteLen": 4619,
@@ -398,21 +435,30 @@
           "logicalVersion": 4,
           "startOffset": 158,
           "endOffset": 1645,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            17
+          ]
         },
         {
           "index": 1,
           "logicalVersion": 4,
           "startOffset": 1645,
           "endOffset": 3132,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            18
+          ]
         },
         {
           "index": 2,
           "logicalVersion": 4,
           "startOffset": 3132,
           "endOffset": 4619,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            19
+          ]
         }
       ],
       "bftBlockByteLen": 4619,
@@ -486,21 +532,30 @@
           "logicalVersion": 4,
           "startOffset": 158,
           "endOffset": 1645,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            21
+          ]
         },
         {
           "index": 1,
           "logicalVersion": 4,
           "startOffset": 1645,
           "endOffset": 3132,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            22
+          ]
         },
         {
           "index": 2,
           "logicalVersion": 4,
           "startOffset": 3132,
           "endOffset": 4619,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            23
+          ]
         }
       ],
       "bftBlockByteLen": 4619,
@@ -574,21 +629,30 @@
           "logicalVersion": 4,
           "startOffset": 158,
           "endOffset": 1645,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            23
+          ]
         },
         {
           "index": 1,
           "logicalVersion": 4,
           "startOffset": 1645,
           "endOffset": 3132,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            25
+          ]
         },
         {
           "index": 2,
           "logicalVersion": 4,
           "startOffset": 3132,
           "endOffset": 4619,
-          "byteLen": 1487
+          "byteLen": 1487,
+          "rawPowFixtureHeights": [
+            26
+          ]
         }
       ],
       "bftBlockByteLen": 4619,

@@ -329,6 +329,20 @@ module CrosslinkBftBlockProductionVectors {
     FixtureFirstPowBlockBodyLastByte == 0 and
     FixtureLaterPowBlockBodyLastByte == 0
 
+  val CheckedInBftHeadersBackedByRawPowFixtures =
+    FixtureFirstHeader0RawPowHeight == 1 and
+    FixtureFirstHeader1RawPowHeight == 3 and
+    FixtureFirstHeader2RawPowHeight == 4 and
+    FixtureLaterHeader0RawPowHeight == 4 and
+    FixtureLaterHeader1RawPowHeight == 5 and
+    FixtureLaterHeader2RawPowHeight == 7 and
+    FixtureFirstHeader0RawPowMatchCount == 1 and
+    FixtureFirstHeader1RawPowMatchCount == 1 and
+    FixtureFirstHeader2RawPowMatchCount == 1 and
+    FixtureLaterHeader0RawPowMatchCount == 1 and
+    FixtureLaterHeader1RawPowMatchCount == 2 and
+    FixtureLaterHeader2RawPowMatchCount == 1
+
   val Safety =
     FixedPrefixOffsetsMatchCode and
     PreviousFatPointerVectorsPinned and
@@ -339,7 +353,8 @@ module CrosslinkBftBlockProductionVectors {
     DeserializationSigmaBypassGapRecorded and
     CheckedInFirstFixtureEnvelopePinned and
     CheckedInLaterFixtureEnvelopePinned and
-    CheckedInPowBlockFixturesPinned
+    CheckedInPowBlockFixturesPinned and
+    CheckedInBftHeadersBackedByRawPowFixtures
 
   var checked: bool
 
@@ -472,6 +487,26 @@ module CrosslinkBftBlockProductionVectorsTest {
         assert(FixtureFirstPowBlockBodyLastByte == 0),
         assert(FixtureLaterPowBlockBodyLastByte == 0),
         assert(CheckedInPowBlockFixturesPinned),
+        unchangedAll,
+      })
+  }
+
+  run checkedInBftHeadersBackedByRawPowFixturesTest = {
+    Init
+      .then(all {
+        assert(FixtureFirstHeader0RawPowHeight == 1),
+        assert(FixtureFirstHeader1RawPowHeight == 3),
+        assert(FixtureFirstHeader2RawPowHeight == 4),
+        assert(FixtureLaterHeader0RawPowHeight == 4),
+        assert(FixtureLaterHeader1RawPowHeight == 5),
+        assert(FixtureLaterHeader2RawPowHeight == 7),
+        assert(FixtureFirstHeader0RawPowMatchCount == 1),
+        assert(FixtureFirstHeader1RawPowMatchCount == 1),
+        assert(FixtureFirstHeader2RawPowMatchCount == 1),
+        assert(FixtureLaterHeader0RawPowMatchCount == 1),
+        assert(FixtureLaterHeader1RawPowMatchCount == 2),
+        assert(FixtureLaterHeader2RawPowMatchCount == 1),
+        assert(CheckedInBftHeadersBackedByRawPowFixtures),
         unchangedAll,
       })
   }

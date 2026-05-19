@@ -409,13 +409,16 @@ For Crosslink, matching that quality means adding:
   and all include one trailing fat-pointer signature. For raw
   `test_pow_block_*.bin` blocks, the manifest pins the 24 current samples
   across heights 0..29, their version-4 serialized header length, body length
-  split, and header/body byte probes. The manifest also pins
-  previous/trailing fat-pointer count bytes and first signer-entry byte probes.
-  A generated Quint module imports those constants into the production-vector
-  specs, and the generated artifacts pin the full payload, pubkey, vote
-  signature, and `pubkey || payload` sign-data hex strings. The manifest
-  validator verifies those Ed25519 signatures with Node crypto. The model
-  still records the deserialization sigma-bypass gap.
+  split, and header/body byte probes. The generator also records which raw PoW
+  fixture headers byte-match the headers embedded in each BFT envelope, so the
+  production-vector invariant checks that the BFT header vectors are backed by
+  checked-in raw blocks. The manifest also pins previous/trailing fat-pointer
+  count bytes and first signer-entry byte probes. A generated Quint module
+  imports those constants into the production-vector specs, and the generated
+  artifacts pin the full payload, pubkey, vote signature, and
+  `pubkey || payload` sign-data hex strings. The manifest validator verifies
+  those Ed25519 signatures with Node crypto. The model still records the
+  deserialization sigma-bypass gap.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects

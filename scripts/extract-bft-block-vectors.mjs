@@ -162,7 +162,7 @@ function headerByteLenForFixture(file, version) {
   }
 }
 
-function parseFixture(filePath) {
+function parseFixture(filePath, rawPowHeaderHeightsByHex) {
   const buffer = fs.readFileSync(filePath)
   const file = path.basename(filePath)
 
@@ -186,7 +186,9 @@ function parseFixture(filePath) {
       throw new Error(`${file}: header ${index} runs past end of buffer`)
     }
 
-    headers.push({ index, logicalVersion, startOffset, endOffset, byteLen })
+    const rawPowFixtureHeights =
+      rawPowHeaderHeightsByHex.get(buffer.subarray(startOffset, endOffset).toString('hex')) ?? []
+    headers.push({ index, logicalVersion, startOffset, endOffset, byteLen, rawPowFixtureHeights })
     offset = endOffset
   }
 
@@ -218,6 +220,28 @@ function parseFixture(filePath) {
     trailingFatPointerByteLen: trailingFatPointer.byteLen,
     trailingFatPointerProbe: trailingFatPointer.probe,
   }
+}
+
+function rawPowHeaderHeightsByHex(fixtureDir, powFiles) {
+  const headers = new Map()
+  for (const file of powFiles) {
+    const filePath = path.join(fixtureDir, file)
+    const buffer = fs.readFileSync(filePath)
+    if (buffer.length < layout.u32Bytes) {
+      throw new Error(`${file}: too short to contain a block version`)
+    }
+    const height = Number(file.match(/test_pow_block_(\d+)\.bin$/)?.[1])
+    if (!Number.isFinite(height)) {
+      throw new Error(`${file}: cannot parse PoW height`)
+    }
+    const logicalVersion = buffer.readUInt32LE(0)
+    const headerByteLen = headerByteLenForFixture(file, logicalVersion)
+    const headerHex = buffer.subarray(0, headerByteLen).toString('hex')
+    const heights = headers.get(headerHex) ?? []
+    heights.push(height)
+    headers.set(headerHex, heights)
+  }
+  return headers
 }
 
 function parsePowBlockFixture(filePath) {
@@ -286,6 +310,9 @@ function buildManifest(source) {
     throw new Error(`no test_pow_block_*.bin files found in ${fixtureDir}`)
   }
 
+  const rawPowHeaders = rawPowHeaderHeightsByHex(fixtureDir, powFiles)
+  const powBlockFixtures = powFiles.map(file => parsePowBlockFixture(path.join(fixtureDir, file)))
+
   return {
     schema: 1,
     source: {
@@ -295,8 +322,8 @@ function buildManifest(source) {
       powFixtureGlob: 'crosslink-test-data/test_pow_block_*.bin',
     },
     layout,
-    fixtures: files.map(file => parseFixture(path.join(fixtureDir, file))),
-    powBlockFixtures: powFiles.map(file => parsePowBlockFixture(path.join(fixtureDir, file))),
+    fixtures: files.map(file => parseFixture(path.join(fixtureDir, file), rawPowHeaders)),
+    powBlockFixtures,
   }
 }
 
@@ -417,6 +444,7 @@ function validateManifest(manifest) {
 
   let hasZeroPreviousSignatureFixture = false
   let hasOnePreviousSignatureFixture = false
+  const powFixtureHeights = new Set(manifest.powBlockFixtures.map(fixture => fixture.height))
 
   for (const fixture of manifest.fixtures) {
     const prefix = `${fixture.file}: `
@@ -450,6 +478,17 @@ function validateManifest(manifest) {
       assert(header.startOffset === offset, `${prefix}header ${header.index} start mismatch`)
       assert(header.byteLen === byteLen, `${prefix}header ${header.index} length mismatch`)
       assert(header.endOffset === header.startOffset + byteLen, `${prefix}header ${header.index} end mismatch`)
+      assert(
+        Array.isArray(header.rawPowFixtureHeights) && header.rawPowFixtureHeights.length > 0,
+        `${prefix}header ${header.index} raw PoW fixture match missing`,
+      )
+      let previousHeight = -1
+      for (const height of header.rawPowFixtureHeights) {
+        assert(Number.isInteger(height), `${prefix}header ${header.index} raw PoW height invalid`)
+        assert(height > previousHeight, `${prefix}header ${header.index} raw PoW heights not sorted`)
+        assert(powFixtureHeights.has(height), `${prefix}header ${header.index} raw PoW fixture height unknown`)
+        previousHeight = height
+      }
       offset = header.endOffset
     }
 
@@ -537,6 +576,11 @@ function renderGeneratedQuintModule(manifest) {
   assert(firstPow !== undefined, 'missing first PoW block fixture for generated Quint constants')
   assert(laterPow !== undefined, 'missing later PoW block fixture for generated Quint constants')
   assert(lastPow !== undefined, 'missing last PoW block fixture for generated Quint constants')
+  const rawPowHeight = header => {
+    assert(header.rawPowFixtureHeights.length > 0, 'missing raw PoW header match for generated Quint constants')
+    return header.rawPowFixtureHeights[0]
+  }
+  const rawPowMatchCount = header => header.rawPowFixtureHeights.length
 
   const constants = [
     ['GeneratedFixtureCount', manifest.fixtures.length],
@@ -576,6 +620,18 @@ function renderGeneratedQuintModule(manifest) {
     ['FixtureLaterHeader1StartOffset', later.headers[1].startOffset],
     ['FixtureLaterHeader2StartOffset', later.headers[2].startOffset],
     ['FixtureLaterHeader2EndOffset', later.headers[2].endOffset],
+    ['FixtureFirstHeader0RawPowHeight', rawPowHeight(first.headers[0])],
+    ['FixtureFirstHeader1RawPowHeight', rawPowHeight(first.headers[1])],
+    ['FixtureFirstHeader2RawPowHeight', rawPowHeight(first.headers[2])],
+    ['FixtureLaterHeader0RawPowHeight', rawPowHeight(later.headers[0])],
+    ['FixtureLaterHeader1RawPowHeight', rawPowHeight(later.headers[1])],
+    ['FixtureLaterHeader2RawPowHeight', rawPowHeight(later.headers[2])],
+    ['FixtureFirstHeader0RawPowMatchCount', rawPowMatchCount(first.headers[0])],
+    ['FixtureFirstHeader1RawPowMatchCount', rawPowMatchCount(first.headers[1])],
+    ['FixtureFirstHeader2RawPowMatchCount', rawPowMatchCount(first.headers[2])],
+    ['FixtureLaterHeader0RawPowMatchCount', rawPowMatchCount(later.headers[0])],
+    ['FixtureLaterHeader1RawPowMatchCount', rawPowMatchCount(later.headers[1])],
+    ['FixtureLaterHeader2RawPowMatchCount', rawPowMatchCount(later.headers[2])],
     ['CheckedInFixturePreviousFatPointerOffset', later.previousFatPointerProbe.offset],
     ['CheckedInFixtureTrailingFatPointerOffset', later.trailingFatPointerProbe.offset],
     ['CheckedInFixtureSignatureCount', later.previousFatPointerSignatureCount],
