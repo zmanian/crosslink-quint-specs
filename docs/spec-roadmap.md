@@ -390,6 +390,10 @@ For Crosslink, matching that quality means adding:
   rule behind that intuition: baseline Crosslink keeps a stale cached
   proposal/lock value after a stream change, while nil-precommit resampling can
   burn nil-certified rounds and decide after the stream becomes stable.
+- `CrosslinkMixedWaitProgressContract.qnt` adds the matching mixed-precommit
+  waiting contract: a mixed quorum does not clear same-round lock/cache state,
+  but a later actual nil-precommit certificate can unlock that round and let
+  the stable resampling path decide.
 - `CrosslinkValidatorScaleFinalityProgressContract.qnt` composes that scale
   progress path with Crosslink finality. It reuses the scale-progress machine,
   adds a linear finalized-prefix cursor, and TLC checks eventual finalization

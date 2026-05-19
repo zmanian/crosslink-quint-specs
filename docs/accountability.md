@@ -91,6 +91,7 @@ The model checks this with:
 ```text
 mixedPrecommitQuorumDoesNotUnlockTest
 mixedPrecommitQuorumDoesNotClearHeightedLockTest
+CrosslinkMixedWaitProgressContractModel / EventuallyNilCertUnlocksMixedWait
 precommitTimeoutDoesNotUnlockWithoutNilCertificateTest
 precommitTimeoutDoesNotClearHeightedLockTest
 ```
