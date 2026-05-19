@@ -8,9 +8,9 @@ module CrosslinkTenderlinkProposalPolEvidence {
    accepted only with canonical prevote PacketVotes evidence whose height,
    round, and value id match the proposal chunk.
 
-   The bounded packet fixture carries one canonical signature and models that
-   as the minimal quorum threshold. Full validator-set thresholds remain in the
-   abstract valid-round and authenticated-evidence specs.
+   The bounded packet fixture carries three canonical signatures, modeling a
+   2f + 1 quorum in the smallest f = 1 setting. Larger and weighted validator
+   sets remain in the abstract valid-round and authenticated-evidence specs.
    */
 
   type Bytes_t = str
@@ -62,7 +62,7 @@ module CrosslinkTenderlinkProposalPolEvidence {
   }
 
   pure val NilValidRound = -1
-  pure val FixtureQuorumVotingPower = 1
+  pure val FixtureQuorumVotingPower = 3
   pure val PacketTypePrevoteSignatures = 8
   pure val PacketTypePrecommitSignatures = 9
   pure val TestProposalIdHex =
@@ -75,8 +75,16 @@ module CrosslinkTenderlinkProposalPolEvidence {
     "0000000000000000000000000000000000000000000000000000000000000000"
   pure val TestPubKeyHex =
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+  pure val TestPubKey2Hex =
+    "2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40"
+  pure val TestPubKey3Hex =
+    "4142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60"
   pure val TestVoteSignatureHex =
     "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+  pure val TestVoteSignature2Hex =
+    "22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
+  pure val TestVoteSignature3Hex =
+    "33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
   pure val TestChunkDataHex = "cafebabe"
 
   pure val NilProposalChunkHex =
@@ -90,6 +98,8 @@ module CrosslinkTenderlinkProposalPolEvidence {
     "0100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
   pure val ValuePrevotePolPacketHex =
     "0001010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+  pure val ValuePrevotePolQuorumPacketHex =
+    "0003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
   pure val ValuePrecommitPacketHex =
     "0001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
 
@@ -97,6 +107,10 @@ module CrosslinkTenderlinkProposalPolEvidence {
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f200000000000000000000000000000000000000000000000000000000000000000010000000000000000000000"
   pure val ValuePrevotePolSignBytes =
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+  pure val ValuePrevotePolSignBytes2 =
+    "2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+  pure val ValuePrevotePolSignBytes3 =
+    "4142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
   pure val ValuePrecommitSignBytes =
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa010000000000000000000080"
 
@@ -133,17 +147,44 @@ module CrosslinkTenderlinkProposalPolEvidence {
       false
     }
 
+  pure def ExpectedPubKey(i: EntryIndex_t): Bytes_t =
+    if (i == 0) {
+      TestPubKeyHex
+    } else if (i == 1) {
+      TestPubKey2Hex
+    } else {
+      TestPubKey3Hex
+    }
+
+  pure def ExpectedSignature(i: EntryIndex_t): Signature_t =
+    if (i == 0) {
+      TestVoteSignatureHex
+    } else if (i == 1) {
+      TestVoteSignature2Hex
+    } else {
+      TestVoteSignature3Hex
+    }
+
+  pure def ExpectedValuePrevoteSignBytes(i: EntryIndex_t): Bytes_t =
+    if (i == 0) {
+      ValuePrevotePolSignBytes
+    } else if (i == 1) {
+      ValuePrevotePolSignBytes2
+    } else {
+      ValuePrevotePolSignBytes3
+    }
+
   pure def EntryCanonical(packet: VotePacket_t, i: EntryIndex_t): bool = {
     val entry = packet.entries.get(i)
     all {
-      entry.rosterIndex == 0,
-      entry.pubKey == TestPubKeyHex,
-      entry.voteSignature == TestVoteSignatureHex,
+      entry.rosterIndex == i,
+      entry.pubKey == ExpectedPubKey(i),
+      entry.voteSignature == ExpectedSignature(i),
       if (packet.noVotes == 1) {
         entry.valueId == NilValueId and entry.signBytes == NilPrevoteSignBytes
       } else if (packet.packetType == PacketTypePrevoteSignatures) {
         entry.valueId == TestValueIdHex and
-        entry.signBytes == ValuePrevotePolSignBytes
+        entry.signBytes == ExpectedValuePrevoteSignBytes(i)
       } else {
         entry.valueId == TestValueIdHex and
         entry.signBytes == ValuePrecommitSignBytes
@@ -162,6 +203,14 @@ module CrosslinkTenderlinkProposalPolEvidence {
       packet.yesVotes == 1 and packet.round == 1 and packet.height == 2 and
       packet.valueId == TestValueIdHex) {
       EntryCanonical(packet, 0) and packet.hex == ValuePrevotePolPacketHex
+    } else if (packet.packetType == PacketTypePrevoteSignatures and
+      packet.byteLen == 244 and packet.noVotes == 0 and
+      packet.yesVotes == 3 and packet.round == 1 and packet.height == 2 and
+      packet.valueId == TestValueIdHex) {
+      EntryCanonical(packet, 0) and
+      EntryCanonical(packet, 1) and
+      EntryCanonical(packet, 2) and
+      packet.hex == ValuePrevotePolQuorumPacketHex
     } else if (packet.packetType == PacketTypePrecommitSignatures and
       packet.byteLen == 112 and packet.noVotes == 0 and
       packet.yesVotes == 1 and packet.round == 0 and packet.height == 1 and
@@ -276,12 +325,19 @@ module CrosslinkTenderlinkProposalPolEvidenceTest {
   def Entry(
     valueId: ValueId_t,
     signBytes: Bytes_t,
+  ): VotePacketEntry_t =
+    EntryAt(0, valueId, signBytes)
+
+  def EntryAt(
+    rosterIndex: EntryIndex_t,
+    valueId: ValueId_t,
+    signBytes: Bytes_t,
   ): VotePacketEntry_t = {
-    rosterIndex: 0,
-    pubKey: TestPubKeyHex,
+    rosterIndex: rosterIndex,
+    pubKey: ExpectedPubKey(rosterIndex),
     valueId: valueId,
     signBytes: signBytes,
-    voteSignature: TestVoteSignatureHex,
+    voteSignature: ExpectedSignature(rosterIndex),
   }
 
   def PacketAt(
@@ -306,6 +362,22 @@ module CrosslinkTenderlinkProposalPolEvidenceTest {
       signBytes,
     )),
     hex: hex,
+  }
+
+  pure val valuePrevotePolQuorumPacket: VotePacket_t = {
+    packetType: PacketTypePrevoteSignatures,
+    byteLen: 244,
+    noVotes: 0,
+    yesVotes: 3,
+    round: 1,
+    height: 2,
+    valueId: TestValueIdHex,
+    entries: Map(
+      0 -> EntryAt(0, TestValueIdHex, ValuePrevotePolSignBytes),
+      1 -> EntryAt(1, TestValueIdHex, ValuePrevotePolSignBytes2),
+      2 -> EntryAt(2, TestValueIdHex, ValuePrevotePolSignBytes3),
+    ),
+    hex: ValuePrevotePolQuorumPacketHex,
   }
 
   pure val matchingPolProposalChunk =
@@ -362,7 +434,11 @@ module CrosslinkTenderlinkProposalPolEvidenceTest {
   }
 
   pure val matchingPolEvidence =
-    Evidence(matchingPolProposalChunk, valuePrevotePolPacket, FixtureQuorumVotingPower)
+    Evidence(
+      matchingPolProposalChunk,
+      valuePrevotePolQuorumPacket,
+      FixtureQuorumVotingPower,
+    )
 
   pure val mismatchedValueEvidence =
     Evidence(mismatchedValueProposalChunk, valuePrevotePolPacket, FixtureQuorumVotingPower)
@@ -374,7 +450,7 @@ module CrosslinkTenderlinkProposalPolEvidenceTest {
     Evidence(matchingPolProposalChunk, valuePrecommitPacket, FixtureQuorumVotingPower)
 
   pure val lowPowerEvidence =
-    Evidence(matchingPolProposalChunk, valuePrevotePolPacket, 0)
+    Evidence(matchingPolProposalChunk, valuePrevotePolPacket, 1)
 
   pure val TestNilProposals = Set(nilValidRoundChunk, matchingPolProposalChunk)
   pure val TestPolEvidence = Set(

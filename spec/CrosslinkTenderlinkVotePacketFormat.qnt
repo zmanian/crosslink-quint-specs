@@ -56,6 +56,10 @@ module CrosslinkTenderlinkVotePacketFormat {
 
   pure val TestPubKeyHex =
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20"
+  pure val TestPubKey2Hex =
+    "2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40"
+  pure val TestPubKey3Hex =
+    "4142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60"
   pure val NilValueId =
     "0000000000000000000000000000000000000000000000000000000000000000"
   pure val TestValueIdHex =
@@ -93,9 +97,13 @@ module CrosslinkTenderlinkVotePacketFormat {
   pure val PacketVotesStructPaddingBytes =
     PacketVotesStructByteLen - PacketVotesMaxSerializedByteLen
 
-  pure val EntryIndexes = 0.to(0)
+  pure val EntryIndexes = 0.to(2)
   pure val TestVoteSignatureHex =
     "11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+  pure val TestVoteSignature2Hex =
+    "22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
+  pure val TestVoteSignature3Hex =
+    "33333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
   pure val UnmodeledVotePacketHex = "unmodeled-vote-packet"
 
   var acceptedVotePackets: Set[VotePacket_t]
@@ -114,11 +122,21 @@ module CrosslinkTenderlinkVotePacketFormat {
       vote.voteKind == PrevoteKind and vote.roundFlag == 0) {
       vote.hex ==
         "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f200000000000000000000000000000000000000000000000000000000000000000010000000000000000000000"
-    } else if (vote.byteLen == 76 and vote.pubKey == TestPubKeyHex and
-      vote.valueId == TestValueIdHex and vote.height == 2 and vote.round == 1 and
+    } else if (vote.byteLen == 76 and vote.valueId == TestValueIdHex and
+      vote.height == 2 and vote.round == 1 and
       vote.voteKind == PrevoteKind and vote.roundFlag == 1) {
-      vote.hex ==
-        "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+      if (vote.pubKey == TestPubKeyHex) {
+        vote.hex ==
+          "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+      } else if (vote.pubKey == TestPubKey2Hex) {
+        vote.hex ==
+          "2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+      } else if (vote.pubKey == TestPubKey3Hex) {
+        vote.hex ==
+          "4142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+      } else {
+        false
+      }
     } else if (vote.byteLen == 76 and vote.pubKey == TestPubKeyHex and
       vote.valueId == TestValueIdHex and vote.height == 1 and vote.round == 0 and
       vote.voteKind == PrecommitKind and vote.roundFlag == PrecommitRoundFlag) {
@@ -134,6 +152,10 @@ module CrosslinkTenderlinkVotePacketFormat {
   pure def RosterPubKey(rosterIndex: int): PubKey_t =
     if (rosterIndex == 0) {
       TestPubKeyHex
+    } else if (rosterIndex == 1) {
+      TestPubKey2Hex
+    } else if (rosterIndex == 2) {
+      TestPubKey3Hex
     } else {
       "unknown-pubkey"
     }
@@ -142,6 +164,12 @@ module CrosslinkTenderlinkVotePacketFormat {
     if (pubKey == TestPubKeyHex and
       signBytes != UnmodeledVoteSignWireHex) {
       TestVoteSignatureHex
+    } else if (pubKey == TestPubKey2Hex and
+      signBytes != UnmodeledVoteSignWireHex) {
+      TestVoteSignature2Hex
+    } else if (pubKey == TestPubKey3Hex and
+      signBytes != UnmodeledVoteSignWireHex) {
+      TestVoteSignature3Hex
     } else {
       "invalid-signature"
     }
@@ -227,7 +255,7 @@ module CrosslinkTenderlinkVotePacketFormat {
   ): bool = {
     val entry = packet.entries.get(i)
     all {
-      entry.rosterIndex == 0,
+      entry.rosterIndex == i,
       entry.pubKey == RosterPubKey(entry.rosterIndex),
       entry.valueId == EntryValueFor(packet, i),
       VoteSignWireCanonical(EntryVoteSignWire(packet, entry)),
@@ -246,6 +274,11 @@ module CrosslinkTenderlinkVotePacketFormat {
       packet.round == 1 and packet.height == 2 and
       packet.valueId == TestValueIdHex) {
       "0001010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+    } else if (packet.packetType == PacketTypePrevoteSignatures and
+      packet.byteLen == 244 and packet.noVotes == 0 and packet.yesVotes == 3 and
+      packet.round == 1 and packet.height == 2 and
+      packet.valueId == TestValueIdHex) {
+      "0003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
     } else if (packet.packetType == PacketTypePrecommitSignatures and
       packet.byteLen == 112 and packet.noVotes == 0 and packet.yesVotes == 1 and
       packet.round == 0 and packet.height == 1 and
@@ -296,9 +329,17 @@ module CrosslinkTenderlinkVotePacketFormatTest {
     valueId: ValueId_t,
     signBytes: Bytes_t,
     voteSignature: Signature_t,
+  ): VotePacketEntry_t =
+    EntryAt(0, valueId, signBytes, voteSignature)
+
+  def EntryAt(
+    rosterIndex: int,
+    valueId: ValueId_t,
+    signBytes: Bytes_t,
+    voteSignature: Signature_t,
   ): VotePacketEntry_t = {
-    rosterIndex: 0,
-    pubKey: TestPubKeyHex,
+    rosterIndex: rosterIndex,
+    pubKey: RosterPubKey(rosterIndex),
     valueId: valueId,
     signBytes: signBytes,
     voteSignature: voteSignature,
@@ -343,6 +384,12 @@ module CrosslinkTenderlinkVotePacketFormatTest {
   pure val ValuePrevotePolSignBytes =
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
 
+  pure val ValuePrevotePolSignBytes2 =
+    "2122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f40aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+
+  pure val ValuePrevotePolSignBytes3 =
+    "4142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f60aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa020000000000000001000000"
+
   pure val ValuePrecommitSignBytes =
     "0102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f20aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa010000000000000000000080"
 
@@ -369,6 +416,23 @@ module CrosslinkTenderlinkVotePacketFormatTest {
       Entry(TestValueIdHex, ValuePrevotePolSignBytes, TestVoteSignatureHex),
       "0001010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
     )
+
+  pure val valuePrevotePolQuorumPacket: VotePacket_t = {
+    packetType: PacketTypePrevoteSignatures,
+    byteLen: 244,
+    noVotes: 0,
+    yesVotes: 3,
+    round: 1,
+    height: 2,
+    valueId: TestValueIdHex,
+    entries: Map(
+      0 -> EntryAt(0, TestValueIdHex, ValuePrevotePolSignBytes, TestVoteSignatureHex),
+      1 -> EntryAt(1, TestValueIdHex, ValuePrevotePolSignBytes2, TestVoteSignature2Hex),
+      2 -> EntryAt(2, TestValueIdHex, ValuePrevotePolSignBytes3, TestVoteSignature3Hex),
+    ),
+    hex:
+      "0003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333",
+  }
 
   pure val valuePrecommitPacket =
     Packet(
@@ -417,6 +481,7 @@ module CrosslinkTenderlinkVotePacketFormatTest {
   pure val TestVotePackets = Set(
     nilPrevotePacket,
     valuePrevotePolPacket,
+    valuePrevotePolQuorumPacket,
     valuePrecommitPacket,
     wrongSignBytesPacket,
     trailingBytePacket,
@@ -455,9 +520,12 @@ module CrosslinkTenderlinkVotePacketFormatTest {
       assert(CanonicalVotePacketHex(nilPrevotePacket) == nilPrevotePacket.hex),
       assert(CanonicalVotePacketHex(valuePrevotePolPacket) ==
         valuePrevotePolPacket.hex),
+      assert(CanonicalVotePacketHex(valuePrevotePolQuorumPacket) ==
+        valuePrevotePolQuorumPacket.hex),
       assert(CanonicalVotePacketHex(valuePrecommitPacket) ==
         valuePrecommitPacket.hex),
       assert(VotePacketWireByteLen(nilPrevotePacket) == 112),
+      assert(VotePacketWireByteLen(valuePrevotePolQuorumPacket) == 244),
       assert(PacketVotesStructPaddingBytes == 6),
       unchangedAll,
     })
@@ -467,9 +535,13 @@ module CrosslinkTenderlinkVotePacketFormatTest {
     Init.then(all {
       assert(VotePacketEntryCanonical(nilPrevotePacket, 0)),
       assert(VotePacketEntryCanonical(valuePrevotePolPacket, 0)),
+      assert(VotePacketEntryCanonical(valuePrevotePolQuorumPacket, 0)),
+      assert(VotePacketEntryCanonical(valuePrevotePolQuorumPacket, 1)),
+      assert(VotePacketEntryCanonical(valuePrevotePolQuorumPacket, 2)),
       assert(VotePacketEntryCanonical(valuePrecommitPacket, 0)),
       assert(EntryValueFor(nilPrevotePacket, 0) == NilValueId),
       assert(EntryValueFor(valuePrevotePolPacket, 0) == TestValueIdHex),
+      assert(EntryValueFor(valuePrevotePolQuorumPacket, 2) == TestValueIdHex),
       assert(EntryValueFor(valuePrecommitPacket, 0) == TestValueIdHex),
       unchangedAll,
     })
@@ -479,10 +551,12 @@ module CrosslinkTenderlinkVotePacketFormatTest {
     Init
       .then(AcceptVotePacket(nilPrevotePacket))
       .then(AcceptVotePacket(valuePrevotePolPacket))
+      .then(AcceptVotePacket(valuePrevotePolQuorumPacket))
       .then(AcceptVotePacket(valuePrecommitPacket))
       .then(all {
         assert(acceptedVotePackets.contains(nilPrevotePacket)),
         assert(acceptedVotePackets.contains(valuePrevotePolPacket)),
+        assert(acceptedVotePackets.contains(valuePrevotePolQuorumPacket)),
         assert(acceptedVotePackets.contains(valuePrecommitPacket)),
         assert(Safety),
         unchangedAll,

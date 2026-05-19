@@ -156,13 +156,14 @@ For Crosslink, matching that quality means adding:
   roster-index/signature entries. It records the struct padding gap separately
   from the variable-length `write_to` bytes and checks that nil prevote,
   value prevote, and value precommit packet entries reconstruct the canonical
-  76-byte vote sign payload before signature verification.
+  76-byte vote sign payload before signature verification, including a
+  three-signature value-prevote POL packet for the smallest f = 1 quorum.
 - `CrosslinkTenderlinkProposalPolEvidence.qnt` bridges the valid-round rule to
   those production-shaped bytes: a proposal chunk with a non-`-1` valid round
   is accepted only when paired with a canonical prevote packet for the same
-  height, valid round, and value id. The bounded fixture models one canonical
-  signer as the minimal quorum threshold; full production-size 2f+1 packet
-  fixtures remain future work.
+  height, valid round, and value id. The bounded fixture now requires three
+  canonical signatures and modeled quorum power, while larger and weighted
+  validator-set packet fixtures remain future work.
 - `CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the compact Tenderlink
   consensus packet envelopes around those payloads: a 16-byte little-endian
   `PacketHeader` tag/ack prefix, including a nonzero
