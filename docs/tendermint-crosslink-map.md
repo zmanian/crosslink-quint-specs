@@ -138,6 +138,12 @@ same-round lock, valid, or cached proposal state by itself. Only
 `StartNextRoundAfterPrecommitQuorum` with a nil-precommit certificate performs
 the resampling unlock.
 
+`CrosslinkTimeoutProgressContract.qnt` adds a TLC-checked temporal envelope for
+this slice. It keeps older Tendermint locks preserved across ordinary timeout
+and nil-precommit recovery, clears only same-round recovery state after the nil
+certificate, and requires a justified stable proposal before the recovery path
+can decide across an older lock.
+
 ### Finality Can Skip PoW Heights
 
 Crosslink finality is over a PoW branch prefix, not over every PoW block height.

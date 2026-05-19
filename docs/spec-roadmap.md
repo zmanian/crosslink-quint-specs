@@ -531,6 +531,11 @@ For Crosslink, matching that quality means adding:
   propose timeout broadcasts a nil prevote, prevote timeout broadcasts a nil
   precommit, and precommit timeout advances the round without clearing
   lock/valid/cache state unless a nil-precommit certificate exists.
+- `CrosslinkTimeoutProgressContractModel` adds the first temporal timeout
+  recovery contract over that behavior: timeout-only advancement preserves
+  older Tendermint locks, nil-precommit certificates clear only same-round
+  recovery state, and a stable proposal must carry the justification needed to
+  vote across an older lock before the contract can decide.
 - The heighted round model now distinguishes a cached proposal from a real
   Tendermint `validValue`/`validRound` lock. After a timeout-only round advance
   with no value lock, the next fresh proposal resamples the current
@@ -583,6 +588,10 @@ For Crosslink, matching that quality means adding:
   contract for that scheduler envelope. It is not yet a full composed protocol
   liveness proof, because current temporal backends have trouble with the full
   imported round-machine state.
+- `CrosslinkTimeoutProgressContractModel` supplies the matching TLC-checked
+  timeout envelope. It proves that an ordinary timeout round cannot be the
+  unlock event, that nil-precommit recovery clears only recovery-round state,
+  and that the system can still reach a justified stable decision.
 - `CrosslinkFinalityProgressContractModel` extends the same TLC-friendly
   envelope from stable decision to finality cursor advancement.
 - `CrosslinkComposedProgressContractModel` adds a self-contained composed
