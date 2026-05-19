@@ -148,6 +148,10 @@ the Zebra Crosslink working branch:
   registry above both router families, checking that Tenderlink consensus lanes
   and Malachite proposal/liveness/sync lanes cannot be cross-routed by protocol,
   topic, channel, kind, or byte label.
+- `spec/CrosslinkProductionGossipIngress.qnt` adds the node-local ingress gate
+  above that registry: even a registry-valid envelope must be accepted only by
+  its matching downstream Tenderlink or Malachite lane, and raw wrong-lane or
+  cross-protocol injections violate ingress safety.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
@@ -593,6 +597,7 @@ quint typecheck spec/CrosslinkMalachiteSyncGossipTransport.qnt
 quint typecheck spec/CrosslinkMalachiteGossipRouter.qnt
 quint typecheck spec/CrosslinkMalachiteGossipRouterSafety.qnt
 quint typecheck spec/CrosslinkProductionGossipRegistry.qnt
+quint typecheck spec/CrosslinkProductionGossipIngress.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
 quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkHeightedAuthenticatedEvidence.qnt
@@ -740,6 +745,7 @@ quint test spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalach
 quint test spec/CrosslinkMalachiteGossipRouter.qnt --main=CrosslinkMalachiteGossipRouterModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --max-samples=100 --backend=rust
@@ -780,6 +786,7 @@ quint verify spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalac
 quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --init=RegistryInit --step=RegistryNext --invariants=RegistrySafety --max-steps=5
+quint verify spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --init=IngressInit --step=IngressNext --invariants=IngressSafety --max-steps=5
 quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -899,6 +906,7 @@ quint verify spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalac
 quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --init=RegistryInit --step=RegistryNext --invariants=RegistrySafety --max-steps=5
+quint verify spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --init=IngressInit --step=IngressNext --invariants=IngressSafety --max-steps=5
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt --main=CrosslinkHeightedAuthenticatedGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5

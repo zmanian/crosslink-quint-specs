@@ -315,6 +315,11 @@ For Crosslink, matching that quality means adding:
   liveness, and sync lanes, and rejects cross-protocol routing such as Malachite
   proposals on the Tenderlink consensus channel or Tenderlink precommits on the
   Malachite liveness channel.
+- `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
+  above that registry. It checks that registry-valid records still enter only
+  their matching downstream lane, rejecting accountability evidence handed to
+  the Tenderlink consensus lane, Malachite proposal traffic handed to Tenderlink
+  ingress, and cross-protocol raw injections.
 
 ### 2026-05-18
 
