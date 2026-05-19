@@ -341,6 +341,12 @@ For Crosslink, matching that quality means adding:
   monotone rollback-risk estimates across the sigma ladder, and forces the
   selected sigma to satisfy rollback-risk and expected-loss budgets whenever
   the bounded ladder can satisfy them.
+- `CrosslinkDynamicSigmaForkSchedule.qnt` composes the dynamic controller with
+  the derived PoW fork schedule, replacing a supplied observed-reorg map with
+  rollback depth computed from best-tip transitions.
+- `CrosslinkDynamicSigmaBranchCompetition.qnt` feeds generated published-tip
+  work competition into the same dynamic controller, including the adversarial
+  branch-release witness that raises sigma from a derived rollback signal.
 - `CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
   boundary for the dynamic controller. It checks that committed per-height
   `bc_confirmation_depth_sigma` wires decode to the deterministic active sigma,
@@ -527,6 +533,7 @@ For Crosslink, matching that quality means adding:
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW fork-schedule, PoW branch-competition,
   PoW-reorg-stress, dynamic-sigma, dynamic-sigma telemetry,
+  dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
   dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
   dynamic-sigma consensus-param-transport, dynamic-sigma head-sampling,
   dynamic-sigma heighted-round,
@@ -604,6 +611,13 @@ For Crosslink, matching that quality means adding:
   conservatively upper-bound those samples, that rollback-risk estimates are
   monotone across the sigma ladder, and that expected-loss budgets can raise
   sigma even when rollback probability is within the PPM target.
+- `CrosslinkDynamicSigmaForkScheduleModel` composes the controller with a
+  derived best-tip schedule, checking that rollback depth computed from a fork
+  switch raises sigma before future rounds consume that value.
+- `CrosslinkDynamicSigmaBranchCompetitionModel` composes the controller with
+  generated published-tip work competition, checking that released
+  adversarial work can become the best tip and raise sigma through the derived
+  rollback-depth path.
 - `CrosslinkDynamicSigmaHeadSamplingModel` composes that controller with
   `head - sigma(h)` sampling. It verifies that height 0 samples with the
   initial sigma, a nil-round burn leaves that sample and same-height sigma

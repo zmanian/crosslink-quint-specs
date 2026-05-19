@@ -150,6 +150,12 @@ the Zebra Crosslink working branch:
   upper-bound raw samples, rollback-risk curves must be monotone across the
   sigma ladder, and the selected sigma must satisfy explicit rollback-risk and
   expected-loss budgets whenever the ladder can satisfy them.
+- `spec/CrosslinkDynamicSigmaForkSchedule.qnt` composes dynamic sigma with the
+  derived fork schedule, so the controller consumes rollback depth computed
+  from best-tip transitions instead of a hand-supplied reorg-depth map.
+- `spec/CrosslinkDynamicSigmaBranchCompetition.qnt` feeds the generated
+  published-tip branch-competition model into dynamic sigma, including the
+  adversarial release witness that raises sigma from a derived rollback signal.
 - `spec/CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
   boundary for that controller: committed per-height
   `bc_confirmation_depth_sigma` params must decode to the active sigma,
@@ -270,6 +276,10 @@ The current spec surface has three first-class Crosslink variants:
   `CrosslinkDynamicSigmaTelemetryModel` checks nine bounded production-shaped
   telemetry windows, including economic expected-loss cases where sigma must
   rise even though rollback probability alone is within the PPM target.
+  `CrosslinkDynamicSigmaForkScheduleModel` and
+  `CrosslinkDynamicSigmaBranchCompetitionModel` feed derived rollback-depth
+  signals from best-tip changes and published-tip work competition into the
+  controller, including an adversarial branch-release witness.
   `CrosslinkDynamicSigmaConsensusParamsModel` checks that the schedule is
   installed through canonical `bc_confirmation_depth_sigma` consensus-param
   wires at height boundaries and rejects malformed keys, stale activation
@@ -336,7 +346,8 @@ npm run verify:temporal
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
 PoW fork-schedule, PoW branch-competition, PoW-reorg stress, dynamic-sigma,
-dynamic-sigma telemetry, dynamic-sigma consensus-params,
+dynamic-sigma telemetry, dynamic-sigma fork-schedule,
+dynamic-sigma branch-competition, dynamic-sigma consensus-params,
 dynamic-sigma consensus-param-format, dynamic-sigma consensus-param-transport,
 dynamic-sigma head-sampling, dynamic-sigma heighted-round,
 dynamic-sigma heighted-finality,
@@ -401,6 +412,8 @@ quint typecheck spec/CrosslinkPowBranchCompetition.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
 quint typecheck spec/CrosslinkDynamicSigmaTelemetry.qnt
+quint typecheck spec/CrosslinkDynamicSigmaForkSchedule.qnt
+quint typecheck spec/CrosslinkDynamicSigmaBranchCompetition.qnt
 quint typecheck spec/CrosslinkDynamicSigmaConsensusParams.qnt
 quint typecheck spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt
 quint typecheck spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt
@@ -440,6 +453,8 @@ quint test spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompe
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaForkSchedule.qnt --main=CrosslinkDynamicSigmaForkScheduleModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaBranchCompetition.qnt --main=CrosslinkDynamicSigmaBranchCompetitionModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --max-samples=100 --backend=rust
@@ -532,6 +547,8 @@ quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCom
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaForkSchedule.qnt --main=CrosslinkDynamicSigmaForkScheduleModel --init=DerivedInit --step=DerivedNext --invariants=DerivedSafety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaBranchCompetition.qnt --main=CrosslinkDynamicSigmaBranchCompetitionModel --init=BranchCompetitionDynamicInit --step=BranchCompetitionDynamicNext --invariants=BranchCompetitionDynamicSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --init=ProductionParamInit --step=ProductionParamNext --invariants=ProductionConsensusParamFormatSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --init=ParamTransportInit --step=ParamTransportNext --invariants=ParamTransportSafety --max-steps=5
@@ -560,6 +577,8 @@ quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCom
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaTelemetry.qnt --main=CrosslinkDynamicSigmaTelemetryModel --init=Init --step=Next --invariants=Safety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaForkSchedule.qnt --main=CrosslinkDynamicSigmaForkScheduleModel --init=DerivedInit --step=DerivedNext --invariants=DerivedSafety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaBranchCompetition.qnt --main=CrosslinkDynamicSigmaBranchCompetitionModel --init=BranchCompetitionDynamicInit --step=BranchCompetitionDynamicNext --invariants=BranchCompetitionDynamicSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaConsensusParamFormat.qnt --main=CrosslinkDynamicSigmaConsensusParamFormatModel --init=ProductionParamInit --step=ProductionParamNext --invariants=ProductionConsensusParamFormatSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaConsensusParamTransport.qnt --main=CrosslinkDynamicSigmaConsensusParamTransportModel --init=ParamTransportInit --step=ParamTransportNext --invariants=ParamTransportSafety --max-steps=8
