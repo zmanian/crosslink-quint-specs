@@ -81,6 +81,11 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkMalachiteSyncGossipTransport.qnt` adds a Crosslink sync-topic
   transport-envelope boundary around those exact sync protobuf bytes, including
   request/response kind separation for the shared no-value response bytes.
+- `spec/CrosslinkMalachiteGossipRouter.qnt` composes the Malachite proposal,
+  liveness, and sync transport machines behind one shared gossip router,
+  checking channel/topic/kind separation and wrong-channel rejection.
+- `spec/CrosslinkMalachiteGossipRouterSafety.qnt` is the verifier-friendly
+  router safety slice for the same channel/topic/kind registry contract.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
@@ -321,7 +326,8 @@ fixture-authenticated evidence, fixture-gossip transport, heighted message
 gossip transport, Tenderlink vote/proposal bytes, vote packets, consensus
 packets, nonce/ack transport, status packets, heighted authenticated gossip
 transport, Malachite proposal/liveness/sync protobuf certificates and
-messages, Malachite proposal/liveness/sync gossip transport,
+messages, Malachite proposal/liveness/sync gossip transport and router,
+Malachite gossip router safety,
 validator-evidence, and authenticated evidence composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
@@ -356,6 +362,8 @@ quint typecheck spec/CrosslinkMalachiteLivenessProtobufFormat.qnt
 quint typecheck spec/CrosslinkMalachiteLivenessGossipTransport.qnt
 quint typecheck spec/CrosslinkMalachiteSyncProtobufFormat.qnt
 quint typecheck spec/CrosslinkMalachiteSyncGossipTransport.qnt
+quint typecheck spec/CrosslinkMalachiteGossipRouter.qnt
+quint typecheck spec/CrosslinkMalachiteGossipRouterSafety.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
 quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkHeightedAuthenticatedEvidence.qnt
@@ -449,6 +457,8 @@ quint test spec/CrosslinkMalachiteLivenessProtobufFormat.qnt --main=CrosslinkMal
 quint test spec/CrosslinkMalachiteLivenessGossipTransport.qnt --main=CrosslinkMalachiteLivenessGossipTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalachiteSyncProtobufFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkMalachiteGossipRouter.qnt --main=CrosslinkMalachiteGossipRouterModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --max-samples=100 --backend=rust
@@ -478,6 +488,7 @@ quint verify spec/CrosslinkMalachiteLivenessProtobufFormat.qnt --main=CrosslinkM
 quint verify spec/CrosslinkMalachiteLivenessGossipTransport.qnt --main=CrosslinkMalachiteLivenessGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalachiteSyncProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
+quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -546,6 +557,7 @@ quint verify spec/CrosslinkMalachiteLivenessProtobufFormat.qnt --main=CrosslinkM
 quint verify spec/CrosslinkMalachiteLivenessGossipTransport.qnt --main=CrosslinkMalachiteLivenessGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncProtobufFormat.qnt --main=CrosslinkMalachiteSyncProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMalachiteSyncGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
+quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt --main=CrosslinkHeightedAuthenticatedGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5

@@ -223,6 +223,15 @@ For Crosslink, matching that quality means adding:
   protobuf payload before accepting a sync message; witnesses reject raw
   decoder acceptance, wrong topics/kinds, wrong bytes, missing certificates,
   and preserve request/response kind separation for the shared no-value bytes.
+- `CrosslinkMalachiteGossipRouter.qnt` composes the Malachite proposal,
+  liveness, and sync transport machines behind one shared gossip router. It
+  records routed messages per channel, checks that proposal/liveness/sync
+  topics and channels stay disjoint, preserves each underlying transport
+  safety invariant, and includes wrong-channel/wrong-topic/wrong-kind witnesses.
+- `CrosslinkMalachiteGossipRouterSafety.qnt` keeps the same router namespace
+  contract in a verifier-friendly direct state machine, so Apalache can check
+  the channel/topic/kind invariant without flattening alias-imported transport
+  modules.
 
 ### 2026-05-18
 
@@ -635,7 +644,9 @@ For Crosslink, matching that quality means adding:
   the heighted message gossip transport bridge covers the abstract
   proposal/vote/fat-pointer-signature envelope boundary, the heighted
   authenticated gossip transport bridge covers the observer-evidence precommit
-  and fat-pointer-signature envelope boundary, and the dynamic-sigma
+  and fat-pointer-signature envelope boundary, the Malachite gossip router and
+  verifier-friendly router safety slice compose the proposal/liveness/sync
+  channel namespaces, and the dynamic-sigma
   consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
   bytes, quorum-signed production-byte gossip, node-config application,
