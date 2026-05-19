@@ -298,7 +298,11 @@ transport model adds the first transport boundary for the checked-in generated
 fixture: the matching precommit and fat-pointer wire must arrive through
 canonical Crosslink-topic envelopes, wrong topic/sign-bytes/kind/length
 envelopes are rejected, and a fixture precommit cannot enter gossip unless its
-matching transport envelope was seen. `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt`
+matching transport envelope was seen. The production-finality projection then
+uses that fixture transport bridge at the finality boundary: finality cannot
+advance from the generated fixture unless both the checked-in BFT-block shape
+and the transported authenticated fat-pointer wire have been observed.
+`CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt`
 adds concrete slashing-evidence envelopes for nil/value precommit equivocation
 under the nil-precommit rule and ordinary value/value precommit equivocation by
 one validator at the same height and round, encoded as typed header fields plus
@@ -306,10 +310,11 @@ two canonical `PacketVotes` payloads. It rejects prevote evidence,
 wrong-height/round evidence, wrong byte lengths, same-value packets,
 wrong-signer claims, and non-canonical envelope bytes. This is still partial:
 the model now covers the authentication boundary, wire shape,
-gossip-before-observe rule, fixture-level transport gate, fixture-manifest
-Ed25519 verification, and nil/value plus value/value precommit equivocation
-evidence envelopes, but does not yet call a full production gossip transport
-implementation or cover every future slashing evidence encoding. The
+gossip-before-observe rule, fixture-level transport gate, production-fixture
+finality gate, fixture-manifest Ed25519 verification, and nil/value plus
+value/value precommit equivocation evidence envelopes, but does not yet call a
+full production gossip transport implementation or cover every future slashing
+evidence encoding. The
 `CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt` bridge narrows that
 gap for these envelopes by requiring a Crosslink consensus-topic transport
 envelope with exact evidence bytes and matching height, round, and signer

@@ -590,6 +590,12 @@ For Crosslink, matching that quality means adding:
   fat-pointer wire must be gossiped in canonical Crosslink-topic envelopes
   before the observer accepts the wire, and witnesses reject wrong-topic,
   wrong-sign-bytes, wrong-kind, and wrong-wire-length envelopes.
+- `CrosslinkProductionFinalityProjectionContract.qnt` now composes the
+  generated BFT-block fixture shape, fixture transport boundary, and
+  authenticated fat-pointer observer evidence at the finality boundary. The
+  composed safety model rejects finality without both the checked-in BFT-block
+  candidate and transported fat-pointer wire; the scalar TLC projection proves
+  eventual fixture finality under fair progress through the same gates.
 - `CrosslinkHeightedAuthenticatedGossipTransport.qnt` adds the corresponding
   non-fixture transport bridge for heighted authenticated evidence. It keeps
   bytes compact but prevents authenticated precommits or fat-pointer signatures
@@ -861,7 +867,8 @@ For Crosslink, matching that quality means adding:
   validator-set, BFT-block-shape, fat-pointer-format, and production-shaped
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
-  The fixture-gossip bridge now covers the checked-in fixture transport boundary,
+  The fixture-gossip and production-finality projection bridges now cover the
+  checked-in fixture transport and finality boundary,
   the heighted message gossip transport bridge covers the abstract
   proposal/vote/fat-pointer-signature envelope boundary, the heighted
   authenticated gossip transport bridge covers the observer-evidence precommit

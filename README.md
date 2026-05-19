@@ -350,6 +350,12 @@ the Zebra Crosslink working branch:
   the generated fixture precommit and fat-pointer wire must first be gossiped
   in canonical Crosslink-topic envelopes before the observer accepts the wire;
   wrong topic, wrong sign bytes, wrong kind, and wrong wire length are rejected.
+- `spec/CrosslinkProductionFinalityProjectionContract.qnt` composes the
+  generated production BFT-block fixture, the fixture transport boundary, and
+  authenticated fat-pointer evidence at finality: the composed safety model
+  rejects finality until the checked-in BFT-block candidate and transported
+  fat-pointer wire are both observed, while a scalar TLC projection proves the
+  same gates eventually finalize under fair progress.
 
 The current spec surface has three first-class Crosslink variants:
 
@@ -463,8 +469,9 @@ dynamic-sigma authenticated-finality, head-sigma, BFT-height finality,
 BFT-block-shape,
 BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
 fat-pointer production-vector, fat-pointer authenticated-evidence,
-fixture-authenticated evidence, fixture-gossip transport, heighted message
-gossip transport, Tenderlink vote/proposal bytes, vote packets,
+fixture-authenticated evidence, fixture-gossip transport,
+production-finality projection, heighted message gossip transport,
+Tenderlink vote/proposal bytes, vote packets,
 proposal/POL evidence, consensus packets, accountability evidence, transport, and observer,
 nonce/ack transport, status packets,
 heighted authenticated gossip transport, Malachite proposal/liveness/sync
@@ -479,8 +486,9 @@ timeout-recovery contract, the scheduler-plus-finality contract, the composed
 nil-resampling/finality progress contract, the baseline sticky-churn recovery
 contract, the mixed-precommit wait/recovery contract, the heighted
 round/finality progress projection, the authenticated heighted projection, the
-rotating-validator authenticated projection, the validator-scale resampling
-progress contract, and the validator-scale finality progress contract, because TLC has mature
+rotating-validator authenticated projection, the production-finality
+projection, the validator-scale resampling progress contract, and the
+validator-scale finality progress contract, because TLC has mature
 temporal property support while Apalache's temporal support is still
 experimental.
 
@@ -570,6 +578,7 @@ quint typecheck spec/CrosslinkFatPointerProductionVectors.qnt
 quint typecheck spec/CrosslinkFatPointerAuthenticatedEvidence.qnt
 quint typecheck spec/CrosslinkFixtureAuthenticatedEvidence.qnt
 quint typecheck spec/CrosslinkFixtureGossipTransport.qnt
+quint typecheck spec/CrosslinkProductionFinalityProjectionContract.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -626,6 +635,8 @@ quint test spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPoin
 quint test spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFixtureAuthenticatedEvidence.qnt --main=CrosslinkFixtureAuthenticatedEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGossipTransportModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkProductionFinalityProjectionContract.qnt --main=CrosslinkProductionFinalityProjectionContractModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkProductionFinalityProjectionContract.qnt --main=CrosslinkProductionFinalityTemporalProjectionModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkProposalValidityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkValidRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --max-samples=100 --backend=rust
@@ -746,6 +757,8 @@ quint verify spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPo
 quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
 quint verify spec/CrosslinkFixtureAuthenticatedEvidence.qnt --main=CrosslinkFixtureAuthenticatedEvidenceModel --init=PipelineInit --step=FixtureNext --invariants=FixtureSafety --max-steps=5
 quint verify spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGossipTransportModel --init=TransportPipelineInit --step=TransportNext --invariants=TransportSafety --max-steps=5
+quint verify spec/CrosslinkProductionFinalityProjectionContract.qnt --main=CrosslinkProductionFinalityProjectionContractModel --init=Init --step=Next --invariants=ProductionFinalitySafety --max-steps=5
+quint verify spec/CrosslinkProductionFinalityProjectionContract.qnt --main=CrosslinkProductionFinalityTemporalProjectionModel --init=Init --step=Next --invariants=Safety --max-steps=5
 
 quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -788,6 +801,8 @@ quint verify spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPo
 quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
 quint verify spec/CrosslinkFixtureAuthenticatedEvidence.qnt --main=CrosslinkFixtureAuthenticatedEvidenceModel --init=PipelineInit --step=FixtureNext --invariants=FixtureSafety --max-steps=5
 quint verify spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGossipTransportModel --init=TransportPipelineInit --step=TransportNext --invariants=TransportSafety --max-steps=5
+quint verify spec/CrosslinkProductionFinalityProjectionContract.qnt --main=CrosslinkProductionFinalityProjectionContractModel --init=Init --step=Next --invariants=ProductionFinalitySafety --max-steps=8
+quint verify spec/CrosslinkProductionFinalityProjectionContract.qnt --main=CrosslinkProductionFinalityTemporalProjectionModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkHeightedMessageGossipTransport.qnt --main=CrosslinkHeightedMessageGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkVoteSignBytes.qnt --main=CrosslinkTenderlinkVoteSignBytesModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkProposalChunkSignBytes.qnt --main=CrosslinkTenderlinkProposalChunkSignBytesModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -823,6 +838,7 @@ quint verify spec/CrosslinkMixedWaitProgressContract.qnt --backend=tlc --main=Cr
 quint verify spec/CrosslinkHeightedProgressProjectionContract.qnt --backend=tlc --main=CrosslinkHeightedProgressProjectionContractModel --init=Init --step=Next --temporal=EventuallyHeightedProgressFinalizesTwoHeights --max-steps=45
 quint verify spec/CrosslinkHeightedAuthenticatedProgressProjectionContract.qnt --backend=tlc --main=CrosslinkHeightedAuthenticatedProgressProjectionContractModel --init=AuthInit --step=AuthenticatedNext --temporal=EventuallyHeightedAuthenticatedProgressFinalizesTwoHeights --max-steps=70
 quint verify spec/CrosslinkRotatingAuthenticatedProgressProjectionContract.qnt --backend=tlc --main=CrosslinkRotatingAuthenticatedProgressProjectionContractModel --init=Init --step=Next --temporal=EventuallyRotatingAuthenticatedProgressFinalizesTwoHeights --max-steps=70
+quint verify spec/CrosslinkProductionFinalityProjectionContract.qnt --backend=tlc --main=CrosslinkProductionFinalityTemporalProjectionModel --init=Init --step=Next --temporal=EventuallyProductionFixtureFinalized --max-steps=30
 quint verify spec/CrosslinkValidatorScaleProgressContract.qnt --backend=tlc --main=CrosslinkValidatorScaleProgressContractModel --init=Init --step=Next --temporal=EventuallyResamplingDecision --max-steps=45
 quint verify spec/CrosslinkValidatorScaleFinalityProgressContract.qnt --backend=tlc --main=CrosslinkValidatorScaleFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --temporal=EventuallyValidatorScaleFinalized --max-steps=50
 ```
