@@ -182,6 +182,14 @@ For Crosslink, matching that quality means adding:
   acked-status hex vectors. The witnesses reject missing status flags,
   reversed proposal ranges, vote request ranges past the roster, malformed
   ack/tag fields, and truncated status packets.
+- `CrosslinkMalachiteProposalProtobufFormat.qnt` adds the first Malachite
+  protobuf proposal vectors. It pins exact proto3 bytes for `Value`,
+  `Proposal` with and without `pol_round`, `SignedMessage::Proposal`, and
+  streamed proposal parts, including field tags, length prefixes, the omitted
+  nil POL round, 32-byte validator/proposer keys, and 64-byte signatures. The
+  rejection witnesses cover missing values, nil proposal rounds, short
+  validator/proposer keys, wrong signed-message oneof tags, and missing
+  signatures.
 
 ### 2026-05-18
 
