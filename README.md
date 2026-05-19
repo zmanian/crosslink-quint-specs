@@ -59,7 +59,8 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkTenderlinkProposalPolTransport.qnt` links that decoded POL
   evidence to compact Tenderlink transport receipt: the non-nil proposal chunk
   and prevote POL packet must first appear in decrypted, exact consensus
-  packet envelopes before accepted transported evidence is recorded.
+  packet envelopes imported from the consensus-packet fixture slice before
+  accepted transported evidence is recorded.
 - `spec/CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the legacy
   Tenderlink compact consensus packet envelopes: the 16-byte `PacketHeader`
   tag/ack prefix, including nonzero `ack_latest`/`ack_field` bytes, proposal

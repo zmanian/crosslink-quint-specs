@@ -18,6 +18,8 @@ module CrosslinkTenderlinkProposalPolTransport {
   import CrosslinkTenderlinkProposalPolEvidenceTest.* from
     "./CrosslinkTenderlinkProposalPolEvidence"
   export CrosslinkTenderlinkProposalPolEvidenceTest.*
+  import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
+    "./CrosslinkTenderlinkConsensusPacketFormat"
 
   type TransportEnvelope_t = {
     decrypted: bool,
@@ -30,27 +32,22 @@ module CrosslinkTenderlinkProposalPolTransport {
     packetHex: Bytes_t,
   }
 
-  pure val PacketTypeProposalChunk = 7
-  pure val PacketHeaderByteLen = 16
-  pure val ProposalSignatureByteLen = 64
-  pure val ProposalPacketHeaderHex = "07000000000000000000000000000000"
-  pure val PrevotePacketHeaderHex = "08000000000000000000000000000000"
-  pure val TestProposalSignatureHex =
-    "22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
   pure val UnmodeledTransportPacketHex = "unmodeled-transport-packet"
   pure val UnmodeledNoncePrefixHex = "unmodeled-nonce-prefix"
 
+  // Reuse the exact compact consensus packet witnesses so POL transport cannot
+  // drift from the packet-envelope layout slice.
   pure val PolProposalConsensusPacketHex =
-    "07000000000000000000000000000000010000000800000002000000010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacafebabe22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
+    ConsensusPacketFormat::TestPolProposalConsensusPacketHex
 
   pure val ValuePrevotePolConsensusPacketHex =
-    "080000000000000000000000000000000001010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+    ConsensusPacketFormat::TestValuePrevotePolConsensusPacketHex
 
   pure val ValuePrevotePolWeightedConsensusPacketHex =
-    "080000000000000000000000000000000002010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
+    ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex
 
   pure val ValuePrevotePolQuorumConsensusPacketHex =
-    "080000000000000000000000000000000003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+    ConsensusPacketFormat::TestQuorumPrevoteConsensusPacketHex
 
   var transportedProposalChunks: Set[ProposalChunkWire_t]
   var transportedPolPackets: Set[VotePacket_t]
@@ -97,11 +94,12 @@ module CrosslinkTenderlinkProposalPolTransport {
     env.decrypted and
     env.noncePrefixHex == NoncePrefixHex(env.nonce) and
     env.noncePrefixHex != UnmodeledNoncePrefixHex and
-    env.packetType == PacketTypeProposalChunk and
+    env.packetType == ConsensusPacketFormat::PacketTypeProposalChunk and
     ProposalChunkWireCanonical(proposal) and
     ProposalNeedsPol(proposal) and
     env.payloadByteLen == proposal.byteLen and
-    env.byteLen == PacketHeaderByteLen + proposal.byteLen + ProposalSignatureByteLen and
+    env.byteLen == ConsensusPacketFormat::PacketHeaderByteLen + proposal.byteLen +
+      ConsensusPacketFormat::ProposalSignatureByteLen and
     env.payloadHex == proposal.hex and
     ProposalTransportPacketHex(proposal) != UnmodeledTransportPacketHex and
     env.packetHex == ProposalTransportPacketHex(proposal)
@@ -113,12 +111,12 @@ module CrosslinkTenderlinkProposalPolTransport {
     env.decrypted and
     env.noncePrefixHex == NoncePrefixHex(env.nonce) and
     env.noncePrefixHex != UnmodeledNoncePrefixHex and
-    env.packetType == PacketTypePrevoteSignatures and
+    env.packetType == ConsensusPacketFormat::PacketTypePrevoteSignatures and
     VotePacketCanonical(packet) and
-    packet.packetType == PacketTypePrevoteSignatures and
+    packet.packetType == ConsensusPacketFormat::PacketTypePrevoteSignatures and
     packet.noVotes == 0 and
     env.payloadByteLen == packet.byteLen and
-    env.byteLen == PacketHeaderByteLen + packet.byteLen and
+    env.byteLen == ConsensusPacketFormat::PacketHeaderByteLen + packet.byteLen and
     env.payloadHex == packet.hex and
     PolVoteTransportPacketHex(packet) != UnmodeledTransportPacketHex and
     env.packetHex == PolVoteTransportPacketHex(packet)
@@ -197,7 +195,8 @@ module CrosslinkTenderlinkProposalPolTransport {
   pure def TransportedPolPacketsCanonical: bool =
     transportedPolPackets.forall(packet =>
       PolVoteTransportPacketHex(packet) != UnmodeledTransportPacketHex and
-      VotePacketCanonical(packet) and packet.packetType == PacketTypePrevoteSignatures and
+      VotePacketCanonical(packet) and
+      packet.packetType == ConsensusPacketFormat::PacketTypePrevoteSignatures and
       packet.noVotes == 0
     )
 
@@ -209,8 +208,8 @@ module CrosslinkTenderlinkProposalPolTransport {
     )
 
   val TransportSafety =
-    PacketHeaderByteLen == 16 and
-    ProposalSignatureByteLen == 64 and
+    ConsensusPacketFormat::PacketHeaderByteLen == 16 and
+    ConsensusPacketFormat::ProposalSignatureByteLen == 64 and
     TransportedProposalsCanonical and
     TransportedPolPacketsCanonical and
     AcceptedTransportedPolEvidenceCanonical
@@ -220,6 +219,8 @@ module CrosslinkTenderlinkProposalPolTransportTest {
   import CrosslinkTenderlinkProposalPolTransport.* from
     "./CrosslinkTenderlinkProposalPolTransport"
   export CrosslinkTenderlinkProposalPolTransport.*
+  import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
+    "./CrosslinkTenderlinkConsensusPacketFormat"
 
   def Env(
     decrypted: bool,
@@ -246,7 +247,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       true,
       120,
       "7800000000000000",
-      PacketTypeProposalChunk,
+      ConsensusPacketFormat::PacketTypeProposalChunk,
       matchingPolProposalChunk.byteLen,
       140,
       matchingPolProposalChunk.hex,
@@ -258,7 +259,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       true,
       125,
       "7d00000000000000",
-      PacketTypePrevoteSignatures,
+      ConsensusPacketFormat::PacketTypePrevoteSignatures,
       valuePrevotePolWeightedPacket.byteLen,
       194,
       valuePrevotePolWeightedPacket.hex,
@@ -270,7 +271,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       true,
       126,
       "7e00000000000000",
-      PacketTypePrevoteSignatures,
+      ConsensusPacketFormat::PacketTypePrevoteSignatures,
       valuePrevotePolQuorumPacket.byteLen,
       260,
       valuePrevotePolQuorumPacket.hex,
@@ -282,7 +283,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       true,
       127,
       "7f00000000000000",
-      PacketTypePrevoteSignatures,
+      ConsensusPacketFormat::PacketTypePrevoteSignatures,
       valuePrevotePolPacket.byteLen,
       128,
       valuePrevotePolPacket.hex,
@@ -294,7 +295,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       true,
       120,
       "7800000000000000",
-      PacketTypePrevoteSignatures,
+      ConsensusPacketFormat::PacketTypePrevoteSignatures,
       matchingPolProposalChunk.byteLen,
       140,
       matchingPolProposalChunk.hex,
@@ -306,7 +307,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       true,
       125,
       "7d00000000000000",
-      PacketTypePrevoteSignatures,
+      ConsensusPacketFormat::PacketTypePrevoteSignatures,
       valuePrevotePolWeightedPacket.byteLen,
       194,
       valuePrevotePolQuorumPacket.hex,
@@ -318,7 +319,7 @@ module CrosslinkTenderlinkProposalPolTransportTest {
       true,
       125,
       "7d00000000000000",
-      PacketTypePrevoteSignatures,
+      ConsensusPacketFormat::PacketTypePrevoteSignatures,
       valuePrevotePolWeightedPacket.byteLen,
       194,
       valuePrevotePolWeightedPacket.hex,

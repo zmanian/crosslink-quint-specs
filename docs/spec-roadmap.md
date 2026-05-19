@@ -170,9 +170,11 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkTenderlinkProposalPolTransport.qnt` adds the transport bridge for
   that rule: the non-nil proposal chunk and the weighted or f = 1 POL prevote
   packet must first be received as decrypted, exact compact Tenderlink
-  consensus packets before the decoded POL evidence can be accepted. Witnesses
-  reject missing proposal transport, missing POL transport, low-power POL,
-  wrong proposal packet type, wrong POL payload, and wrong packet bytes.
+  consensus packets before the decoded POL evidence can be accepted. The bridge
+  reuses the consensus-packet fixture constants for the proposal and 112/178/244
+  byte POL prevote envelopes. Witnesses reject missing proposal transport,
+  missing POL transport, low-power POL, wrong proposal packet type, wrong POL
+  payload, and wrong packet bytes.
 - `CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the compact Tenderlink
   consensus packet envelopes around those payloads: a 16-byte little-endian
   `PacketHeader` tag/ack prefix, including a nonzero
