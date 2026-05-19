@@ -48,6 +48,37 @@ Required pieces:
   permanently wedge the protocol once the stream is stable across the
   prevote/precommit window.
 
+## Dynamic-Sigma Variant
+
+The dynamic-sigma spec should be treated as a third Crosslink variant, not just
+as parameter-analysis metadata. It layers nil-precommit resampling with a
+consensus-visible sigma schedule:
+
+```text
+sigma(h) is fixed for BFT height h.
+sigma(h + 1) is computed deterministically from committed telemetry for h.
+```
+
+Required pieces:
+
+- A per-height sigma schedule included in consensus-visible state.
+- No same-height or same-lock sigma changes.
+- Deterministic updates from committed nil-round failure telemetry and a
+  quorum-backed network coverage model.
+- The percentage of PoW hash power participating in Crosslink as a separate
+  committed telemetry input; low participation should make sigma updates more
+  conservative because the sampled PoW stream is less representative of total
+  block production.
+- A classification boundary between sigma-relevant
+  long-reorg/low-coverage/low-participation failures and ordinary same-branch
+  block-arrival churn, since larger sigma does not mitigate normal head
+  progression during the prevote/precommit window.
+- Hysteresis: raise on repeated sigma-relevant failures, lower only after
+  stable windows with adequate validator/network coverage and adequate
+  Crosslink-participating hash power.
+- Compatibility witnesses showing that nil-precommit resampling burns rounds
+  while dynamic sigma only affects future BFT heights.
+
 ## Tendermint-Quality Target
 
 The upstream Tendermint Quint specs are useful because they are not just unit
@@ -62,7 +93,8 @@ tests. They provide:
 
 For Crosslink, matching that quality means adding:
 
-- a single shared protocol core with separate baseline and resampling variants,
+- a single shared protocol core with baseline, fixed-sigma resampling, and
+  dynamic-sigma variants,
 - stronger message-domain modeling for proposals, prevotes, precommits, and
   decided/fat-pointer evidence,
 - model-checkable safety invariants beyond scripted witness runs,
@@ -74,7 +106,8 @@ For Crosslink, matching that quality means adding:
 ## Near-Term Milestones
 
 1. Split the current focused model into a shared core plus explicit
-   `BaselineCrosslink` and `NilPrecommitResamplingCrosslink` modules.
+   `BaselineCrosslink`, `NilPrecommitResamplingCrosslink`, and dynamic-sigma
+   variant modules.
 2. Import the relevant structure from the upstream Tendermint Quint examples and
    map every Tendermint rule to a Crosslink-specific rule or deviation.
 3. Add model-checkable invariants for decision uniqueness, lock safety, finality
@@ -164,6 +197,15 @@ For Crosslink, matching that quality means adding:
   `head - sigma` candidate, and an ordinary same-branch block arrival can do
   the same; the resampling path burns those rounds and decides only after a
   stable head-sigma window.
+- `CrosslinkDynamicSigma.qnt` adds the third Crosslink variant: dynamic sigma
+  layered on nil-precommit resampling. It treats sigma as a per-BFT-height
+  consensus schedule, keeps same-height nil-precommit round burns from changing
+  sigma, updates sigma only at height boundaries from committed telemetry and a
+  coverage model, includes Crosslink-participating PoW hash-power percentage as
+  a separate input, refuses to treat same-branch head arrivals as
+  sigma-relevant, and applies hysteresis so long-reorg/low-coverage/low-hash
+  participation failures can raise sigma while stable covered,
+  high-participation windows lower it slowly.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
@@ -199,8 +241,9 @@ For Crosslink, matching that quality means adding:
   previous/trailing fat-pointer count bytes and first signer-entry byte probes.
   A generated Quint module imports those constants into the production-vector
   specs, and the generated artifacts pin the full payload, pubkey, vote
-  signature, and `pubkey || payload` sign-data hex strings. The model still
-  records the deserialization sigma-bypass gap.
+  signature, and `pubkey || payload` sign-data hex strings. The manifest
+  validator verifies those Ed25519 signatures with Node crypto. The model
+  still records the deserialization sigma-bypass gap.
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
@@ -327,6 +370,13 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkPowReorgStressModel` adds the corresponding concrete fork-tree
   stress trace: a long reorg and a same-branch PoW block arrival both burn
   nil-precommit rounds before a stable head-sigma window decides.
+- `CrosslinkDynamicSigmaModel` lifts the sigma-controller idea into the
+  variant set. The model checks that the dynamic controller is distinct from
+  baseline and fixed-sigma resampling, that nil-precommit round burns do not
+  rewrite same-height sigma, that long-reorg or ambiguous low-coverage
+  telemetry can raise future-height sigma, that same-branch failures do not,
+  that low Crosslink-participating hash power prevents sigma relaxation, and
+  that stable covered high-participation windows lower sigma at most one step.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height

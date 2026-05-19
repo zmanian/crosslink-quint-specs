@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from 'node:child_process'
+import crypto from 'node:crypto'
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -16,6 +17,8 @@ const layout = {
   fatPointerSignatureEntryBytes: 96,
   preCrosslinkHeaderBytes: 1487,
 }
+
+const ed25519SpkiPrefix = Buffer.from('302a300506032b6570032100', 'hex')
 
 function usage() {
   console.error(`Usage:
@@ -70,6 +73,23 @@ function fatPointerByteLen(signatureCount) {
 
 function u16LeBytes(value) {
   return [value & 0xff, (value >> 8) & 0xff]
+}
+
+function rawEd25519PublicKey(pubKeyHex) {
+  return crypto.createPublicKey({
+    key: Buffer.concat([ed25519SpkiPrefix, Buffer.from(pubKeyHex, 'hex')]),
+    format: 'der',
+    type: 'spki',
+  })
+}
+
+function verifyEd25519Signature(pubKeyHex, signDataHex, signatureHex) {
+  return crypto.verify(
+    null,
+    Buffer.from(signDataHex, 'hex'),
+    rawEd25519PublicKey(pubKeyHex),
+    Buffer.from(signatureHex, 'hex'),
+  )
 }
 
 function parseFatPointer(buffer, offset) {
@@ -291,6 +311,14 @@ function validateFatPointerProbe(prefix, probe, offset, signatureCount, byteLen)
       typeof probe.firstSignatureEntry.voteSignDataHex === 'string' &&
         probe.firstSignatureEntry.voteSignDataHex.length === 152,
       `${prefix}vote sign-data hex mismatch`,
+    )
+    assert(
+      verifyEd25519Signature(
+        probe.firstSignatureEntry.pubKeyHex,
+        probe.firstSignatureEntry.voteSignDataHex,
+        probe.firstSignatureEntry.voteSignatureHex,
+      ),
+      `${prefix}Ed25519 signature verification failed`,
     )
     assert(
       probe.firstSignatureEntry.endOffset === probe.entriesOffset + layout.fatPointerSignatureEntryBytes,

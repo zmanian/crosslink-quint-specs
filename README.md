@@ -73,6 +73,12 @@ the Zebra Crosslink working branch:
   witness for that risk: a long reorg and a same-branch block arrival both
   change `head - sigma` between prevote and precommit, causing nil-precommit
   resampling to burn rounds until a stable head-sigma window decides.
+- `spec/CrosslinkDynamicSigma.qnt` models dynamic-sigma Crosslink as a third
+  first-class variant: nil-precommit resampling plus a consensus-visible sigma
+  schedule. Sigma is fixed for an active BFT height, then updated at height
+  boundaries from committed round-failure telemetry and a quorum-backed network
+  coverage model, including the percentage of PoW hash power participating in
+  Crosslink.
 - `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
   explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
   locally observed PoW head, including same-branch progress, fork switches, and
@@ -106,8 +112,8 @@ the Zebra Crosslink working branch:
   fixture manifest and is imported by the BFT-block and fat-pointer production
   vector specs so checked-in fixture constants do not have to be copied by hand.
   The manifest/module also pin the fixture payload, pubkey, vote signature, and
-  `pubkey || payload` sign-data hex strings for implementation-level crypto
-  checks.
+  `pubkey || payload` sign-data hex strings; `test:fixture-manifest` verifies
+  those Ed25519 signatures with Node's built-in crypto.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -131,13 +137,19 @@ the Zebra Crosslink working branch:
   abstract precommit is gossiped. The executable model keeps signature tokens
   compact while the generated fixture artifacts pin the real byte strings.
 
-The round-recovery model has two first-class instantiations:
+The current spec surface has three first-class Crosslink variants:
 
 - `BaselineCrosslink`: baseline Crosslink behavior where round state carries
   a stale stream sample across a failed round.
 - `NilPrecommitResamplingCrosslink`: proposed nil-precommit resampling behavior
   where a `2f + 1 PRECOMMIT nil` certificate abandons that round, clears
   same-round lock/valid state, and lets the next round resample the stream.
+- `CrosslinkDynamicSigmaModel`: dynamic-sigma Crosslink, which keeps the
+  nil-precommit resampling rule but makes sigma a consensus-visible per-height
+  schedule updated only from committed telemetry at BFT-height boundaries.
+  Low Crosslink-participating PoW hash power is modeled separately from
+  validator/network coverage: it contributes to sigma-relevant pressure for
+  long-reorg or ambiguous low-coverage failures and prevents sigma relaxation.
 
 The intended safety rule is deliberately narrow:
 
@@ -180,7 +192,7 @@ npm run verify:temporal
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
-PoW-reorg stress, head-sigma, BFT-block-shape, BFT-block validation-gap,
+PoW-reorg stress, dynamic-sigma, head-sigma, BFT-block-shape, BFT-block validation-gap,
 BFT-block production-vector, fat-pointer-format, fat-pointer
 production-vector, fat-pointer authenticated-evidence, fixture-authenticated
 evidence, validator-evidence, and authenticated evidence composition models.
@@ -214,6 +226,7 @@ quint typecheck spec/CrosslinkComposedProgressContract.qnt
 quint typecheck spec/CrosslinkStreamChurnRisk.qnt
 quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
+quint typecheck spec/CrosslinkDynamicSigma.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
@@ -240,6 +253,7 @@ quint test spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedPr
 quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
@@ -288,6 +302,7 @@ quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposed
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -303,6 +318,7 @@ quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposed
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
+quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5
