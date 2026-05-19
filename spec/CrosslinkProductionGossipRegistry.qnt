@@ -2,11 +2,13 @@ module CrosslinkProductionGossipRegistry {
   /*
    Direct production gossip registry safety slice.
 
-   The Tenderlink and Malachite router models already keep their own channels
-   separated. This model adds one production-level registry above both protocol
-   families, checking that Tenderlink compact-consensus lanes cannot be routed
-   through Malachite proposal/liveness/sync lanes, and that Malachite protobuf
-   lanes cannot be routed through Tenderlink's consensus-topic registry.
+   The Tenderlink, Malachite, and dynamic-sigma router models already keep
+   their own channels separated. This model adds one production-level registry
+   above all protocol families, checking that Tenderlink compact-consensus
+   lanes cannot be routed through Malachite proposal/liveness/sync lanes, that
+   Malachite protobuf lanes cannot be routed through Tenderlink's
+   consensus-topic registry, and that dynamic-sigma consensus-param envelopes
+   do not share either protocol's ingress lane.
    */
 
   type Protocol_t = str
@@ -24,6 +26,7 @@ module CrosslinkProductionGossipRegistry {
 
   pure val TenderlinkProtocol = "tenderlink"
   pure val MalachiteProtocol = "malachite"
+  pure val DynamicSigmaProtocol = "dynamic-sigma"
   pure val UnknownProtocol = "unknown-protocol"
 
   pure val TenderlinkConsensusChannel = "tenderlink-consensus-channel"
@@ -34,6 +37,9 @@ module CrosslinkProductionGossipRegistry {
   pure val MalachiteProposalChannel = "malachite-proposal-channel"
   pure val MalachiteLivenessChannel = "malachite-liveness-channel"
   pure val MalachiteSyncChannel = "malachite-sync-channel"
+
+  pure val DynamicSigmaConsensusParamChannel =
+    "dynamic-sigma-consensus-param-channel"
 
   pure val CrosslinkConsensusTopic = "crosslink-consensus-v1"
   pure val MalachiteProposalTopic = "crosslink-proposal-v1"
@@ -61,6 +67,8 @@ module CrosslinkProductionGossipRegistry {
   pure val MalachiteRoundKind = "liveness-round"
   pure val MalachiteSyncRequestKind = "sync-request"
   pure val MalachiteSyncResponseKind = "sync-response"
+
+  pure val DynamicSigmaConsensusParamKind = "consensus-param"
 
   pure val TenderlinkProposalChunkBytes =
     "tenderlink-proposal-pol-packet-bytes"
@@ -94,6 +102,9 @@ module CrosslinkProductionGossipRegistry {
   pure val MalachiteSyncResponseBytes =
     "malachite-sync-response-proto-bytes"
 
+  pure val DynamicSigmaConsensusParamBytes =
+    "dynamic-sigma-consensus-param-bytes"
+
   pure val WrongBytes = "wrong-production-gossip-bytes"
 
   def Envelope(
@@ -125,21 +136,28 @@ module CrosslinkProductionGossipRegistry {
     TenderlinkConsensusChannel != MalachiteProposalChannel and
     TenderlinkConsensusChannel != MalachiteLivenessChannel and
     TenderlinkConsensusChannel != MalachiteSyncChannel and
+    TenderlinkConsensusChannel != DynamicSigmaConsensusParamChannel and
     TenderlinkEvidenceChannel != TenderlinkKnownPeerChannel and
     TenderlinkEvidenceChannel != TenderlinkStatusChannel and
     TenderlinkEvidenceChannel != MalachiteProposalChannel and
     TenderlinkEvidenceChannel != MalachiteLivenessChannel and
     TenderlinkEvidenceChannel != MalachiteSyncChannel and
+    TenderlinkEvidenceChannel != DynamicSigmaConsensusParamChannel and
     TenderlinkKnownPeerChannel != TenderlinkStatusChannel and
     TenderlinkKnownPeerChannel != MalachiteProposalChannel and
     TenderlinkKnownPeerChannel != MalachiteLivenessChannel and
     TenderlinkKnownPeerChannel != MalachiteSyncChannel and
+    TenderlinkKnownPeerChannel != DynamicSigmaConsensusParamChannel and
     TenderlinkStatusChannel != MalachiteProposalChannel and
     TenderlinkStatusChannel != MalachiteLivenessChannel and
     TenderlinkStatusChannel != MalachiteSyncChannel and
+    TenderlinkStatusChannel != DynamicSigmaConsensusParamChannel and
     MalachiteProposalChannel != MalachiteLivenessChannel and
     MalachiteProposalChannel != MalachiteSyncChannel and
-    MalachiteLivenessChannel != MalachiteSyncChannel
+    MalachiteProposalChannel != DynamicSigmaConsensusParamChannel and
+    MalachiteLivenessChannel != MalachiteSyncChannel and
+    MalachiteLivenessChannel != DynamicSigmaConsensusParamChannel and
+    MalachiteSyncChannel != DynamicSigmaConsensusParamChannel
 
   def TenderlinkConsensusRouteValid(env: ProductionEnvelope_t): bool =
     env.protocol == TenderlinkProtocol and
@@ -246,6 +264,13 @@ module CrosslinkProductionGossipRegistry {
       )
     )
 
+  def DynamicSigmaConsensusParamRouteValid(env: ProductionEnvelope_t): bool =
+    env.protocol == DynamicSigmaProtocol and
+    env.channel == DynamicSigmaConsensusParamChannel and
+    env.topic == CrosslinkConsensusTopic and
+    env.kind == DynamicSigmaConsensusParamKind and
+    env.bytes == DynamicSigmaConsensusParamBytes
+
   def ProductionRouteValid(env: ProductionEnvelope_t): bool =
     TenderlinkConsensusRouteValid(env) or
     TenderlinkEvidenceRouteValid(env) or
@@ -253,7 +278,8 @@ module CrosslinkProductionGossipRegistry {
     TenderlinkStatusRouteValid(env) or
     MalachiteProposalRouteValid(env) or
     MalachiteLivenessRouteValid(env) or
-    MalachiteSyncRouteValid(env)
+    MalachiteSyncRouteValid(env) or
+    DynamicSigmaConsensusParamRouteValid(env)
 
   pure val TenderlinkMixedPrecommitEnvelope =
     Envelope(
@@ -329,6 +355,15 @@ module CrosslinkProductionGossipRegistry {
       MalachiteSyncResponseBytes,
     )
 
+  pure val DynamicSigmaConsensusParamEnvelope =
+    Envelope(
+      DynamicSigmaProtocol,
+      DynamicSigmaConsensusParamChannel,
+      CrosslinkConsensusTopic,
+      DynamicSigmaConsensusParamKind,
+      DynamicSigmaConsensusParamBytes,
+    )
+
   pure val MalachiteProposalOnTenderlinkConsensus =
     Envelope(
       MalachiteProtocol,
@@ -360,6 +395,38 @@ module CrosslinkProductionGossipRegistry {
       CrosslinkConsensusTopic,
       MalachiteRoundKind,
       MalachiteRoundBytes,
+    )
+  pure val DynamicSigmaParamOnTenderlinkConsensus =
+    Envelope(
+      DynamicSigmaProtocol,
+      TenderlinkConsensusChannel,
+      CrosslinkConsensusTopic,
+      DynamicSigmaConsensusParamKind,
+      DynamicSigmaConsensusParamBytes,
+    )
+  pure val TenderlinkPrecommitOnDynamicSigmaParam =
+    Envelope(
+      TenderlinkProtocol,
+      DynamicSigmaConsensusParamChannel,
+      CrosslinkConsensusTopic,
+      TenderlinkMixedPrecommitKind,
+      TenderlinkMixedPrecommitBytes,
+    )
+  pure val MalachiteRoundOnDynamicSigmaParam =
+    Envelope(
+      MalachiteProtocol,
+      DynamicSigmaConsensusParamChannel,
+      CrosslinkConsensusTopic,
+      MalachiteRoundKind,
+      MalachiteRoundBytes,
+    )
+  pure val WrongBytesDynamicSigmaParamEnvelope =
+    Envelope(
+      DynamicSigmaProtocol,
+      DynamicSigmaConsensusParamChannel,
+      CrosslinkConsensusTopic,
+      DynamicSigmaConsensusParamKind,
+      WrongBytes,
     )
   pure val WrongTopicTenderlinkEnvelope =
     Envelope(
@@ -397,6 +464,7 @@ module CrosslinkProductionGossipRegistry {
       MalachiteSignedProposalEnvelope,
       MalachiteRoundEnvelope,
       MalachiteSyncResponseEnvelope,
+      DynamicSigmaConsensusParamEnvelope,
     )
 
   var routedProductionEnvelopes: Set[ProductionEnvelope_t]
@@ -465,6 +533,7 @@ module CrosslinkProductionGossipRegistryTest {
       .then(RouteProduction(MalachiteSignedProposalEnvelope))
       .then(RouteProduction(MalachiteRoundEnvelope))
       .then(RouteProduction(MalachiteSyncResponseEnvelope))
+      .then(RouteProduction(DynamicSigmaConsensusParamEnvelope))
       .then(all {
         assert(RegistrySafety),
         assert(routedProductionEnvelopes.contains(TenderlinkMixedPrecommitEnvelope)),
@@ -479,6 +548,11 @@ module CrosslinkProductionGossipRegistryTest {
         assert(routedProductionEnvelopes.contains(MalachiteSignedProposalEnvelope)),
         assert(routedProductionEnvelopes.contains(MalachiteRoundEnvelope)),
         assert(routedProductionEnvelopes.contains(MalachiteSyncResponseEnvelope)),
+        assert(
+          routedProductionEnvelopes.contains(
+            DynamicSigmaConsensusParamEnvelope
+          )
+        ),
         registryUnchangedAll,
       })
   }
@@ -500,8 +574,24 @@ module CrosslinkProductionGossipRegistryTest {
     RegistryInit.then(RouteProduction(TenderlinkPrecommitOnMalachiteLiveness)).fail()
   }
 
+  run dynamicSigmaParamOnTenderlinkConsensusRejectedTest = {
+    RegistryInit.then(RouteProduction(DynamicSigmaParamOnTenderlinkConsensus)).fail()
+  }
+
+  run tenderlinkPrecommitOnDynamicSigmaParamRejectedTest = {
+    RegistryInit.then(RouteProduction(TenderlinkPrecommitOnDynamicSigmaParam)).fail()
+  }
+
+  run malachiteRoundOnDynamicSigmaParamRejectedTest = {
+    RegistryInit.then(RouteProduction(MalachiteRoundOnDynamicSigmaParam)).fail()
+  }
+
   run wrongTopicTenderlinkRejectedTest = {
     RegistryInit.then(RouteProduction(WrongTopicTenderlinkEnvelope)).fail()
+  }
+
+  run wrongBytesDynamicSigmaParamRejectedTest = {
+    RegistryInit.then(RouteProduction(WrongBytesDynamicSigmaParamEnvelope)).fail()
   }
 
   run wrongBytesMalachiteRejectedTest = {
@@ -524,6 +614,24 @@ module CrosslinkProductionGossipRegistryTest {
   run rawMalachiteRoundOnTenderlinkConsensusViolatesSafetyTest = {
     RegistryInit
       .then(RawRouteProduction(MalachiteRoundOnTenderlinkConsensus))
+      .then(all {
+        assert(not(RegistrySafety)),
+        registryUnchangedAll,
+      })
+  }
+
+  run rawDynamicSigmaParamOnTenderlinkConsensusViolatesSafetyTest = {
+    RegistryInit
+      .then(RawRouteProduction(DynamicSigmaParamOnTenderlinkConsensus))
+      .then(all {
+        assert(not(RegistrySafety)),
+        registryUnchangedAll,
+      })
+  }
+
+  run rawTenderlinkPrecommitOnDynamicSigmaParamViolatesSafetyTest = {
+    RegistryInit
+      .then(RawRouteProduction(TenderlinkPrecommitOnDynamicSigmaParam))
       .then(all {
         assert(not(RegistrySafety)),
         registryUnchangedAll,

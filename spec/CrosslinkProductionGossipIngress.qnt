@@ -3,12 +3,13 @@ module CrosslinkProductionGossipIngress {
    Production node gossip ingress safety.
 
    CrosslinkProductionGossipRegistry.qnt records the production channel
-   registry across Tenderlink compact packets and Malachite protobuf packets.
-   This slice models the next node-local gate: an accepted ingress record must
-   enter the exact downstream lane selected by the registry. A registry-valid
-   accountability evidence envelope is still unsafe if it is handed to the
-   Tenderlink consensus packet lane, and a Malachite proposal is still unsafe if
-   it reaches any Tenderlink lane.
+   registry across Tenderlink compact packets, Malachite protobuf packets, and
+   dynamic-sigma consensus-param packets. This slice models the next node-local
+   gate: an accepted ingress record must enter the exact downstream lane
+   selected by the registry. A registry-valid accountability evidence envelope
+   is still unsafe if it is handed to the Tenderlink consensus packet lane, and
+   a dynamic-sigma consensus-param envelope is still unsafe if it reaches any
+   Tenderlink or Malachite lane.
    */
 
   import CrosslinkProductionGossipRegistry.* from
@@ -22,6 +23,7 @@ module CrosslinkProductionGossipIngress {
   var acceptedMalachiteProposal: Set[ProductionEnvelope_t]
   var acceptedMalachiteLiveness: Set[ProductionEnvelope_t]
   var acceptedMalachiteSync: Set[ProductionEnvelope_t]
+  var acceptedDynamicSigmaConsensusParam: Set[ProductionEnvelope_t]
   var ingressFiredAction: str
 
   pure val TenderlinkConsensusIngressFixtures =
@@ -36,6 +38,8 @@ module CrosslinkProductionGossipIngress {
   pure val MalachiteProposalIngressFixtures = Set(MalachiteSignedProposalEnvelope)
   pure val MalachiteLivenessIngressFixtures = Set(MalachiteRoundEnvelope)
   pure val MalachiteSyncIngressFixtures = Set(MalachiteSyncResponseEnvelope)
+  pure val DynamicSigmaConsensusParamIngressFixtures =
+    Set(DynamicSigmaConsensusParamEnvelope)
 
   val AcceptedTenderlinkConsensusValid =
     acceptedTenderlinkConsensus.forall(TenderlinkConsensusRouteValid)
@@ -58,6 +62,11 @@ module CrosslinkProductionGossipIngress {
   val AcceptedMalachiteSyncValid =
     acceptedMalachiteSync.forall(MalachiteSyncRouteValid)
 
+  val AcceptedDynamicSigmaConsensusParamValid =
+    acceptedDynamicSigmaConsensusParam.forall(
+      DynamicSigmaConsensusParamRouteValid
+    )
+
   val IngressSafety =
     ProductionTopicsDisjoint and
     ProductionChannelsDisjoint and
@@ -67,7 +76,8 @@ module CrosslinkProductionGossipIngress {
     AcceptedTenderlinkStatusValid and
     AcceptedMalachiteProposalValid and
     AcceptedMalachiteLivenessValid and
-    AcceptedMalachiteSyncValid
+    AcceptedMalachiteSyncValid and
+    AcceptedDynamicSigmaConsensusParamValid
 
   action IngressInit = all {
     routedProductionEnvelopes' = Set(),
@@ -79,6 +89,7 @@ module CrosslinkProductionGossipIngress {
     acceptedMalachiteProposal' = Set(),
     acceptedMalachiteLiveness' = Set(),
     acceptedMalachiteSync' = Set(),
+    acceptedDynamicSigmaConsensusParam' = Set(),
     ingressFiredAction' = "IngressInit",
   }
 
@@ -100,6 +111,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "AcceptTenderlinkConsensus",
     }
 
@@ -114,6 +127,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "AcceptTenderlinkEvidence",
     }
 
@@ -129,6 +144,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "AcceptTenderlinkKnownPeer",
     }
 
@@ -143,6 +160,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "AcceptTenderlinkStatus",
     }
 
@@ -157,6 +176,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal.union(Set(env)),
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "AcceptMalachiteProposal",
     }
 
@@ -171,6 +192,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness.union(Set(env)),
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "AcceptMalachiteLiveness",
     }
 
@@ -185,7 +208,27 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync.union(Set(env)),
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "AcceptMalachiteSync",
+    }
+
+  action AcceptDynamicSigmaConsensusParam(
+    env: ProductionEnvelope_t,
+  ): bool =
+    all {
+      DynamicSigmaConsensusParamRouteValid(env),
+      KeepRegistryState,
+      acceptedTenderlinkConsensus' = acceptedTenderlinkConsensus,
+      acceptedTenderlinkEvidence' = acceptedTenderlinkEvidence,
+      acceptedTenderlinkKnownPeer' = acceptedTenderlinkKnownPeer,
+      acceptedTenderlinkStatus' = acceptedTenderlinkStatus,
+      acceptedMalachiteProposal' = acceptedMalachiteProposal,
+      acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
+      acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam.union(Set(env)),
+      ingressFiredAction' = "AcceptDynamicSigmaConsensusParam",
     }
 
   action RawAcceptTenderlinkConsensus(env: ProductionEnvelope_t): bool =
@@ -199,6 +242,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "RawAcceptTenderlinkConsensus",
     }
 
@@ -212,7 +257,26 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness.union(Set(env)),
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = "RawAcceptMalachiteLiveness",
+    }
+
+  action RawAcceptDynamicSigmaConsensusParam(
+    env: ProductionEnvelope_t,
+  ): bool =
+    all {
+      KeepRegistryState,
+      acceptedTenderlinkConsensus' = acceptedTenderlinkConsensus,
+      acceptedTenderlinkEvidence' = acceptedTenderlinkEvidence,
+      acceptedTenderlinkKnownPeer' = acceptedTenderlinkKnownPeer,
+      acceptedTenderlinkStatus' = acceptedTenderlinkStatus,
+      acceptedMalachiteProposal' = acceptedMalachiteProposal,
+      acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
+      acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam.union(Set(env)),
+      ingressFiredAction' = "RawAcceptDynamicSigmaConsensusParam",
     }
 
   action IngressStutter: bool =
@@ -225,6 +289,8 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = ingressFiredAction,
     }
 }
@@ -250,6 +316,8 @@ module CrosslinkProductionGossipIngressTest {
       AcceptMalachiteLiveness(env),
       nondet env = oneOf(MalachiteSyncIngressFixtures)
       AcceptMalachiteSync(env),
+      nondet env = oneOf(DynamicSigmaConsensusParamIngressFixtures)
+      AcceptDynamicSigmaConsensusParam(env),
       IngressStutter,
     }
 
@@ -263,6 +331,8 @@ module CrosslinkProductionGossipIngressTest {
       acceptedMalachiteProposal' = acceptedMalachiteProposal,
       acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
       acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
       ingressFiredAction' = ingressFiredAction,
     }
 
@@ -275,6 +345,7 @@ module CrosslinkProductionGossipIngressTest {
       .then(AcceptMalachiteProposal(MalachiteSignedProposalEnvelope))
       .then(AcceptMalachiteLiveness(MalachiteRoundEnvelope))
       .then(AcceptMalachiteSync(MalachiteSyncResponseEnvelope))
+      .then(AcceptDynamicSigmaConsensusParam(DynamicSigmaConsensusParamEnvelope))
       .then(all {
         assert(IngressSafety),
         assert(acceptedTenderlinkConsensus.contains(TenderlinkMixedPrecommitEnvelope)),
@@ -284,6 +355,11 @@ module CrosslinkProductionGossipIngressTest {
         assert(acceptedMalachiteProposal.contains(MalachiteSignedProposalEnvelope)),
         assert(acceptedMalachiteLiveness.contains(MalachiteRoundEnvelope)),
         assert(acceptedMalachiteSync.contains(MalachiteSyncResponseEnvelope)),
+        assert(
+          acceptedDynamicSigmaConsensusParam.contains(
+            DynamicSigmaConsensusParamEnvelope
+          )
+        ),
         ingressUnchangedAll,
       })
   }
@@ -306,11 +382,49 @@ module CrosslinkProductionGossipIngressTest {
       .fail()
   }
 
+  run dynamicSigmaParamRejectedByTenderlinkConsensusIngressTest = {
+    IngressInit
+      .then(AcceptTenderlinkConsensus(DynamicSigmaConsensusParamEnvelope))
+      .fail()
+  }
+
+  run tenderlinkPrecommitRejectedByDynamicSigmaParamIngressTest = {
+    IngressInit
+      .then(AcceptDynamicSigmaConsensusParam(TenderlinkMixedPrecommitEnvelope))
+      .fail()
+  }
+
+  run malachiteRoundRejectedByDynamicSigmaParamIngressTest = {
+    IngressInit
+      .then(AcceptDynamicSigmaConsensusParam(MalachiteRoundEnvelope))
+      .fail()
+  }
+
   run rawValidRegistryEnvelopeOnWrongLaneViolatesIngressSafetyTest = {
     IngressInit
       .then(RawAcceptTenderlinkConsensus(TenderlinkEvidenceEnvelope))
       .then(all {
         assert(ProductionRouteValid(TenderlinkEvidenceEnvelope)),
+        assert(not(IngressSafety)),
+        ingressUnchangedAll,
+      })
+  }
+
+  run rawDynamicSigmaParamOnTenderlinkConsensusViolatesIngressSafetyTest = {
+    IngressInit
+      .then(RawAcceptTenderlinkConsensus(DynamicSigmaConsensusParamEnvelope))
+      .then(all {
+        assert(ProductionRouteValid(DynamicSigmaConsensusParamEnvelope)),
+        assert(not(IngressSafety)),
+        ingressUnchangedAll,
+      })
+  }
+
+  run rawTenderlinkPrecommitOnDynamicSigmaParamViolatesIngressSafetyTest = {
+    IngressInit
+      .then(RawAcceptDynamicSigmaConsensusParam(TenderlinkMixedPrecommitEnvelope))
+      .then(all {
+        assert(ProductionRouteValid(TenderlinkMixedPrecommitEnvelope)),
         assert(not(IngressSafety)),
         ingressUnchangedAll,
       })

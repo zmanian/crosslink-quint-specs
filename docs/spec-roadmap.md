@@ -309,17 +309,19 @@ For Crosslink, matching that quality means adding:
   the channel/topic/kind invariant without flattening alias-imported transport
   modules.
 - `CrosslinkProductionGossipRegistry.qnt` adds a production-level registry
-  safety slice above the Tenderlink and Malachite routers. It records the
-  combined protocol/topic/channel/kind contract, routes Tenderlink mixed
-  precommit and certificate/evidence/status lanes alongside Malachite proposal,
-  liveness, and sync lanes, and rejects cross-protocol routing such as Malachite
-  proposals on the Tenderlink consensus channel or Tenderlink precommits on the
-  Malachite liveness channel.
+  safety slice above the Tenderlink, Malachite, and dynamic-sigma routers. It
+  records the combined protocol/topic/channel/kind contract, routes Tenderlink
+  mixed precommit and certificate/evidence/status lanes alongside Malachite
+  proposal/liveness/sync lanes and dynamic-sigma consensus-param lanes, and
+  rejects cross-protocol routing such as Malachite proposals on the Tenderlink
+  consensus channel, Tenderlink precommits on the Malachite liveness channel,
+  or consensus-param bytes on a Tenderlink/Malachite lane.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to
   the Tenderlink consensus lane, Malachite proposal traffic handed to Tenderlink
-  ingress, and cross-protocol raw injections.
+  ingress, dynamic-sigma consensus params handed to Tenderlink ingress, and
+  cross-protocol raw injections.
 
 ### 2026-05-18
 
@@ -945,7 +947,7 @@ For Crosslink, matching that quality means adding:
   and fat-pointer-signature envelope boundary, the Malachite gossip router and
   verifier-friendly router safety slice compose the proposal/liveness/sync
   channel namespaces, the production gossip registry checks cross-protocol
-  Tenderlink/Malachite topic-channel separation, and the dynamic-sigma
+  Tenderlink/Malachite/dynamic-sigma topic-channel separation, and the dynamic-sigma
   consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
   bytes, quorum-signed production-byte gossip, node-config application,

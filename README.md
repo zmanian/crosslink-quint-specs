@@ -145,13 +145,14 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkMalachiteGossipRouterSafety.qnt` is the verifier-friendly
   router safety slice for the same channel/topic/kind registry contract.
 - `spec/CrosslinkProductionGossipRegistry.qnt` adds a direct production-level
-  registry above both router families, checking that Tenderlink consensus lanes
-  and Malachite proposal/liveness/sync lanes cannot be cross-routed by protocol,
-  topic, channel, kind, or byte label.
+  registry above Tenderlink, Malachite, and dynamic-sigma router families,
+  checking that Tenderlink consensus lanes, Malachite proposal/liveness/sync
+  lanes, and dynamic-sigma consensus-param lanes cannot be cross-routed by
+  protocol, topic, channel, kind, or byte label.
 - `spec/CrosslinkProductionGossipIngress.qnt` adds the node-local ingress gate
   above that registry: even a registry-valid envelope must be accepted only by
-  its matching downstream Tenderlink or Malachite lane, and raw wrong-lane or
-  cross-protocol injections violate ingress safety.
+  its matching downstream Tenderlink, Malachite, or dynamic-sigma lane, and raw
+  wrong-lane or cross-protocol injections violate ingress safety.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
@@ -461,6 +462,11 @@ The current spec surface has three first-class Crosslink variants:
   the format model's exact hex string for the production wire, so no separate
   transport byte map can drift. It rejects malformed production envelopes and
   quorum-signed stale activation at the transport boundary.
+  `CrosslinkProductionGossipRegistryModel` and
+  `CrosslinkProductionGossipIngressModel` now route those dynamic-sigma
+  consensus-param envelopes through a dedicated production lane, checking that
+  they cannot be accepted as Tenderlink consensus traffic or Malachite liveness
+  traffic.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
