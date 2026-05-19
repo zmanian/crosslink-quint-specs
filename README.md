@@ -66,8 +66,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs for
   that risk layer into an executable assumption profile. It pins Zebra's
   post-Blossom 75-second PoW target spacing as the arrival-risk denominator,
-  models validator-set/GST growth as the vulnerable window, and keeps
-  long-reorg tails as explicit monotone integer numerators by sigma.
+  models validator-set/GST growth as the vulnerable window, uses the
+  one-block Poisson/union-bound numerator for normal block-arrival exposure,
+  and keeps long-reorg tails as an explicit geometric-decay profile by sigma.
 - `spec/CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree stress
   witness for that risk: a long reorg and a same-branch block arrival both
   change `head - sigma` between prevote and precommit, causing nil-precommit

@@ -5,11 +5,13 @@ module CrosslinkPowStochasticAssumptions {
    This is not a random simulator. It records the numeric assumptions that sit
    underneath CrosslinkStreamChurnRisk.qnt as bounded integer numerators:
    - post-Blossom Zcash block target spacing is the probability denominator,
-   - the prevote-to-precommit window contributes normal PoW-arrival exposure,
+   - the prevote-to-precommit window contributes normal PoW-arrival exposure
+     using the one-block Poisson/union-bound numerator window / target_spacing,
    - globally distributed validator sets can make that window grow
      quadratically in the worst case,
    - sigma does not reduce normal same-branch block-arrival exposure, and
-   - sigma only reduces the assumed long-reorg tail.
+   - sigma only reduces the assumed long-reorg tail, modeled here as a
+     geometric decay profile until measurements replace it.
 
    The concrete model instance uses Zebra's current post-Blossom target spacing
    constant, POST_BLOSSOM_POW_TARGET_SPACING = 75 seconds.
@@ -23,6 +25,7 @@ module CrosslinkPowStochasticAssumptions {
   const LinearGstSecondsPerValidator: int
   const QuadraticGstSecondsPerValidatorPair: int
   const LongReorgTailNumeratorAtSigma: int -> int
+  const LongReorgTailDecayFactor: int
 
   pure val ValidatorCounts = 1.to(MaxValidatorCount)
   pure val Sigmas = 1.to(MaxSigma)
@@ -44,10 +47,16 @@ module CrosslinkPowStochasticAssumptions {
     validatorCount: int,
     globalDistributionWorstCase: bool,
   ): int =
-    PrevotePrecommitWindowSeconds(
+    AtLeastOnePowBlockArrivalUpperBoundNumerator(PrevotePrecommitWindowSeconds(
       validatorCount,
       globalDistributionWorstCase,
-    )
+    ))
+
+  pure def AtLeastOnePowBlockArrivalUpperBoundNumerator(windowSeconds: int): int =
+    windowSeconds
+
+  pure val AtLeastOnePowBlockArrivalUpperBoundDenominator =
+    PowTargetSpacingSeconds
 
   pure def LongReorgTailNumerator(sigma: int): int =
     LongReorgTailNumeratorAtSigma.get(sigma)
@@ -90,7 +99,8 @@ module CrosslinkPowStochasticAssumptions {
     PowTargetSpacingSeconds > 0 and
     BasePrevotePrecommitSeconds >= 0 and
     LinearGstSecondsPerValidator > 0 and
-    QuadraticGstSecondsPerValidatorPair > 0
+    QuadraticGstSecondsPerValidatorPair > 0 and
+    LongReorgTailDecayFactor > 1
 
   assume windows_fit_arrival_denominator =
     ValidatorCounts.forall(n =>
@@ -126,6 +136,18 @@ module CrosslinkPowStochasticAssumptions {
         NormalPowArrivalNumerator(n, globalDistributionWorstCase) ==
           PrevotePrecommitWindowSeconds(n, globalDistributionWorstCase) and
         NormalPowArrivalNumerator(n, globalDistributionWorstCase) <=
+          AtLeastOnePowBlockArrivalUpperBoundDenominator
+      )
+    )
+
+  val NormalArrivalUsesPoissonUnionBound =
+    ValidatorCounts.forall(n =>
+      Set(true, false).forall(globalDistributionWorstCase =>
+        AtLeastOnePowBlockArrivalUpperBoundNumerator(
+          PrevotePrecommitWindowSeconds(n, globalDistributionWorstCase)
+        ) ==
+          PrevotePrecommitWindowSeconds(n, globalDistributionWorstCase) and
+        AtLeastOnePowBlockArrivalUpperBoundDenominator ==
           PowTargetSpacingSeconds
       )
     )
@@ -178,6 +200,12 @@ module CrosslinkPowStochasticAssumptions {
       )
     )
 
+  val LongReorgTailUsesGeometricSigmaDecay =
+    1.to(MaxSigma - 1).forall(sigma =>
+      LongReorgTailNumerator(sigma + 1) * LongReorgTailDecayFactor ==
+        LongReorgTailNumerator(sigma)
+    )
+
   val FiniteChurnStillComposesWithResampling =
     ChurnRounds.forall(churnRounds =>
       ResamplingBurnedRoundsBeforeStable(churnRounds) == churnRounds
@@ -188,9 +216,11 @@ module CrosslinkPowStochasticAssumptions {
     WindowMonotoneInValidatorCount and
     GlobalDistributionAddsWorstCaseDelay and
     ArrivalNumeratorUsesWindowOverTargetSpacing and
+    NormalArrivalUsesPoissonUnionBound and
     SigmaReducesOnlyLongReorgTail and
     TotalChurnNumeratorMonotoneInValidatorCount and
     TotalChurnNumeratorMonotoneInSigma and
+    LongReorgTailUsesGeometricSigmaDecay and
     FiniteChurnStillComposesWithResampling
 
   var checked: bool
@@ -233,6 +263,17 @@ module CrosslinkPowStochasticAssumptionsTest {
       })
   }
 
+  run normalPowArrivalUsesPoissonUnionBoundTest = {
+    Init
+      .then(all {
+        assert(AtLeastOnePowBlockArrivalUpperBoundDenominator == 75),
+        assert(AtLeastOnePowBlockArrivalUpperBoundNumerator(37) == 37),
+        assert(NormalPowArrivalNumerator(4, true) == 37),
+        assert(NormalArrivalUsesPoissonUnionBound),
+        unchangedAll,
+      })
+  }
+
   run largerValidatorSetRaisesArrivalRiskTest = {
     Init
       .then(all {
@@ -251,6 +292,17 @@ module CrosslinkPowStochasticAssumptionsTest {
         assert(NormalPowArrivalNumerator(4, true) == 37),
         assert(TotalChurnNumerator(4, 2, true) <
           TotalChurnNumerator(4, 1, true)),
+        unchangedAll,
+      })
+  }
+
+  run longReorgTailUsesGeometricDecayTest = {
+    Init
+      .then(all {
+        assert(LongReorgTailDecayFactor == 2),
+        assert(LongReorgTailNumerator(2) * 2 == LongReorgTailNumerator(1)),
+        assert(LongReorgTailNumerator(4) * 2 == LongReorgTailNumerator(3)),
+        assert(LongReorgTailUsesGeometricSigmaDecay),
         unchangedAll,
       })
   }
@@ -289,5 +341,6 @@ module CrosslinkPowStochasticAssumptionsModel {
       3 -> 4,
       4 -> 2,
     ),
+    LongReorgTailDecayFactor = 2,
   ).*
 }

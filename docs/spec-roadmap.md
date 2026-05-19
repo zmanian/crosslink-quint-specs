@@ -157,8 +157,8 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs to that
   risk model into an executable assumption profile. It pins Zebra's
   post-Blossom 75-second PoW target spacing, models prevote/precommit window
-  growth as an arrival-risk numerator, and keeps the long-reorg tail as an
-  explicit monotone table by sigma.
+  growth as the one-block Poisson/union-bound arrival-risk numerator, and
+  keeps the long-reorg tail as an explicit geometric-decay profile by sigma.
 - `CrosslinkPowReorgStress.qnt` adds a concrete bounded fork-tree witness for
   that risk. A long reorg between prevote and precommit changes the sampled
   `head - sigma` candidate, and an ordinary same-branch block arrival can do
@@ -353,6 +353,6 @@ For Crosslink, matching that quality means adding:
   this likely needs either a TLC-oriented imported-state refactor or improved
   backend support.
   The current stream-churn and PoW-reorg stress models now have an executable
-  assumption profile, but the arrival, propagation-race, GST-scaling, and
-  long-reorg numerators still need to be replaced by measured or
-  analysis-backed distributions.
+  analytic assumption profile, but the arrival, propagation-race, GST-scaling,
+  and long-reorg numerators still need to be calibrated against measured
+  distributions.
