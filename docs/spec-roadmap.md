@@ -250,13 +250,13 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkTenderlinkGossipRouter.qnt` and
   `CrosslinkTenderlinkGossipRouterSafety.qnt` add the shared Tenderlink router
   namespace contract for the current compact transport lanes. Proposal/POL
-  packets, nil/value precommit packets and certificates, accountability
-  evidence, known-peer consensus packets, and status packets all stay on
-  `crosslink-consensus-v1`, but occupy separate channel/kind namespaces. The
-  direct safety slice includes wrong-topic, wrong-kind, wrong-bytes,
-  cross-channel, and unknown-channel witnesses; the imported router composes the
-  stateful proposal/POL, precommit, accountability-evidence, nonce/ack, and
-  status transport slices after namespacing their helper state.
+  packets, nil/value/mixed precommit packets, nil/value precommit certificates,
+  accountability evidence, known-peer consensus packets, and status packets all
+  stay on `crosslink-consensus-v1`, but occupy separate channel/kind
+  namespaces. The direct safety slice includes wrong-topic, wrong-kind,
+  wrong-bytes, cross-channel, and unknown-channel witnesses; the imported router
+  composes the stateful proposal/POL, precommit, accountability-evidence,
+  nonce/ack, and status transport slices after namespacing their helper state.
 - `CrosslinkMalachiteProposalProtobufFormat.qnt` adds the first Malachite
   protobuf proposal vectors. It pins exact proto3 bytes for `Value`,
   `Proposal` with and without `pol_round`, `SignedMessage::Proposal`, and
@@ -307,6 +307,13 @@ For Crosslink, matching that quality means adding:
   contract in a verifier-friendly direct state machine, so Apalache can check
   the channel/topic/kind invariant without flattening alias-imported transport
   modules.
+- `CrosslinkProductionGossipRegistry.qnt` adds a production-level registry
+  safety slice above the Tenderlink and Malachite routers. It records the
+  combined protocol/topic/channel/kind contract, routes Tenderlink mixed
+  precommit and certificate/evidence/status lanes alongside Malachite proposal,
+  liveness, and sync lanes, and rejects cross-protocol routing such as Malachite
+  proposals on the Tenderlink consensus channel or Tenderlink precommits on the
+  Malachite liveness channel.
 
 ### 2026-05-18
 
@@ -925,7 +932,8 @@ For Crosslink, matching that quality means adding:
   authenticated gossip transport bridge covers the observer-evidence precommit
   and fat-pointer-signature envelope boundary, the Malachite gossip router and
   verifier-friendly router safety slice compose the proposal/liveness/sync
-  channel namespaces, and the dynamic-sigma
+  channel namespaces, the production gossip registry checks cross-protocol
+  Tenderlink/Malachite topic-channel separation, and the dynamic-sigma
   consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
   bytes, quorum-signed production-byte gossip, node-config application,
