@@ -159,7 +159,7 @@ For Crosslink, matching that quality means adding:
   76-byte vote sign payload before signature verification, including a
   two-signature weighted POL packet and a three-signature value-prevote POL
   packet for the smallest f = 1 quorum, plus a five-entry larger-validator-set
-  POL packet.
+  POL packet and three-signature nil/value precommit certificate fixtures.
 - `CrosslinkTenderlinkProposalPolEvidence.qnt` bridges the valid-round rule to
   those production-shaped bytes: a proposal chunk with a non-`-1` valid round
   is accepted only when paired with a canonical prevote packet for the same
@@ -182,11 +182,21 @@ For Crosslink, matching that quality means adding:
   `ack_latest`/`ack_field` vector, complete proposal chunk packet bytes with
   the proposer signature outside the signed payload, and complete
   prevote/precommit vote batch packet bytes. It now records the variable-length
-  vote-batch envelope sizes used by POL evidence: 112-byte one-signature,
-  178-byte weighted two-signature, 244-byte three-signature, and 376-byte
-  five-entry larger-validator-set payloads. The witnesses also reject
+  vote-batch envelope sizes used by POL evidence and all-nil/mixed/all-value
+  precommit quorum packets: 112-byte one-signature, 178-byte weighted
+  two-signature, 244-byte three-signature, and 376-byte five-entry
+  larger-validator-set payloads. The witnesses also reject
   status-flag compact consensus packets, wrong packet types, malformed ack/tag
   fields, missing proposal signatures, and trailing vote bytes.
+- `CrosslinkTenderlinkPrecommitTransport.qnt` adds the decrypted compact
+  transport boundary for nil, value, and mixed precommit packets. It routes
+  low-power and mixed precommit quorums as messages only, and accepts nil or
+  value certificate evidence only after a transported exact three-signature
+  all-nil or all-value quorum packet; witnesses reject missing transport,
+  low-power certificate attempts, mixed-quorum unlock or commit attempts,
+  failed decrypts, prevote packets, wrong packet type, wrong payload, and wrong
+  packet bytes. `CrosslinkTenderlinkPrecommitTransportSafety.qnt` mirrors the
+  same boundary as a direct Apalache-friendly safety slice.
 - `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt` pins concrete
   slashing-evidence envelopes for the nil-precommit accountability story and
   ordinary Tendermint equivocation: nil/value and value/value precommit
@@ -240,12 +250,13 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkTenderlinkGossipRouter.qnt` and
   `CrosslinkTenderlinkGossipRouterSafety.qnt` add the shared Tenderlink router
   namespace contract for the current compact transport lanes. Proposal/POL
-  packets, accountability evidence, known-peer consensus packets, and status
-  packets all stay on `crosslink-consensus-v1`, but occupy separate
-  channel/kind namespaces. The direct safety slice includes wrong-topic,
-  wrong-kind, wrong-bytes, cross-channel, and unknown-channel witnesses; the
-  imported router composes the stateful proposal/POL, accountability-evidence,
-  nonce/ack, and status transport slices after namespacing their helper state.
+  packets, nil/value precommit packets and certificates, accountability
+  evidence, known-peer consensus packets, and status packets all stay on
+  `crosslink-consensus-v1`, but occupy separate channel/kind namespaces. The
+  direct safety slice includes wrong-topic, wrong-kind, wrong-bytes,
+  cross-channel, and unknown-channel witnesses; the imported router composes the
+  stateful proposal/POL, precommit, accountability-evidence, nonce/ack, and
+  status transport slices after namespacing their helper state.
 - `CrosslinkMalachiteProposalProtobufFormat.qnt` adds the first Malachite
   protobuf proposal vectors. It pins exact proto3 bytes for `Value`,
   `Proposal` with and without `pol_round`, `SignedMessage::Proposal`, and

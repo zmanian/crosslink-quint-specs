@@ -2,16 +2,20 @@ module CrosslinkTenderlinkGossipRouter {
   /*
    Tenderlink gossip router composition.
 
-   The compact proposal/POL transport, accountability evidence transport,
-   known-peer nonce/ack transport, and status packet slices each prove a local
-   wire boundary. This module composes those accepted transport paths behind a
-   shared Tenderlink router contract: every accepted message is recorded on the
-   channel for its domain, on the Crosslink consensus topic, with the canonical
-   bytes expected by that channel.
+   The compact proposal/POL transport, precommit transport, accountability
+   evidence transport, known-peer nonce/ack transport, and status packet slices
+   each prove a local wire boundary. This module composes those accepted
+   transport paths behind a shared Tenderlink router contract: every accepted
+   message is recorded on the channel for its domain, on the Crosslink consensus
+   topic, with the canonical bytes expected by that channel.
    */
 
   import CrosslinkTenderlinkProposalPolTransportTest as ProposalPolTransport from
     "./CrosslinkTenderlinkProposalPolTransport"
+  import CrosslinkTenderlinkPrecommitTransportTest as PrecommitTransport from
+    "./CrosslinkTenderlinkPrecommitTransport"
+  import CrosslinkTenderlinkVotePacketFormatTest as VotePacketFormat from
+    "./CrosslinkTenderlinkVotePacketFormat"
   import CrosslinkTenderlinkAccountabilityEvidenceTransportTest as EvidenceTransport from
     "./CrosslinkTenderlinkAccountabilityEvidenceTransport"
   import CrosslinkTenderlinkNonceAckTransportTest as NonceAckTransport from
@@ -40,6 +44,11 @@ module CrosslinkTenderlinkGossipRouter {
 
   pure val ProposalChunkKind = "proposal-chunk"
   pure val PolPrevoteKind = "pol-prevote"
+  pure val NilPrecommitKind = "nil-precommit"
+  pure val ValuePrecommitKind = "value-precommit"
+  pure val MixedPrecommitKind = "mixed-precommit"
+  pure val NilPrecommitCertificateKind = "nil-precommit-certificate"
+  pure val ValuePrecommitCertificateKind = "value-precommit-certificate"
   pure val AccountabilityEvidenceKind =
     EvidenceTransport::AccountabilityEvidenceEnvelopeKind
   pure val KnownPeerPacketKind = "known-peer-consensus-packet"
@@ -51,6 +60,14 @@ module CrosslinkTenderlinkGossipRouter {
     ProposalPolTransport::ValuePrevotePolWeightedConsensusPacketHex,
     ProposalPolTransport::ValuePrevotePolQuorumConsensusPacketHex,
     ProposalPolTransport::ValuePrevotePolLargeConsensusPacketHex,
+  )
+
+  pure val PrecommitPacketBytes = Set(
+    PrecommitTransport::NilPrecommitConsensusPacketHex,
+    PrecommitTransport::ValuePrecommitConsensusPacketHex,
+    PrecommitTransport::NilPrecommitQuorumConsensusPacketHex,
+    PrecommitTransport::MixedPrecommitQuorumConsensusPacketHex,
+    PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex,
   )
 
   pure val AccountabilityEvidenceBytes = Set(
@@ -96,6 +113,34 @@ module CrosslinkTenderlinkGossipRouter {
       env.packetHex,
     )
 
+  def PrecommitRouteKind(
+    packet: VotePacketFormat::VotePacket_t,
+  ): RouterKind_t =
+    if (PrecommitTransport::NilPrecommitCertificatePacket(packet)) {
+      NilPrecommitCertificateKind
+    } else if (PrecommitTransport::ValuePrecommitCertificatePacket(packet)) {
+      ValuePrecommitCertificateKind
+    } else if (packet.noVotes > 0 and packet.yesVotes == 0) {
+      NilPrecommitKind
+    } else if (packet.yesVotes > 0 and packet.noVotes == 0) {
+      ValuePrecommitKind
+    } else if (packet.noVotes > 0 and packet.yesVotes > 0) {
+      MixedPrecommitKind
+    } else {
+      UnknownKind
+    }
+
+  def PrecommitRoute(
+    env: PrecommitTransport::TransportEnvelope_t,
+    packet: VotePacketFormat::VotePacket_t,
+  ): RoutedEnvelope_t =
+    Routed(
+      ConsensusChannel,
+      CrosslinkConsensusTopic,
+      PrecommitRouteKind(packet),
+      env.packetHex,
+    )
+
   def EvidenceRoute(
     env: EvidenceTransport::AccountabilityEvidenceTransportEnvelope_t,
   ): RoutedEnvelope_t =
@@ -122,7 +167,17 @@ module CrosslinkTenderlinkGossipRouter {
         env.kind == ProposalChunkKind and
         env.bytes == ProposalPolTransport::PolProposalConsensusPacketHex
       ) or
-      (env.kind == PolPrevoteKind and PolPrevotePacketBytes.contains(env.bytes))
+      (env.kind == PolPrevoteKind and PolPrevotePacketBytes.contains(env.bytes)) or
+      (env.kind == NilPrecommitKind and
+        env.bytes == PrecommitTransport::NilPrecommitConsensusPacketHex) or
+      (env.kind == ValuePrecommitKind and
+        env.bytes == PrecommitTransport::ValuePrecommitConsensusPacketHex) or
+      (env.kind == MixedPrecommitKind and
+        env.bytes == PrecommitTransport::MixedPrecommitQuorumConsensusPacketHex) or
+      (env.kind == NilPrecommitCertificateKind and
+        env.bytes == PrecommitTransport::NilPrecommitQuorumConsensusPacketHex) or
+      (env.kind == ValuePrecommitCertificateKind and
+        env.bytes == PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex)
     )
 
   def EvidenceRouteValid(env: RoutedEnvelope_t): bool =
@@ -161,6 +216,25 @@ module CrosslinkTenderlinkGossipRouter {
   pure val WrongTypeProposalEnvelope =
     ProposalPolTransport::wrongTypeProposalEnvelope
 
+  pure val NilPrecommitEnvelope = PrecommitTransport::nilPrecommitEnvelope
+  pure val NilPrecommitPacket = PrecommitTransport::NilPrecommitPacket
+  pure val ValuePrecommitEnvelope = PrecommitTransport::valuePrecommitEnvelope
+  pure val ValuePrecommitPacket = PrecommitTransport::ValuePrecommitPacket
+  pure val NilPrecommitQuorumEnvelope =
+    PrecommitTransport::nilPrecommitQuorumEnvelope
+  pure val NilPrecommitQuorumPacket =
+    PrecommitTransport::NilPrecommitQuorumPacket
+  pure val MixedPrecommitQuorumEnvelope =
+    PrecommitTransport::mixedPrecommitQuorumEnvelope
+  pure val MixedPrecommitQuorumPacket =
+    PrecommitTransport::MixedPrecommitQuorumPacket
+  pure val ValuePrecommitQuorumEnvelope =
+    PrecommitTransport::valuePrecommitQuorumEnvelope
+  pure val ValuePrecommitQuorumPacket =
+    PrecommitTransport::ValuePrecommitQuorumPacket
+  pure val WrongTypePrecommitEnvelope =
+    PrecommitTransport::wrongTypePrecommitEnvelope
+
   pure val NilValueEvidenceEnvelope =
     EvidenceTransport::accountabilityEvidenceEnvelope
   pure val NilValuePrecommitEvidence =
@@ -179,6 +253,16 @@ module CrosslinkTenderlinkGossipRouter {
   pure val WeightedPolRoute = ProposalPolRoute(WeightedPolVoteEnvelope)
   pure val QuorumPolRoute = ProposalPolRoute(QuorumPolVoteEnvelope)
   pure val LargePolRoute = ProposalPolRoute(LargePolVoteEnvelope)
+  pure val NilPrecommitRoute =
+    PrecommitRoute(NilPrecommitEnvelope, NilPrecommitPacket)
+  pure val ValuePrecommitRoute =
+    PrecommitRoute(ValuePrecommitEnvelope, ValuePrecommitPacket)
+  pure val NilPrecommitCertificateRoute =
+    PrecommitRoute(NilPrecommitQuorumEnvelope, NilPrecommitQuorumPacket)
+  pure val MixedPrecommitRoute =
+    PrecommitRoute(MixedPrecommitQuorumEnvelope, MixedPrecommitQuorumPacket)
+  pure val ValuePrecommitCertificateRoute =
+    PrecommitRoute(ValuePrecommitQuorumEnvelope, ValuePrecommitQuorumPacket)
   pure val NilValueEvidenceRoute = EvidenceRoute(NilValueEvidenceEnvelope)
   pure val ValueValueEvidenceRoute = EvidenceRoute(ValueValueEvidenceEnvelope)
   pure val KnownPeer120Route = KnownPeerRoute(KnownPeerPacket120)
@@ -241,6 +325,7 @@ module CrosslinkTenderlinkGossipRouter {
 
   val RouterSafety =
     ProposalPolTransport::TransportSafety and
+    PrecommitTransport::PrecommitTransportSafety and
     EvidenceTransport::TransportSafety and
     NonceAckTransport::TransportSafety and
     StatusFormat::Safety and
@@ -258,6 +343,16 @@ module CrosslinkTenderlinkGossipRouter {
   val WeightedPolVoteTransported =
     ProposalPolTransport::transportedPolPackets.contains(WeightedPolVotePacket)
 
+  val NilPrecommitCertificateAccepted =
+    PrecommitTransport::acceptedNilPrecommitCertificates.contains(
+      NilPrecommitQuorumPacket
+    )
+
+  val ValuePrecommitCertificateAccepted =
+    PrecommitTransport::acceptedValuePrecommitCertificates.contains(
+      ValuePrecommitQuorumPacket
+    )
+
   val NilValueEvidenceTransported =
     EvidenceTransport::transportedAccountabilityEvidence.contains(
       NilValuePrecommitEvidence
@@ -270,6 +365,7 @@ module CrosslinkTenderlinkGossipRouter {
 
   action RouterInit = all {
     ProposalPolTransport::TransportInit,
+    PrecommitTransport::PrecommitTransportInit,
     EvidenceTransport::TransportInit,
     NonceAckTransport::TransportInit,
     StatusFormat::Init,
@@ -293,6 +389,7 @@ module CrosslinkTenderlinkGossipRouter {
   ): bool =
     all {
       ProposalPolTransport::ReceiveProposalChunkTransport(env, proposal),
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -310,6 +407,7 @@ module CrosslinkTenderlinkGossipRouter {
   ): bool =
     all {
       ProposalPolTransport::ReceivePolVoteTransport(env, packet),
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -321,12 +419,57 @@ module CrosslinkTenderlinkGossipRouter {
       routerFiredAction' = "RoutePolVoteTransport",
     }
 
+  action RoutePrecommitTransport(
+    env: PrecommitTransport::TransportEnvelope_t,
+    packet: VotePacketFormat::VotePacket_t,
+  ): bool =
+    all {
+      ProposalPolTransport::TransportStutter,
+      PrecommitTransport::ReceivePrecommitTransport(env, packet),
+      EvidenceTransport::TransportStutter,
+      NonceAckTransport::TransportStutter,
+      StatusFormat::Stutter,
+      routedConsensusEnvelopes' =
+        routedConsensusEnvelopes.union(Set(PrecommitRoute(env, packet))),
+      routedEvidenceEnvelopes' = routedEvidenceEnvelopes,
+      routedKnownPeerEnvelopes' = routedKnownPeerEnvelopes,
+      routedStatusEnvelopes' = routedStatusEnvelopes,
+      routerFiredAction' = "RoutePrecommitTransport",
+    }
+
+  action AcceptNilPrecommitCertificateTransport(
+    packet: VotePacketFormat::VotePacket_t,
+  ): bool =
+    all {
+      ProposalPolTransport::TransportStutter,
+      PrecommitTransport::AcceptNilPrecommitCertificate(packet),
+      EvidenceTransport::TransportStutter,
+      NonceAckTransport::TransportStutter,
+      StatusFormat::Stutter,
+      KeepRouterState,
+      routerFiredAction' = "AcceptNilPrecommitCertificateTransport",
+    }
+
+  action AcceptValuePrecommitCertificateTransport(
+    packet: VotePacketFormat::VotePacket_t,
+  ): bool =
+    all {
+      ProposalPolTransport::TransportStutter,
+      PrecommitTransport::AcceptValuePrecommitCertificate(packet),
+      EvidenceTransport::TransportStutter,
+      NonceAckTransport::TransportStutter,
+      StatusFormat::Stutter,
+      KeepRouterState,
+      routerFiredAction' = "AcceptValuePrecommitCertificateTransport",
+    }
+
   action RouteAccountabilityEvidenceTransport(
     env: EvidenceTransport::AccountabilityEvidenceTransportEnvelope_t,
     evidence: EvidenceTransport::AccountabilityEvidence_t,
   ): bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::ReceiveAccountabilityEvidenceTransport(env, evidence),
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -343,6 +486,7 @@ module CrosslinkTenderlinkGossipRouter {
   ): bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::AcceptKnownPeerTransportPacket(packet),
       StatusFormat::Stutter,
@@ -357,6 +501,7 @@ module CrosslinkTenderlinkGossipRouter {
   action RouteStatusPacket(packet: StatusFormat::StatusPacket_t): bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::AcceptStatusPacket(packet),
@@ -371,6 +516,7 @@ module CrosslinkTenderlinkGossipRouter {
   action RawRouteConsensus(record: RoutedEnvelope_t): bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -385,6 +531,7 @@ module CrosslinkTenderlinkGossipRouter {
   action RawRouteEvidence(record: RoutedEnvelope_t): bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -399,6 +546,7 @@ module CrosslinkTenderlinkGossipRouter {
   action RawRouteStatus(record: RoutedEnvelope_t): bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -413,6 +561,7 @@ module CrosslinkTenderlinkGossipRouter {
   action RouterStutter: bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -423,6 +572,7 @@ module CrosslinkTenderlinkGossipRouter {
   action RouterUnchangedAll: bool =
     all {
       ProposalPolTransport::TransportStutter,
+      PrecommitTransport::PrecommitTransportStutter,
       EvidenceTransport::TransportStutter,
       NonceAckTransport::TransportStutter,
       StatusFormat::Stutter,
@@ -454,6 +604,16 @@ module CrosslinkTenderlinkGossipRouterTest {
         LargePolVoteEnvelope,
         LargePolVotePacket,
       ),
+      RoutePrecommitTransport(
+        NilPrecommitQuorumEnvelope,
+        NilPrecommitQuorumPacket,
+      ),
+      AcceptNilPrecommitCertificateTransport(NilPrecommitQuorumPacket),
+      RoutePrecommitTransport(
+        ValuePrecommitQuorumEnvelope,
+        ValuePrecommitQuorumPacket,
+      ),
+      AcceptValuePrecommitCertificateTransport(ValuePrecommitQuorumPacket),
       RouteAccountabilityEvidenceTransport(
         NilValueEvidenceEnvelope,
         NilValuePrecommitEvidence,
@@ -500,6 +660,55 @@ module CrosslinkTenderlinkGossipRouterTest {
         assert(routedConsensusEnvelopes.contains(LargePolRoute)),
         assert(MatchingProposalChunkTransported),
         assert(WeightedPolVoteTransported),
+        assert(RouterSafety),
+        routerUnchangedAll,
+      })
+  }
+
+  run routesNilAndValuePrecommitCertificatesThroughConsensusChannelTest = {
+    RouterInit
+      .then(RoutePrecommitTransport(
+        NilPrecommitQuorumEnvelope,
+        NilPrecommitQuorumPacket,
+      ))
+      .then(AcceptNilPrecommitCertificateTransport(NilPrecommitQuorumPacket))
+      .then(RoutePrecommitTransport(
+        ValuePrecommitQuorumEnvelope,
+        ValuePrecommitQuorumPacket,
+      ))
+      .then(AcceptValuePrecommitCertificateTransport(
+        ValuePrecommitQuorumPacket
+      ))
+      .then(all {
+        assert(routedConsensusEnvelopes.contains(NilPrecommitCertificateRoute)),
+        assert(routedConsensusEnvelopes.contains(ValuePrecommitCertificateRoute)),
+        assert(NilPrecommitCertificateAccepted),
+        assert(ValuePrecommitCertificateAccepted),
+        assert(RouterSafety),
+        routerUnchangedAll,
+      })
+  }
+
+  run routesLowPowerPrecommitPacketsWithoutCertificateTest = {
+    RouterInit
+      .then(RoutePrecommitTransport(
+        NilPrecommitEnvelope,
+        NilPrecommitPacket,
+      ))
+      .then(RoutePrecommitTransport(
+        ValuePrecommitEnvelope,
+        ValuePrecommitPacket,
+      ))
+      .then(RoutePrecommitTransport(
+        MixedPrecommitQuorumEnvelope,
+        MixedPrecommitQuorumPacket,
+      ))
+      .then(all {
+        assert(routedConsensusEnvelopes.contains(NilPrecommitRoute)),
+        assert(routedConsensusEnvelopes.contains(ValuePrecommitRoute)),
+        assert(routedConsensusEnvelopes.contains(MixedPrecommitRoute)),
+        assert(not(NilPrecommitCertificateAccepted)),
+        assert(not(ValuePrecommitCertificateAccepted)),
         assert(RouterSafety),
         routerUnchangedAll,
       })
@@ -554,6 +763,15 @@ module CrosslinkTenderlinkGossipRouterTest {
       .then(RouteAccountabilityEvidenceTransport(
         WrongTopicEvidenceEnvelope,
         NilValuePrecommitEvidence,
+      ))
+      .fail()
+  }
+
+  run wrongPrecommitTransportRejectedBeforeRoutingTest = {
+    RouterInit
+      .then(RoutePrecommitTransport(
+        WrongTypePrecommitEnvelope,
+        ValuePrecommitPacket,
       ))
       .fail()
   }

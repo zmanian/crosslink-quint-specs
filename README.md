@@ -52,7 +52,8 @@ the Zebra Crosslink working branch:
   `PacketVotes` batch format and checks that each carried vote reconstructs
   the canonical vote sign bytes from packet fields and roster pubkey, including
   two-signature weighted, three-signature value-prevote, and five-entry larger
-  validator-set POL packet fixtures.
+  validator-set POL packet fixtures plus three-signature nil/value precommit
+  certificate fixtures.
 - `spec/CrosslinkTenderlinkProposalPolEvidence.qnt` bridges non-nil
   `validRound` proposal chunks to production-shaped Tenderlink prevote packet
   evidence, deriving certified voting power from packet entries and requiring
@@ -66,7 +67,15 @@ the Zebra Crosslink working branch:
   Tenderlink compact consensus packet envelopes: the 16-byte `PacketHeader`
   tag/ack prefix, including nonzero `ack_latest`/`ack_field` bytes, proposal
   chunk packet bytes, and prevote/precommit vote batch packet bytes, including
-  the variable-length 112/178/244/376-byte vote batches used by POL evidence.
+  the variable-length 112/178/244/376-byte vote batches used by POL evidence
+  and all-nil/mixed/all-value precommit quorum packets.
+- `spec/CrosslinkTenderlinkPrecommitTransport.qnt` adds the decrypted
+  compact-transport receipt for nil, value, and mixed precommit batches.
+  Low-power and mixed precommit quorums are routed as messages only; a nil or
+  value certificate is accepted only after the exact transported
+  three-signature all-nil or all-value quorum packet. Its companion
+  `spec/CrosslinkTenderlinkPrecommitTransportSafety.qnt` keeps the same
+  certificate boundary in a direct Apalache-friendly safety model.
 - `spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt` pins concrete
   accountability evidence envelopes: nil/value and value/value precommit
   equivocation by one validator at the same height and round, carrying two
@@ -98,9 +107,9 @@ the Zebra Crosslink working branch:
   chunk request range, prevote request range, and precommit request range.
 - `spec/CrosslinkTenderlinkGossipRouter.qnt` records the shared Tenderlink
   router contract for the current compact transport lanes: proposal/POL
-  packets, accountability evidence, known-peer consensus packets, and status
-  packets all stay on the Crosslink consensus topic but occupy separate
-  channel/kind namespaces.
+  packets, nil/value precommit packets and certificates, accountability
+  evidence, known-peer consensus packets, and status packets all stay on the
+  Crosslink consensus topic but occupy separate channel/kind namespaces.
 - `spec/CrosslinkTenderlinkGossipRouterSafety.qnt` is the verifier-friendly
   direct safety slice for that Tenderlink router contract, so Apalache can
   check the channel/topic/kind invariant without flattening the imported
@@ -508,7 +517,8 @@ fat-pointer production-vector, fat-pointer authenticated-evidence,
 fixture-authenticated evidence, fixture-gossip transport,
 production-finality projection, heighted message gossip transport,
 Tenderlink vote/proposal bytes, vote packets,
-proposal/POL evidence, consensus packets, accountability evidence, transport, and observer,
+proposal/POL evidence, consensus packets, precommit transport,
+accountability evidence, transport, and observer,
 nonce/ack transport, status packets,
 tenderlink router and router safety,
 heighted authenticated gossip transport, Malachite proposal/liveness/sync
@@ -551,6 +561,8 @@ quint typecheck spec/CrosslinkTenderlinkVotePacketFormat.qnt
 quint typecheck spec/CrosslinkTenderlinkProposalPolEvidence.qnt
 quint typecheck spec/CrosslinkTenderlinkProposalPolTransport.qnt
 quint typecheck spec/CrosslinkTenderlinkConsensusPacketFormat.qnt
+quint typecheck spec/CrosslinkTenderlinkPrecommitTransport.qnt
+quint typecheck spec/CrosslinkTenderlinkPrecommitTransportSafety.qnt
 quint typecheck spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt
 quint typecheck spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt
 quint typecheck spec/CrosslinkTenderlinkAccountabilityObserver.qnt
@@ -696,6 +708,8 @@ quint test spec/CrosslinkTenderlinkVotePacketFormat.qnt --main=CrosslinkTenderli
 quint test spec/CrosslinkTenderlinkProposalPolEvidence.qnt --main=CrosslinkTenderlinkProposalPolEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkProposalPolTransport.qnt --main=CrosslinkTenderlinkProposalPolTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTenderlinkConsensusPacketFormatModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkTenderlinkPrecommitTransport.qnt --main=CrosslinkTenderlinkPrecommitTransportModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkTenderlinkPrecommitTransportSafety.qnt --main=CrosslinkTenderlinkPrecommitTransportSafetyModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkAccountabilityObserver.qnt --main=CrosslinkTenderlinkAccountabilityObserverModel --max-samples=100 --backend=rust
@@ -735,6 +749,7 @@ quint verify spec/CrosslinkTenderlinkVotePacketFormat.qnt --main=CrosslinkTender
 quint verify spec/CrosslinkTenderlinkProposalPolEvidence.qnt --main=CrosslinkTenderlinkProposalPolEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkProposalPolTransport.qnt --main=CrosslinkTenderlinkProposalPolTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTenderlinkConsensusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkTenderlinkPrecommitTransportSafety.qnt --main=CrosslinkTenderlinkPrecommitTransportSafetyModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityObserver.qnt --main=CrosslinkTenderlinkAccountabilityObserverModel --init=ObserverInit --step=ObserverNext --invariants=ObserverSafety --max-steps=5
@@ -852,6 +867,7 @@ quint verify spec/CrosslinkTenderlinkVotePacketFormat.qnt --main=CrosslinkTender
 quint verify spec/CrosslinkTenderlinkProposalPolEvidence.qnt --main=CrosslinkTenderlinkProposalPolEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkProposalPolTransport.qnt --main=CrosslinkTenderlinkProposalPolTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTenderlinkConsensusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkTenderlinkPrecommitTransportSafety.qnt --main=CrosslinkTenderlinkPrecommitTransportSafetyModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityObserver.qnt --main=CrosslinkTenderlinkAccountabilityObserverModel --init=ObserverInit --step=ObserverNext --invariants=ObserverSafety --max-steps=5

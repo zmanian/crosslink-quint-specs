@@ -50,7 +50,11 @@ module CrosslinkTenderlinkConsensusPacketFormat {
   pure val PrevoteWeightedBatchKind = "prevote-weighted-batch"
   pure val PrevoteQuorumBatchKind = "prevote-quorum-batch"
   pure val PrevoteLargeBatchKind = "prevote-large-batch"
+  pure val NilPrecommitBatchKind = "nil-precommit-batch"
   pure val PrecommitBatchKind = "precommit-batch"
+  pure val NilPrecommitQuorumBatchKind = "nil-precommit-quorum-batch"
+  pure val MixedPrecommitQuorumBatchKind = "mixed-precommit-quorum-batch"
+  pure val PrecommitQuorumBatchKind = "precommit-quorum-batch"
   pure val ConsensusPacketKinds = Set(
     ProposalChunkKind,
     PolProposalChunkKind,
@@ -59,7 +63,11 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     PrevoteWeightedBatchKind,
     PrevoteQuorumBatchKind,
     PrevoteLargeBatchKind,
+    NilPrecommitBatchKind,
     PrecommitBatchKind,
+    NilPrecommitQuorumBatchKind,
+    MixedPrecommitQuorumBatchKind,
+    PrecommitQuorumBatchKind,
   )
 
   pure val PacketTypeProposalChunk = 7
@@ -126,8 +134,16 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     "0003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
   pure val TestLargePrevotePacketPayloadHex =
     "0005010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333030044444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444040055555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555"
+  pure val TestNilPrecommitPacketPayloadHex =
+    "0100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
   pure val TestPrecommitPacketPayloadHex =
     "0001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+  pure val TestNilPrecommitQuorumPacketPayloadHex =
+    "0300000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  pure val TestMixedPrecommitQuorumPacketPayloadHex =
+    "0102000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  pure val TestPrecommitQuorumPacketPayloadHex =
+    "0003000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
 
   pure val TestPolProposalConsensusPacketHex =
     "07000000000000000000000000000000010000000800000002000000010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacafebabe22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
@@ -139,6 +155,12 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     "080000000000000000000000000000000003010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
   pure val TestLargePrevoteConsensusPacketHex =
     "080000000000000000000000000000000005010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333030044444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444444040055555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555555"
+  pure val TestNilPrecommitQuorumConsensusPacketHex =
+    "090000000000000000000000000000000300000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  pure val TestMixedPrecommitQuorumConsensusPacketHex =
+    "090000000000000000000000000000000102000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
+  pure val TestPrecommitQuorumConsensusPacketHex =
+    "090000000000000000000000000000000003000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111010022222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222020033333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333333"
 
   pure val UnmodeledPacketHeaderHex = "unmodeled-packet-header"
   pure val UnmodeledConsensusPacketHex = "unmodeled-consensus-packet"
@@ -152,7 +174,13 @@ module CrosslinkTenderlinkConsensusPacketFormat {
   pure def PacketTypeForKind(kind: ConsensusPacketKind_t): int =
     if (kind == ProposalChunkKind or kind == PolProposalChunkKind) {
       PacketTypeProposalChunk
-    } else if (kind == PrecommitBatchKind) {
+    } else if (Set(
+      NilPrecommitBatchKind,
+      PrecommitBatchKind,
+      NilPrecommitQuorumBatchKind,
+      MixedPrecommitQuorumBatchKind,
+      PrecommitQuorumBatchKind,
+    ).contains(kind)) {
       PacketTypePrecommitSignatures
     } else {
       PacketTypePrevoteSignatures
@@ -168,6 +196,10 @@ module CrosslinkTenderlinkConsensusPacketFormat {
       QuorumVotePacketPayloadByteLen
     } else if (kind == PrevoteLargeBatchKind) {
       LargeVotePacketPayloadByteLen
+    } else if (kind == NilPrecommitQuorumBatchKind or
+      kind == MixedPrecommitQuorumBatchKind or
+      kind == PrecommitQuorumBatchKind) {
+      QuorumVotePacketPayloadByteLen
     } else {
       VotePacketPayloadByteLen
     }
@@ -328,9 +360,21 @@ module CrosslinkTenderlinkConsensusPacketFormat {
     } else if (packet.kind == PrevoteLargeBatchKind and
       ConsensusPacketFieldsValid(packet)) {
       TestLargePrevoteConsensusPacketHex
+    } else if (packet.kind == NilPrecommitBatchKind and
+      ConsensusPacketFieldsValid(packet)) {
+      "090000000000000000000000000000000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
     } else if (packet.kind == PrecommitBatchKind and
       ConsensusPacketFieldsValid(packet)) {
       "090000000000000000000000000000000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+    } else if (packet.kind == NilPrecommitQuorumBatchKind and
+      ConsensusPacketFieldsValid(packet)) {
+      TestNilPrecommitQuorumConsensusPacketHex
+    } else if (packet.kind == MixedPrecommitQuorumBatchKind and
+      ConsensusPacketFieldsValid(packet)) {
+      TestMixedPrecommitQuorumConsensusPacketHex
+    } else if (packet.kind == PrecommitQuorumBatchKind and
+      ConsensusPacketFieldsValid(packet)) {
+      TestPrecommitQuorumConsensusPacketHex
     } else {
       UnmodeledConsensusPacketHex
     }
@@ -527,6 +571,46 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       "090000000000000000000000000000000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
     )
 
+  pure val nilPrecommitPacket =
+    Packet(
+      NilPrecommitBatchKind,
+      precommitHeader,
+      112,
+      0,
+      128,
+      "090000000000000000000000000000000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    )
+
+  pure val precommitQuorumPacket =
+    Packet(
+      PrecommitQuorumBatchKind,
+      precommitHeader,
+      244,
+      0,
+      260,
+      TestPrecommitQuorumConsensusPacketHex,
+    )
+
+  pure val nilPrecommitQuorumPacket =
+    Packet(
+      NilPrecommitQuorumBatchKind,
+      precommitHeader,
+      244,
+      0,
+      260,
+      TestNilPrecommitQuorumConsensusPacketHex,
+    )
+
+  pure val mixedPrecommitQuorumPacket =
+    Packet(
+      MixedPrecommitQuorumBatchKind,
+      precommitHeader,
+      244,
+      0,
+      260,
+      TestMixedPrecommitQuorumConsensusPacketHex,
+    )
+
   pure val ackedPrevotePacket =
     Packet(
       PrevoteBatchKind,
@@ -635,7 +719,11 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
     weightedPrevotePacket,
     quorumPrevotePacket,
     largePrevotePacket,
+    nilPrecommitPacket,
     precommitPacket,
+    nilPrecommitQuorumPacket,
+    mixedPrecommitQuorumPacket,
+    precommitQuorumPacket,
     ackedPrevotePacket,
     statusFlagProposalPacket,
     wrongTypeProposalPacket,
@@ -713,8 +801,16 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
         quorumPrevotePacket.hex),
       assert(CanonicalConsensusPacketHex(largePrevotePacket) ==
         largePrevotePacket.hex),
+      assert(CanonicalConsensusPacketHex(nilPrecommitPacket) ==
+        nilPrecommitPacket.hex),
       assert(CanonicalConsensusPacketHex(precommitPacket) ==
         precommitPacket.hex),
+      assert(CanonicalConsensusPacketHex(nilPrecommitQuorumPacket) ==
+        nilPrecommitQuorumPacket.hex),
+      assert(CanonicalConsensusPacketHex(mixedPrecommitQuorumPacket) ==
+        mixedPrecommitQuorumPacket.hex),
+      assert(CanonicalConsensusPacketHex(precommitQuorumPacket) ==
+        precommitQuorumPacket.hex),
       assert(CanonicalConsensusPacketHex(ackedPrevotePacket) ==
         ackedPrevotePacket.hex),
       unchangedAll,
@@ -730,7 +826,11 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       .then(AcceptConsensusPacket(weightedPrevotePacket))
       .then(AcceptConsensusPacket(quorumPrevotePacket))
       .then(AcceptConsensusPacket(largePrevotePacket))
+      .then(AcceptConsensusPacket(nilPrecommitPacket))
       .then(AcceptConsensusPacket(precommitPacket))
+      .then(AcceptConsensusPacket(nilPrecommitQuorumPacket))
+      .then(AcceptConsensusPacket(mixedPrecommitQuorumPacket))
+      .then(AcceptConsensusPacket(precommitQuorumPacket))
       .then(AcceptConsensusPacket(ackedPrevotePacket))
       .then(all {
         assert(acceptedConsensusPackets.contains(proposalPacket)),
@@ -740,7 +840,11 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
         assert(acceptedConsensusPackets.contains(weightedPrevotePacket)),
         assert(acceptedConsensusPackets.contains(quorumPrevotePacket)),
         assert(acceptedConsensusPackets.contains(largePrevotePacket)),
+        assert(acceptedConsensusPackets.contains(nilPrecommitPacket)),
         assert(acceptedConsensusPackets.contains(precommitPacket)),
+        assert(acceptedConsensusPackets.contains(nilPrecommitQuorumPacket)),
+        assert(acceptedConsensusPackets.contains(mixedPrecommitQuorumPacket)),
+        assert(acceptedConsensusPackets.contains(precommitQuorumPacket)),
         assert(acceptedConsensusPackets.contains(ackedPrevotePacket)),
         assert(Safety),
         unchangedAll,
