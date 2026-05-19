@@ -68,6 +68,10 @@ the Zebra Crosslink working branch:
   rejection, exact wire-envelope offsets and length, height-scoped signer
   authorization, canonical signed bytes, quorum voting power over unique
   signers, and derivation from producer round data.
+- `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
+  production-shaped fat pointer to the authenticated evidence path: a fat
+  pointer can only be observed after each active signer entry has a matching
+  gossiped precommit at the same height, round, and value.
 
 The round-recovery model has two first-class instantiations:
 
@@ -117,8 +121,8 @@ npm run verify:temporal
 
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks at depth 5 for the newer head-sigma,
-BFT-block-shape, fat-pointer-format, validator-evidence, and
-authenticated-evidence composition models.
+BFT-block-shape, fat-pointer-format, fat-pointer authenticated-evidence,
+validator-evidence, and authenticated-evidence composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
 small scheduler progress contract, because TLC has mature temporal property
@@ -146,6 +150,7 @@ quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
 quint typecheck spec/CrosslinkFatPointerFormat.qnt
+quint typecheck spec/CrosslinkFatPointerAuthenticatedEvidence.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -161,6 +166,7 @@ quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSampling
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkProposalValidityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkValidRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --max-samples=100 --backend=rust
@@ -197,11 +203,13 @@ quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSampli
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
 
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 

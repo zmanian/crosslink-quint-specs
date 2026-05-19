@@ -168,6 +168,13 @@ For Crosslink, matching that quality means adding:
   be accepted; and models derivation from producer round data so missing
   signatures, nil precommit signers, and wrong-height fat pointers are
   rejected.
+- `CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
+  production-shaped signer vector to the authenticated observer pipeline. A
+  production fat pointer can only be observed after every active signer entry
+  is backed by a matching gossiped precommit at the same BFT height, round, and
+  value; the witnesses reject observation before gossip, missing signer
+  precommits, duplicate signer entries, and removed-validator next-height
+  precommits.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -258,7 +265,7 @@ For Crosslink, matching that quality means adding:
   rejection of undecided-height finality, and rejection of a later fork after
   an earlier BFT height is final.
 - The remaining multi-height work is to connect the heighted auth, evidence,
-  validator-set, BFT-block-shape, and fat-pointer-format models to production
-  serialization vectors, signatures, header validity checks, and gossip
-  transport, and to lift the scheduler temporal contract into a full composed
-  protocol temporal proof.
+  validator-set, BFT-block-shape, fat-pointer-format, and production-shaped
+  fat-pointer observer models to concrete serialization vectors, real
+  signatures, header validity checks, and gossip transport, and to lift the
+  scheduler temporal contract into a full composed protocol temporal proof.

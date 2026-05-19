@@ -164,6 +164,12 @@ rejectsDuplicatePubKeyQuorumInflationTest
 rejectsRemovedValidatorAtNewHeightTest
 rejectsCrossHeightSignatureReplayTest
 rejectsLowPowerFatPointerTest
+observesProductionFatPointerAfterGossipedPrecommitsTest
+cannotObserveFatPointerBeforeGossipedPrecommitsTest
+missingSignerPrecommitRejectsFatPointerObservationTest
+removedValidatorCannotGossipNextHeightPrecommitTest
+duplicateSignerFatPointerRejectedDespiteGossipTest
+oldHeightFatPointerUsesOldAuthorizedSetTest
 ```
 
 ## Current Limitations
@@ -180,7 +186,10 @@ fat-pointer-format model now also captures the production-shaped signer vector,
 including its counted wire layout, exact wire-envelope length,
 byte offsets, duplicate-pubkey rejection, canonical per-signer vote bytes, and
 height-scoped authorization. It also checks that a fat pointer is derivable
-from producer round data only when the included precommit signatures match the proposal value
-at the same height. This is still abstract: it models the authentication
-boundary and wire shape but does not yet call production signature verification,
-serialization code, or gossip transport.
+from producer round data only when the included precommit signatures match the
+proposal value at the same height. The production fat-pointer authenticated
+evidence model then requires each active signer entry to have a matching
+gossiped precommit before observer acceptance. This is still abstract: it
+models the authentication boundary, wire shape, and gossip-before-observe rule
+but does not yet call production signature verification, serialization code, or
+gossip transport.

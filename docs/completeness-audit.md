@@ -32,11 +32,11 @@ Status terms:
 | Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout`; `precommitTimeoutDoesNotClearHeightedLockTest`; `timeoutWithoutValueLockNextFreshProposalResamplesTest` | partial | Needs fuller timeout scheduling and temporal properties. |
 | Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedHeadSigmaRound.qnt`; `test:heighted-round`; `test:heighted-head-sigma`; `verify:heighted-round-safety`; `verify:heighted-head-sigma-safety` | partial | First receive-reactive heighted slice now has concrete head-sigma stream linkage; not yet composed with auth/evidence rules. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted`; `CrosslinkFatPointerFormat.qnt` | covered | Production fat-pointer signer-vector, exact wire-envelope offset/length, and producer-round-data derivation shapes are modeled; broader production integration remains open. |
-| Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `spec/CrosslinkHeightedValidatorEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `test:validator-set-change`; `test:heighted-validator-evidence`; `test:heighted-authenticated-evidence`; `test:fat-pointer-format`; `verify:validator-set-change-safety`; `verify:heighted-validator-evidence-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-format-safety` | partial | Validator-set rotation is now linked to heighted authenticated evidence signer authorization and the production-shaped fat-pointer signer vector; production serialization vectors and end-to-end integration remain open. |
+| Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `spec/CrosslinkHeightedValidatorEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `test:validator-set-change`; `test:heighted-validator-evidence`; `test:heighted-authenticated-evidence`; `test:fat-pointer-format`; `test:fat-pointer-authenticated-evidence`; `verify:validator-set-change-safety`; `verify:heighted-validator-evidence-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-authenticated-evidence-safety` | partial | Validator-set rotation is now linked to heighted authenticated evidence signer authorization and the production-shaped fat-pointer signer vector; production serialization vectors and end-to-end integration remain open. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
-| Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `test:heighted-authenticated-evidence`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety`; `verify:heighted-authenticated-evidence-safety` | partial | Abstract standalone and first authenticated composition models exist; not yet wired into production gossip. |
-| Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `test:message-auth`; `test:heighted-message-auth`; `test:heighted-authenticated-evidence`; `test:fat-pointer-format`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-format-safety` | partial | Abstract signature metadata, evidence-pipeline composition, and production-shaped fat-pointer canonical bytes exist; not yet linked to concrete serialization vectors or real crypto. |
-| Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `CrosslinkFatPointerFormat.qnt` duplicate-pubkey, removed-validator, wrong-payload, cross-height replay, low-power, wire-offset, trailing-byte, truncated-wire, and producer-round-data derivation witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
+| Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `test:heighted-authenticated-evidence`; `test:fat-pointer-authenticated-evidence`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-authenticated-evidence-safety` | partial | Abstract standalone, first authenticated composition, and production-shaped fat-pointer observer models exist; not yet wired into production gossip transport. |
+| Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `test:message-auth`; `test:heighted-message-auth`; `test:heighted-authenticated-evidence`; `test:fat-pointer-format`; `test:fat-pointer-authenticated-evidence`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-authenticated-evidence-safety` | partial | Abstract signature metadata, evidence-pipeline composition, production-shaped fat-pointer canonical bytes, and first production-shaped observer linkage exist; not yet linked to concrete serialization vectors or real crypto. |
+| Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `CrosslinkFatPointerFormat.qnt` duplicate-pubkey, removed-validator, wrong-payload, cross-height replay, low-power, wire-offset, trailing-byte, truncated-wire, and producer-round-data derivation witnesses; `CrosslinkFatPointerAuthenticatedEvidence.qnt` gossip-before-observe and missing-signer witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
 | Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; production data/linkage remains abstract. |
 | Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:composed`; `test:heighted-finality`; `verify:composed-safety`; `verify:heighted-finality-safety` | partial | Heighted composition exists; production data/linkage remains abstract. |
@@ -60,7 +60,8 @@ npm run verify:temporal
 message evidence, local delivery, timeout, liveness witnesses, scheduler
 liveness, scheduler progress contract, head-sigma sampling, heighted
 head-sigma rounds, BFT-block header shape checks, fat-pointer signer-vector
-format checks, proposal validity, valid-round evidence, fork
+format checks, fat-pointer authenticated-evidence checks, proposal validity,
+valid-round evidence, fork
 finality, composed resampling/finality, composed liveness, multi-height finality,
 height-indexed round-machine behavior, heighted finality composition, evidence
 gossip, heighted evidence gossip, message authentication, heighted message
@@ -91,6 +92,7 @@ CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
 CrosslinkBftBlockShapeModel
 CrosslinkFatPointerFormatModel
+CrosslinkFatPointerAuthenticatedEvidenceModel
 ```
 
 `npm run verify:extended` is a non-default deeper gate for the newest moving
@@ -102,6 +104,7 @@ CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
 CrosslinkBftBlockShapeModel
 CrosslinkFatPointerFormatModel
+CrosslinkFatPointerAuthenticatedEvidenceModel
 CrosslinkHeightedValidatorEvidenceModel
 CrosslinkHeightedAuthenticatedEvidenceModel
 ```
@@ -125,8 +128,8 @@ The goal is not complete yet. The strongest remaining gaps are:
   and concrete header-validation checks;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
-- connect the fat-pointer signer-vector model to concrete production
-  serialization vectors and the broader authenticated-evidence pipeline;
+- connect the fat-pointer format and authenticated-evidence bridge to concrete
+  production serialization vectors and real signature verification;
 - continue expanding bounded verification depth and targeted counterexample
   searches beyond the current depth-5 extended gate for the new standalone
   models.
