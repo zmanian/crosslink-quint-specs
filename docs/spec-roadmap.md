@@ -340,6 +340,11 @@ For Crosslink, matching that quality means adding:
   It exercises the integrated imported-action graph under the Rust backend,
   while the scalar ingress bridge remains the Apalache/TLC proof target because
   the imported composition still hits Quint's flattening limits.
+- `CrosslinkProductionFinalityIngressProjectionBridgeSafety.qnt` adds the
+  verifier-friendly staged projection for that same direct bridge. It gives
+  Apalache and TLC separate gates for proposal transport, candidate
+  observation, precommit evidence, fat-pointer transport, fat-pointer
+  observation, and finality.
 
 ### 2026-05-18
 
@@ -686,6 +691,10 @@ For Crosslink, matching that quality means adding:
   projection contract. Rust tests cover both the happy path and raw projection
   skips; Apalache/TLC coverage stays on `CrosslinkProductionFinalityIngressBridge.qnt`
   until the direct imported graph is flattened cleanly.
+- `CrosslinkProductionFinalityIngressProjectionBridgeSafety.qnt` fills the
+  immediate verifier gap for that direct bridge with a scalar graph that keeps
+  the same intermediate stages. It proves safety at depths 5 and 8 and a TLC
+  temporal progress property over the complete finite staged graph.
 - `CrosslinkHeightedAuthenticatedGossipTransport.qnt` adds the corresponding
   non-fixture transport bridge for heighted authenticated evidence. It keeps
   bytes compact but prevents authenticated precommits or fat-pointer signatures
