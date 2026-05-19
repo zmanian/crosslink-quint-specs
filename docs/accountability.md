@@ -130,6 +130,15 @@ certificate and the conflicting value quorum for the round. This keeps the
 Tendermint value-lock rule from treating a lone nil precommit as unlock
 evidence.
 
+`CrosslinkTenderlinkUnlockAccountabilityBoundary.qnt` records the matching
+negative boundary for invalid-unlock evidence. A correct signer with a value
+precommit in round `r` and a different value precommit in a later round is an
+abstract bad-unlock signal only while there is no observed nil-precommit
+certificate for `r`. That absence is not standalone slashing evidence: a valid
+nil certificate can be learned later and justify the switch. Mixed precommits
+still do not cancel the signal, because only nil itself having quorum is unlock
+evidence.
+
 The executable witnesses are:
 
 ```text
@@ -151,6 +160,11 @@ cannotApplyBeforeObserverRecordsEvidenceTest
 nilValueObserverEvidenceBridgesToSignerPredicateTest
 valueValueObserverEvidenceBridgesToSameRoundPredicateTest
 nilValueObserverBridgeNeedsQuorumContextForAggregateTest
+valueSwitchWithoutNilCertIsAbstractSignalTest
+nilCertContextCancelsBadUnlockSignalTest
+mixedPrecommitDoesNotCancelBadUnlockSignalTest
+absenceBasedStandaloneSwitchAcceptanceIsUnsafeTest
+safeBoundaryNeverAcceptsStandaloneSwitchTest
 validFatPointerEvidenceWitnessTest
 fatPointerRequiresSignerPrecommitEvidenceTest
 fatPointerRequiresQuorumVotingPowerTest
@@ -294,3 +308,8 @@ reaches `CorrectSameRoundEquivocationEvidence`, while nil/value evidence stays
 signer-level until a separate nil certificate and value quorum are present.
 `CrosslinkTenderlinkAccountabilityObserverBridgeSafety.qnt` keeps the same
 obligations in a direct verifier-friendly state machine for Apalache.
+`CrosslinkTenderlinkUnlockAccountabilityBoundary.qnt` adds the parallel
+invalid-unlock boundary: absence-based value-switch detection is useful for the
+abstract accountability proof, but should not be accepted as production
+slashing evidence unless a future evidence format carries an explicit,
+sound proof of invalid unlock.

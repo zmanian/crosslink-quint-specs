@@ -215,6 +215,11 @@ For Crosslink, matching that quality means adding:
   Apalache safety projection for that bridge, mirroring the same nil/value and
   value/value accountability obligations without the executable composition's
   alias-heavy import graph.
+- `CrosslinkTenderlinkUnlockAccountabilityBoundary.qnt` records the bad-unlock
+  accountability boundary around cross-round value switches. The witnesses show
+  that a missing nil certificate is an abstract accountability signal, a later
+  nil certificate cancels that signal, mixed precommits do not cancel it, and
+  absence-based standalone slashing evidence would be unsafe.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport
   replay boundary around compact consensus packets. It pins little-endian outer
   nonce prefixes, requires successful abstract Noise decryption before the
