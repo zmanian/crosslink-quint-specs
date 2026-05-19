@@ -150,6 +150,20 @@ module CrosslinkBftBlockShape {
   def LastHeader(proposal: Proposal_t): Snapshot_t =
     HeaderAt(proposal, Sigma - 1)
 
+  def AccessorFinalizationCandidate(proposal: Proposal_t): Snapshot_t =
+    LastHeader(proposal)
+
+  def VotingPathFinalizationCandidate(proposal: Proposal_t): Snapshot_t =
+    FirstHeader(proposal)
+
+  def AccessorCandidateMatchesHeadSigmaCandidate(proposal: Proposal_t): bool =
+    HeadersAreKnownSnapshots(proposal) and
+    AccessorFinalizationCandidate(proposal) == HeadSigmaCandidate(proposal.tip)
+
+  def VotingPathCandidateMatchesHeadSigmaCandidate(proposal: Proposal_t): bool =
+    HeadersAreKnownSnapshots(proposal) and
+    VotingPathFinalizationCandidate(proposal) == HeadSigmaCandidate(proposal.tip)
+
   def FirstHeaderHeightMatchesDeclaredCandidate(proposal: Proposal_t): bool =
     HeadersAreKnownSnapshots(proposal) and
     Height(FirstHeader(proposal)) == proposal.declaredCandidateHeight
@@ -184,9 +198,25 @@ module CrosslinkBftBlockShape {
       not(CurrentFirstHeaderVotingCheckPasses(BuildFindHeadersProposal(tip)))
     )
 
+  val FindHeadersProposalsExposeAccessorTipNotCandidate =
+    Snapshots.forall(tip =>
+      not(HeadHasFullSigmaWindow(tip)) or (
+        AccessorFinalizationCandidate(BuildFindHeadersProposal(tip)) == tip and
+        not(AccessorCandidateMatchesHeadSigmaCandidate(BuildFindHeadersProposal(tip)))
+      )
+    )
+
+  val FindHeadersProposalsExposeVotingChildNotCandidate =
+    Snapshots.forall(tip =>
+      not(HeadHasFullSigmaWindow(tip)) or
+      not(VotingPathCandidateMatchesHeadSigmaCandidate(BuildFindHeadersProposal(tip)))
+    )
+
   val Safety =
     FindHeadersProposalsPassDeclaredHeadSigmaCheck and
-    FindHeadersProposalsFailFirstHeaderVotingCheck
+    FindHeadersProposalsFailFirstHeaderVotingCheck and
+    FindHeadersProposalsExposeAccessorTipNotCandidate and
+    FindHeadersProposalsExposeVotingChildNotCandidate
 
   action Init = all {
     firedAction' = "Init",
@@ -243,6 +273,21 @@ module CrosslinkBftBlockShapeTest {
           assert(not(CurrentFirstHeaderVotingCheckPasses(proposal))),
           assert(not(FirstHeaderHeightMatchesDeclaredCandidate(proposal))),
           assert(not(FirstHeaderMatchesHeadSigmaCandidate(proposal))),
+          unchangedAll,
+        }
+      })
+  }
+
+  run producedProposalExposesAccessorAndVotingCandidateMismatchTest = {
+    Init
+      .then({
+        val proposal = BuildFindHeadersProposal("a4")
+        all {
+          assert(AccessorFinalizationCandidate(proposal) == "a4"),
+          assert(VotingPathFinalizationCandidate(proposal) == "a2"),
+          assert(HeadSigmaCandidate(proposal.tip) == "a1"),
+          assert(not(AccessorCandidateMatchesHeadSigmaCandidate(proposal))),
+          assert(not(VotingPathCandidateMatchesHeadSigmaCandidate(proposal))),
           unchangedAll,
         }
       })
