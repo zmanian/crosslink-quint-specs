@@ -147,6 +147,10 @@ evidenceOnlyConflictStillHasAccountabilityWitnessTest
 signerValueValueEquivocationEvidenceWitnessTest
 signerNilValueEvidenceAloneDoesNotImplyNilValueAccountabilityTest
 nilValueSignerEvidenceWithQuorumContextTest
+cannotApplyBeforeObserverRecordsEvidenceTest
+nilValueObserverEvidenceBridgesToSignerPredicateTest
+valueValueObserverEvidenceBridgesToSameRoundPredicateTest
+nilValueObserverBridgeNeedsQuorumContextForAggregateTest
 validFatPointerEvidenceWitnessTest
 fatPointerRequiresSignerPrecommitEvidenceTest
 fatPointerRequiresQuorumVotingPowerTest
@@ -282,3 +286,11 @@ metadata before transported accountability evidence can be accepted.
 nil/value and value/value precommit-equivocation facts are recorded only after
 the exact transported evidence has been accepted, and receive-without-accept
 does not create observer-local accountability evidence.
+`CrosslinkTenderlinkAccountabilityObserverBridge.qnt` connects those concrete
+observer facts back into the abstract Crosslink round-recovery model by mapping
+the Tenderlink validator pubkey to the abstract validator id and the concrete
+nil value id to `NilSnapshot`. Its witnesses check that value/value evidence
+reaches `CorrectSameRoundEquivocationEvidence`, while nil/value evidence stays
+signer-level until a separate nil certificate and value quorum are present.
+`CrosslinkTenderlinkAccountabilityObserverBridgeSafety.qnt` keeps the same
+obligations in a direct verifier-friendly state machine for Apalache.

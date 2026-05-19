@@ -78,6 +78,13 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkTenderlinkAccountabilityObserver.qnt` adds the observer bridge
   after that transport gate: abstract precommit-equivocation facts are recorded
   only after the exact transported evidence has been accepted.
+- `spec/CrosslinkTenderlinkAccountabilityObserverBridge.qnt` maps those
+  concrete observer facts into the abstract Crosslink resampling
+  `evidencePrecommit` state, checking that nil/value evidence remains
+  signer-level until separate nil-certificate and value-quorum context exists.
+- `spec/CrosslinkTenderlinkAccountabilityObserverBridgeSafety.qnt` is the
+  verifier-friendly direct safety slice for that bridge, avoiding the
+  alias-heavy executable composition shape.
 - `spec/CrosslinkTenderlinkNonceAckTransport.qnt` models the known-peer
   stateless Noise transport boundary around those packets: little-endian outer
   nonce prefixes, decrypted canonical consensus packets, `nonce_is_ok`
@@ -454,6 +461,8 @@ quint typecheck spec/CrosslinkTenderlinkConsensusPacketFormat.qnt
 quint typecheck spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt
 quint typecheck spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt
 quint typecheck spec/CrosslinkTenderlinkAccountabilityObserver.qnt
+quint typecheck spec/CrosslinkTenderlinkAccountabilityObserverBridge.qnt
+quint typecheck spec/CrosslinkTenderlinkAccountabilityObserverBridgeSafety.qnt
 quint typecheck spec/CrosslinkTenderlinkNonceAckTransport.qnt
 quint typecheck spec/CrosslinkTenderlinkStatusPacketFormat.qnt
 quint typecheck spec/CrosslinkMalachiteProposalProtobufFormat.qnt
@@ -575,6 +584,7 @@ quint test spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkTen
 quint test spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkAccountabilityObserver.qnt --main=CrosslinkTenderlinkAccountabilityObserverModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkTenderlinkAccountabilityObserverBridge.qnt --main=CrosslinkTenderlinkAccountabilityObserverBridgeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMalachiteProposalProtobufFormat.qnt --main=CrosslinkMalachiteProposalProtobufFormatModel --max-samples=100 --backend=rust
@@ -612,6 +622,7 @@ quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkT
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityObserver.qnt --main=CrosslinkTenderlinkAccountabilityObserverModel --init=ObserverInit --step=ObserverNext --invariants=ObserverSafety --max-steps=5
+quint verify spec/CrosslinkTenderlinkAccountabilityObserverBridgeSafety.qnt --main=CrosslinkTenderlinkAccountabilityObserverBridgeSafetyModel --init=BridgeInit --step=BridgeNext --invariants=BridgeSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --init=TransportInit --step=Next --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteProposalProtobufFormat.qnt --main=CrosslinkMalachiteProposalProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -707,6 +718,7 @@ quint verify spec/CrosslinkTenderlinkConsensusPacketFormat.qnt --main=CrosslinkT
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt --main=CrosslinkTenderlinkAccountabilityEvidenceTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkAccountabilityObserver.qnt --main=CrosslinkTenderlinkAccountabilityObserverModel --init=ObserverInit --step=ObserverNext --invariants=ObserverSafety --max-steps=5
+quint verify spec/CrosslinkTenderlinkAccountabilityObserverBridgeSafety.qnt --main=CrosslinkTenderlinkAccountabilityObserverBridgeSafetyModel --init=BridgeInit --step=BridgeNext --invariants=BridgeSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkNonceAckTransport.qnt --main=CrosslinkTenderlinkNonceAckTransportModel --init=TransportInit --step=Next --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkTenderlinkStatusPacketFormat.qnt --main=CrosslinkTenderlinkStatusPacketFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMalachiteProposalProtobufFormat.qnt --main=CrosslinkMalachiteProposalProtobufFormatModel --init=Init --step=Next --invariants=Safety --max-steps=5

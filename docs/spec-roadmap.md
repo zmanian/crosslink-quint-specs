@@ -205,6 +205,16 @@ For Crosslink, matching that quality means adding:
   facts only after the exact canonical evidence has been accepted through
   transport, with witnesses for nil/value, value/value, receive-without-accept,
   and non-canonical evidence.
+- `CrosslinkTenderlinkAccountabilityObserverBridge.qnt` connects those
+  production-shaped observer facts back into `CrosslinkResampling`'s abstract
+  `evidencePrecommit` state. The bridge checks value/value evidence reaches the
+  same-round equivocation predicate, while nil/value evidence remains
+  signer-level until independent nil-certificate and value-quorum context is
+  present.
+- `CrosslinkTenderlinkAccountabilityObserverBridgeSafety.qnt` is the direct
+  Apalache safety projection for that bridge, mirroring the same nil/value and
+  value/value accountability obligations without the executable composition's
+  alias-heavy import graph.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport
   replay boundary around compact consensus packets. It pins little-endian outer
   nonce prefixes, requires successful abstract Noise decryption before the
