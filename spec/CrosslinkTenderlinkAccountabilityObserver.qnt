@@ -60,11 +60,11 @@ module CrosslinkTenderlinkAccountabilityObserver {
 
   action KeepTransportState = all {
     acceptedAccountabilityEvidence' = acceptedAccountabilityEvidence,
-    firedAction' = firedAction,
+    accountabilityEvidenceFormatFiredAction' = accountabilityEvidenceFormatFiredAction,
     transportedAccountabilityEvidence' = transportedAccountabilityEvidence,
     acceptedTransportedAccountabilityEvidence' =
       acceptedTransportedAccountabilityEvidence,
-    transportFiredAction' = transportFiredAction,
+    accountabilityEvidenceTransportFiredAction' = accountabilityEvidenceTransportFiredAction,
   }
 
   action KeepObserverState = all {
@@ -154,11 +154,11 @@ module CrosslinkTenderlinkAccountabilityObserverTest {
 
   action unchangedObserver = all {
     acceptedAccountabilityEvidence' = acceptedAccountabilityEvidence,
-    firedAction' = firedAction,
+    accountabilityEvidenceFormatFiredAction' = accountabilityEvidenceFormatFiredAction,
     transportedAccountabilityEvidence' = transportedAccountabilityEvidence,
     acceptedTransportedAccountabilityEvidence' =
       acceptedTransportedAccountabilityEvidence,
-    transportFiredAction' = transportFiredAction,
+    accountabilityEvidenceTransportFiredAction' = accountabilityEvidenceTransportFiredAction,
     observedPrecommitEquivocations' = observedPrecommitEquivocations,
     observerFiredAction' = observerFiredAction,
   }

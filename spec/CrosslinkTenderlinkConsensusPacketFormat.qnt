@@ -144,7 +144,7 @@ module CrosslinkTenderlinkConsensusPacketFormat {
   pure val UnmodeledConsensusPacketHex = "unmodeled-consensus-packet"
 
   var acceptedConsensusPackets: Set[ConsensusPacket_t]
-  var firedAction: str
+  var consensusPacketFiredAction: str
 
   pure def FieldEndOffset(offset: int, width: int): int =
     offset + width
@@ -342,20 +342,20 @@ module CrosslinkTenderlinkConsensusPacketFormat {
 
   action Init = all {
     acceptedConsensusPackets' = Set(),
-    firedAction' = "Init",
+    consensusPacketFiredAction' = "Init",
   }
 
   action AcceptConsensusPacket(packet: ConsensusPacket_t): bool =
     all {
       ConsensusPacketCanonical(packet),
       acceptedConsensusPackets' = acceptedConsensusPackets.union(Set(packet)),
-      firedAction' = "AcceptConsensusPacket",
+      consensusPacketFiredAction' = "AcceptConsensusPacket",
     }
 
   action Stutter: bool =
     all {
       acceptedConsensusPackets' = acceptedConsensusPackets,
-      firedAction' = firedAction,
+      consensusPacketFiredAction' = consensusPacketFiredAction,
     }
 
   pure def AcceptedConsensusPacketsCanonical: bool =
@@ -657,7 +657,7 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
 
   action unchangedAll = all {
     acceptedConsensusPackets' = acceptedConsensusPackets,
-    firedAction' = firedAction,
+    consensusPacketFiredAction' = consensusPacketFiredAction,
   }
 
   run packetHeaderLayoutPinnedTest = {

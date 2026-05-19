@@ -216,9 +216,7 @@ config.
 
 - Connect the heighted authentication and evidence-gossip models to production
   serialization, signatures, and full production gossip transport. The
-  Tenderlink router contract now covers the current compact transport lanes,
-  but the fully stateful imported composition still needs namespaced transport
-  state.
+  Tenderlink imported router now covers the current compact transport lanes.
 - Connect the dynamic-sigma consensus-param format/transport models to real
   implementation serialization and gossip vectors once the production format
   exists.

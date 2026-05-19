@@ -33,7 +33,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransport {
 
   var transportedAccountabilityEvidence: Set[AccountabilityEvidence_t]
   var acceptedTransportedAccountabilityEvidence: Set[AccountabilityEvidence_t]
-  var transportFiredAction: str
+  var accountabilityEvidenceTransportFiredAction: str
 
   def Env(
     topic: Topic_t,
@@ -76,12 +76,12 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransport {
     Init,
     transportedAccountabilityEvidence' = Set(),
     acceptedTransportedAccountabilityEvidence' = Set(),
-    transportFiredAction' = "TransportInit",
+    accountabilityEvidenceTransportFiredAction' = "TransportInit",
   }
 
   action KeepFormatState = all {
     acceptedAccountabilityEvidence' = acceptedAccountabilityEvidence,
-    firedAction' = firedAction,
+    accountabilityEvidenceFormatFiredAction' = accountabilityEvidenceFormatFiredAction,
   }
 
   action ReceiveAccountabilityEvidenceTransport(
@@ -95,7 +95,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransport {
         transportedAccountabilityEvidence.union(Set(evidence)),
       acceptedTransportedAccountabilityEvidence' =
         acceptedTransportedAccountabilityEvidence,
-      transportFiredAction' = "ReceiveAccountabilityEvidenceTransport",
+      accountabilityEvidenceTransportFiredAction' = "ReceiveAccountabilityEvidenceTransport",
     }
 
   action AcceptTransportedAccountabilityEvidence(
@@ -108,7 +108,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransport {
       transportedAccountabilityEvidence' = transportedAccountabilityEvidence,
       acceptedTransportedAccountabilityEvidence' =
         acceptedTransportedAccountabilityEvidence.union(Set(evidence)),
-      transportFiredAction' = "AcceptTransportedAccountabilityEvidence",
+      accountabilityEvidenceTransportFiredAction' = "AcceptTransportedAccountabilityEvidence",
     }
 
   action TransportStutter: bool =
@@ -117,7 +117,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransport {
       transportedAccountabilityEvidence' = transportedAccountabilityEvidence,
       acceptedTransportedAccountabilityEvidence' =
         acceptedTransportedAccountabilityEvidence,
-      transportFiredAction' = transportFiredAction,
+      accountabilityEvidenceTransportFiredAction' = accountabilityEvidenceTransportFiredAction,
     }
 
   pure def TransportedAccountabilityEvidenceCanonical: bool =
@@ -270,11 +270,11 @@ module CrosslinkTenderlinkAccountabilityEvidenceTransportTest {
 
   action unchangedTransport = all {
     acceptedAccountabilityEvidence' = acceptedAccountabilityEvidence,
-    firedAction' = firedAction,
+    accountabilityEvidenceFormatFiredAction' = accountabilityEvidenceFormatFiredAction,
     transportedAccountabilityEvidence' = transportedAccountabilityEvidence,
     acceptedTransportedAccountabilityEvidence' =
       acceptedTransportedAccountabilityEvidence,
-    transportFiredAction' = transportFiredAction,
+    accountabilityEvidenceTransportFiredAction' = accountabilityEvidenceTransportFiredAction,
   }
 
   run accountabilityEvidenceTransportEnvelopeAcceptedTest = {

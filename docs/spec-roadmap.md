@@ -243,10 +243,9 @@ For Crosslink, matching that quality means adding:
   packets, accountability evidence, known-peer consensus packets, and status
   packets all stay on `crosslink-consensus-v1`, but occupy separate
   channel/kind namespaces. The direct safety slice includes wrong-topic,
-  wrong-kind, wrong-bytes, cross-channel, and unknown-channel witnesses. The
-  fully stateful alias composition is recorded as a follow-up because the
-  current transport helper modules reuse generic state names like
-  `firedAction` and `transportFiredAction`.
+  wrong-kind, wrong-bytes, cross-channel, and unknown-channel witnesses; the
+  imported router composes the stateful proposal/POL, accountability-evidence,
+  nonce/ack, and status transport slices after namespacing their helper state.
 - `CrosslinkMalachiteProposalProtobufFormat.qnt` adds the first Malachite
   protobuf proposal vectors. It pins exact proto3 bytes for `Value`,
   `Proposal` with and without `pol_round`, `SignedMessage::Proposal`, and

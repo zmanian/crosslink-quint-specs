@@ -54,7 +54,7 @@ module CrosslinkTenderlinkProposalPolTransport {
   var transportedProposalChunks: Set[ProposalChunkWire_t]
   var transportedPolPackets: Set[VotePacket_t]
   var acceptedTransportedPolEvidence: Set[ProposalPolEvidence_t]
-  var transportFiredAction: str
+  var proposalPolTransportFiredAction: str
 
   pure def NoncePrefixHex(nonce: int): Bytes_t =
     if (nonce == 120) {
@@ -130,13 +130,13 @@ module CrosslinkTenderlinkProposalPolTransport {
     transportedProposalChunks' = Set(),
     transportedPolPackets' = Set(),
     acceptedTransportedPolEvidence' = Set(),
-    transportFiredAction' = "TransportInit",
+    proposalPolTransportFiredAction' = "TransportInit",
   }
 
   action KeepEvidenceState = all {
     acceptedNilValidRoundProposals' = acceptedNilValidRoundProposals,
     acceptedProposalPolEvidence' = acceptedProposalPolEvidence,
-    firedAction' = firedAction,
+    proposalPolFiredAction' = proposalPolFiredAction,
   }
 
   action ReceiveProposalChunkTransport(
@@ -149,7 +149,7 @@ module CrosslinkTenderlinkProposalPolTransport {
       transportedProposalChunks' = transportedProposalChunks.union(Set(proposal)),
       transportedPolPackets' = transportedPolPackets,
       acceptedTransportedPolEvidence' = acceptedTransportedPolEvidence,
-      transportFiredAction' = "ReceiveProposalChunkTransport",
+      proposalPolTransportFiredAction' = "ReceiveProposalChunkTransport",
     }
 
   action ReceivePolVoteTransport(
@@ -162,7 +162,7 @@ module CrosslinkTenderlinkProposalPolTransport {
       transportedProposalChunks' = transportedProposalChunks,
       transportedPolPackets' = transportedPolPackets.union(Set(packet)),
       acceptedTransportedPolEvidence' = acceptedTransportedPolEvidence,
-      transportFiredAction' = "ReceivePolVoteTransport",
+      proposalPolTransportFiredAction' = "ReceivePolVoteTransport",
     }
 
   action AcceptTransportedProposalWithPol(
@@ -177,7 +177,7 @@ module CrosslinkTenderlinkProposalPolTransport {
       transportedPolPackets' = transportedPolPackets,
       acceptedTransportedPolEvidence' =
         acceptedTransportedPolEvidence.union(Set(evidence)),
-      transportFiredAction' = "AcceptTransportedProposalWithPol",
+      proposalPolTransportFiredAction' = "AcceptTransportedProposalWithPol",
     }
 
   action TransportStutter: bool =
@@ -186,7 +186,7 @@ module CrosslinkTenderlinkProposalPolTransport {
       transportedProposalChunks' = transportedProposalChunks,
       transportedPolPackets' = transportedPolPackets,
       acceptedTransportedPolEvidence' = acceptedTransportedPolEvidence,
-      transportFiredAction' = transportFiredAction,
+      proposalPolTransportFiredAction' = proposalPolTransportFiredAction,
     }
 
   pure def TransportedProposalsCanonical: bool =
@@ -378,11 +378,11 @@ module CrosslinkTenderlinkProposalPolTransportTest {
   action unchangedTransport = all {
     acceptedNilValidRoundProposals' = acceptedNilValidRoundProposals,
     acceptedProposalPolEvidence' = acceptedProposalPolEvidence,
-    firedAction' = firedAction,
+    proposalPolFiredAction' = proposalPolFiredAction,
     transportedProposalChunks' = transportedProposalChunks,
     transportedPolPackets' = transportedPolPackets,
     acceptedTransportedPolEvidence' = acceptedTransportedPolEvidence,
-    transportFiredAction' = transportFiredAction,
+    proposalPolTransportFiredAction' = proposalPolTransportFiredAction,
   }
 
   run proposalTransportEnvelopeAcceptedTest = {

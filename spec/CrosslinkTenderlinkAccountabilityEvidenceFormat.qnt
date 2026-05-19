@@ -122,7 +122,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
     "020100000000000000000000000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f200909700070000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa0000111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111110001000000000100000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
 
   var acceptedAccountabilityEvidence: Set[AccountabilityEvidence_t]
-  var firedAction: str
+  var accountabilityEvidenceFormatFiredAction: str
 
   pure def FieldEndOffset(offset: int, width: int): int =
     offset + width
@@ -337,7 +337,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
 
   action Init = all {
     acceptedAccountabilityEvidence' = Set(),
-    firedAction' = "Init",
+    accountabilityEvidenceFormatFiredAction' = "Init",
   }
 
   action AcceptAccountabilityEvidence(
@@ -347,13 +347,13 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormat {
       AccountabilityEvidenceCanonical(evidence),
       acceptedAccountabilityEvidence' =
         acceptedAccountabilityEvidence.union(Set(evidence)),
-      firedAction' = "AcceptAccountabilityEvidence",
+      accountabilityEvidenceFormatFiredAction' = "AcceptAccountabilityEvidence",
     }
 
   action Stutter: bool =
     all {
       acceptedAccountabilityEvidence' = acceptedAccountabilityEvidence,
-      firedAction' = firedAction,
+      accountabilityEvidenceFormatFiredAction' = accountabilityEvidenceFormatFiredAction,
     }
 
   pure def AcceptedAccountabilityEvidenceCanonical: bool =
@@ -633,7 +633,7 @@ module CrosslinkTenderlinkAccountabilityEvidenceFormatTest {
 
   action unchangedAll = all {
     acceptedAccountabilityEvidence' = acceptedAccountabilityEvidence,
-    firedAction' = firedAction,
+    accountabilityEvidenceFormatFiredAction' = accountabilityEvidenceFormatFiredAction,
   }
 
   run accountabilityEvidenceLayoutPinnedTest = {

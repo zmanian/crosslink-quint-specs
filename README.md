@@ -102,9 +102,9 @@ the Zebra Crosslink working branch:
   packets all stay on the Crosslink consensus topic but occupy separate
   channel/kind namespaces.
 - `spec/CrosslinkTenderlinkGossipRouterSafety.qnt` is the verifier-friendly
-  direct safety slice for that Tenderlink router contract. It keeps the
-  channel/topic/kind invariant in Apalache while the fully stateful alias
-  composition waits on namespaced transport state.
+  direct safety slice for that Tenderlink router contract, so Apalache can
+  check the channel/topic/kind invariant without flattening the imported
+  transport composition.
 - `spec/CrosslinkMalachiteProposalProtobufFormat.qnt` pins the Malachite
   protobuf proposal boundary for `Value`, `Proposal`,
   `SignedMessage::Proposal`, and streamed proposal parts, including exact

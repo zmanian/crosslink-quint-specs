@@ -48,7 +48,7 @@ module CrosslinkTenderlinkNonceAckTransport {
   var transportState: NonceAckState_t
   var acceptedTransportPackets: Set[KnownPeerTransportPacket_t]
   var acceptedNonces: Set[int]
-  var transportFiredAction: str
+  var nonceAckTransportFiredAction: str
 
   def HeaderWithAck(
     packetType: int,
@@ -199,11 +199,11 @@ module CrosslinkTenderlinkNonceAckTransport {
 
   action TransportInit = all {
     acceptedConsensusPackets' = Set(),
-    firedAction' = "TransportInitConsensusIdle",
+    consensusPacketFiredAction' = "TransportInitConsensusIdle",
     transportState' = Missing120At124,
     acceptedTransportPackets' = Set(),
     acceptedNonces' = Set(),
-    transportFiredAction' = "TransportInit",
+    nonceAckTransportFiredAction' = "TransportInit",
   }
 
   action AcceptKnownPeerTransportPacket(
@@ -213,21 +213,21 @@ module CrosslinkTenderlinkNonceAckTransport {
       KnownPeerTransportPacketCanonical(packet),
       NonceOk(packet.nonce, transportState),
       acceptedConsensusPackets' = acceptedConsensusPackets,
-      firedAction' = firedAction,
+      consensusPacketFiredAction' = consensusPacketFiredAction,
       transportState' = NonceUpdate(packet.nonce, transportState),
       acceptedTransportPackets' = acceptedTransportPackets.union(Set(packet)),
       acceptedNonces' = acceptedNonces.union(Set(packet.nonce)),
-      transportFiredAction' = "AcceptKnownPeerTransportPacket",
+      nonceAckTransportFiredAction' = "AcceptKnownPeerTransportPacket",
     }
 
   action TransportStutter: bool =
     all {
       acceptedConsensusPackets' = acceptedConsensusPackets,
-      firedAction' = firedAction,
+      consensusPacketFiredAction' = consensusPacketFiredAction,
       transportState' = transportState,
       acceptedTransportPackets' = acceptedTransportPackets,
       acceptedNonces' = acceptedNonces,
-      transportFiredAction' = transportFiredAction,
+      nonceAckTransportFiredAction' = nonceAckTransportFiredAction,
     }
 
   pure def AcceptedTransportPacketsCanonical: bool =
@@ -300,11 +300,11 @@ module CrosslinkTenderlinkNonceAckTransportTest {
 
   action unchangedAll = all {
     acceptedConsensusPackets' = acceptedConsensusPackets,
-    firedAction' = firedAction,
+    consensusPacketFiredAction' = consensusPacketFiredAction,
     transportState' = transportState,
     acceptedTransportPackets' = acceptedTransportPackets,
     acceptedNonces' = acceptedNonces,
-    transportFiredAction' = transportFiredAction,
+    nonceAckTransportFiredAction' = nonceAckTransportFiredAction,
   }
 
   run noncePrefixLittleEndianTest = {

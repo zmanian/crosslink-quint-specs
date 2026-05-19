@@ -135,7 +135,7 @@ module CrosslinkTenderlinkProposalPolEvidence {
 
   var acceptedNilValidRoundProposals: Set[ProposalChunkWire_t]
   var acceptedProposalPolEvidence: Set[ProposalPolEvidence_t]
-  var firedAction: str
+  var proposalPolFiredAction: str
 
   pure def ProposalNeedsPol(proposal: ProposalChunkWire_t): bool =
     proposal.validRound != NilValidRound
@@ -326,7 +326,7 @@ module CrosslinkTenderlinkProposalPolEvidence {
   action Init = all {
     acceptedNilValidRoundProposals' = Set(),
     acceptedProposalPolEvidence' = Set(),
-    firedAction' = "Init",
+    proposalPolFiredAction' = "Init",
   }
 
   action AcceptNilValidRoundProposal(proposal: ProposalChunkWire_t): bool =
@@ -336,7 +336,7 @@ module CrosslinkTenderlinkProposalPolEvidence {
       acceptedNilValidRoundProposals' =
         acceptedNilValidRoundProposals.union(Set(proposal)),
       acceptedProposalPolEvidence' = acceptedProposalPolEvidence,
-      firedAction' = "AcceptNilValidRoundProposal",
+      proposalPolFiredAction' = "AcceptNilValidRoundProposal",
     }
 
   action AcceptProposalWithPol(evidence: ProposalPolEvidence_t): bool =
@@ -345,14 +345,14 @@ module CrosslinkTenderlinkProposalPolEvidence {
       acceptedNilValidRoundProposals' = acceptedNilValidRoundProposals,
       acceptedProposalPolEvidence' =
         acceptedProposalPolEvidence.union(Set(evidence)),
-      firedAction' = "AcceptProposalWithPol",
+      proposalPolFiredAction' = "AcceptProposalWithPol",
     }
 
   action Stutter: bool =
     all {
       acceptedNilValidRoundProposals' = acceptedNilValidRoundProposals,
       acceptedProposalPolEvidence' = acceptedProposalPolEvidence,
-      firedAction' = firedAction,
+      proposalPolFiredAction' = proposalPolFiredAction,
     }
 
   pure def AcceptedNilProposalsNeedNoPol: bool =
@@ -624,7 +624,7 @@ module CrosslinkTenderlinkProposalPolEvidenceTest {
   action unchangedAll = all {
     acceptedNilValidRoundProposals' = acceptedNilValidRoundProposals,
     acceptedProposalPolEvidence' = acceptedProposalPolEvidence,
-    firedAction' = firedAction,
+    proposalPolFiredAction' = proposalPolFiredAction,
   }
 
   run nilValidRoundAcceptedWithoutPolTest = {
