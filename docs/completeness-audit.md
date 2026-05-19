@@ -115,9 +115,9 @@ It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
 also checked at depth 8, for:
 
 ```text
-CrosslinkStreamChurnRiskModel
 CrosslinkFinalityProgressContractModel
 CrosslinkComposedProgressContractModel
+CrosslinkStreamChurnRiskModel
 CrosslinkPowReorgStressModel
 CrosslinkHeadSigmaSamplingModel
 CrosslinkHeightedHeadSigmaRoundModel
