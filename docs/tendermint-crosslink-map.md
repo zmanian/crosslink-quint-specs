@@ -166,7 +166,7 @@ branch.
 ## Remaining Work To Match Upstream Quality
 
 - Connect the heighted authentication and evidence-gossip models to production
-  serialization, signatures, and gossip transport.
+  serialization, signatures, and full production gossip transport.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and
@@ -174,8 +174,8 @@ branch.
   sampler, to concrete Crosslink block/header data.
 - Expand validator-set modeling beyond the current finite weighted examples to
   production signer-set formats and implementation-linked test vectors.
-- Connect the standalone evidence gossip model to production gossip messages
-  and signature verification.
+- Connect the standalone evidence gossip model to full production gossip
+  messages and signature verification.
 - Expand bounded verification beyond `Safety` at depth 3.
 - Lift the current TLC-friendly progress contracts into temporal liveness
   checks over the full imported protocol state, parameterized by stream
