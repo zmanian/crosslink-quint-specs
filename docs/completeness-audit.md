@@ -35,8 +35,8 @@ Status terms:
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted`; `CrosslinkFatPointerFormat.qnt`; `CrosslinkFatPointerProductionVectors.qnt`; `test:fat-pointer-production-vectors`; `verify:fat-pointer-production-vectors-safety` | covered | Production fat-pointer signer-vector, exact wire-envelope offset/length, checked-in fixture offsets/byte probes, and producer-round-data derivation shapes are modeled; broader production integration remains open. |
 | Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `spec/CrosslinkHeightedValidatorEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerProductionVectors.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `test:validator-set-change`; `test:heighted-validator-evidence`; `test:heighted-authenticated-evidence`; `test:fat-pointer-format`; `test:fat-pointer-production-vectors`; `test:fat-pointer-authenticated-evidence`; `verify:validator-set-change-safety`; `verify:heighted-validator-evidence-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-production-vectors-safety`; `verify:fat-pointer-authenticated-evidence-safety` | partial | Validator-set rotation is now linked to heighted authenticated evidence signer authorization, production-shaped fat-pointer signer vectors, and pinned fat-pointer byte vectors; end-to-end integration remains open. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
-| Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `test:heighted-authenticated-evidence`; `test:fat-pointer-authenticated-evidence`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-authenticated-evidence-safety` | partial | Abstract standalone, first authenticated composition, and production-shaped fat-pointer observer models exist, including exact counted-envelope checks; not yet wired into production gossip transport. |
-| Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerProductionVectors.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `test:message-auth`; `test:heighted-message-auth`; `test:heighted-authenticated-evidence`; `test:fat-pointer-format`; `test:fat-pointer-production-vectors`; `test:fat-pointer-authenticated-evidence`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-production-vectors-safety`; `verify:fat-pointer-authenticated-evidence-safety` | partial | Abstract signature metadata, evidence-pipeline composition, production-shaped fat-pointer canonical bytes, production byte-vector offsets, and first production-shaped observer linkage exist; not yet linked to real crypto. |
+| Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureAuthenticatedEvidence.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `test:heighted-authenticated-evidence`; `test:fat-pointer-authenticated-evidence`; `test:fixture-authenticated-evidence`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-authenticated-evidence-safety`; `verify:fixture-authenticated-evidence-safety` | partial | Abstract standalone, first authenticated composition, production-shaped fat-pointer observer models, and a generated-fixture observer bridge exist, including exact counted-envelope checks; not yet wired into production gossip transport. |
+| Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerProductionVectors.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureAuthenticatedEvidence.qnt`; `test:message-auth`; `test:heighted-message-auth`; `test:heighted-authenticated-evidence`; `test:fat-pointer-format`; `test:fat-pointer-production-vectors`; `test:fat-pointer-authenticated-evidence`; `test:fixture-authenticated-evidence`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-production-vectors-safety`; `verify:fat-pointer-authenticated-evidence-safety`; `verify:fixture-authenticated-evidence-safety` | partial | Abstract signature metadata, evidence-pipeline composition, production-shaped fat-pointer canonical bytes, production byte-vector offsets, generated fixture constants, and generated-fixture observer linkage exist; not yet linked to real crypto. |
 | Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `CrosslinkFatPointerFormat.qnt` duplicate-pubkey, removed-validator, wrong-payload, cross-height replay, low-power, wire-offset, trailing-byte, truncated-wire, and producer-round-data derivation witnesses; `CrosslinkFatPointerProductionVectors.qnt` `try_from_bytes` reversed-slice gap witness; `CrosslinkFatPointerAuthenticatedEvidence.qnt` gossip-before-observe, missing-signer, and trailing-byte wire witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
 | Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; production data/linkage remains abstract. |
@@ -67,7 +67,7 @@ BFT-block validation-gap checks, BFT-block production-vector checks,
 BFT-block fixture-manifest validation and generated-Quint fixture validation,
 fat-pointer signer-vector format checks, fat-pointer production-vector checks,
 fat-pointer
-authenticated-evidence checks, proposal validity, valid-round evidence, fork
+authenticated-evidence checks, fixture-authenticated evidence checks, proposal validity, valid-round evidence, fork
 finality, composed resampling/finality, composed liveness, multi-height finality,
 height-indexed round-machine behavior, heighted finality composition, evidence
 gossip, heighted evidence gossip, message authentication, heighted message
@@ -107,6 +107,7 @@ CrosslinkBftBlockProductionVectorsModel
 CrosslinkFatPointerFormatModel
 CrosslinkFatPointerProductionVectorsModel
 CrosslinkFatPointerAuthenticatedEvidenceModel
+CrosslinkFixtureAuthenticatedEvidenceModel
 ```
 
 `npm run verify:extended` is a non-default deeper gate for the newest
@@ -131,6 +132,7 @@ CrosslinkBftBlockProductionVectorsModel
 CrosslinkFatPointerFormatModel
 CrosslinkFatPointerProductionVectorsModel
 CrosslinkFatPointerAuthenticatedEvidenceModel
+CrosslinkFixtureAuthenticatedEvidenceModel
 CrosslinkHeightedValidatorEvidenceModel
 CrosslinkHeightedAuthenticatedEvidenceModel
 ```
@@ -168,7 +170,8 @@ The goal is not complete yet. The strongest remaining gaps are:
   header-order, and PoW-solution checks;
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
-- extend the generated fixture constants into real signature verification;
+- replace the abstract generated-fixture signature witness with real signature
+  verification;
 - continue expanding bounded verification depth and targeted counterexample
   searches beyond the current depth-5 extended gate for the new standalone
   models.

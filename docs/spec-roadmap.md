@@ -222,6 +222,10 @@ For Crosslink, matching that quality means adding:
   precommit at the same BFT height, round, and value; the witnesses reject
   observation before gossip, missing signer precommits, trailing-byte wires,
   duplicate signer entries, and removed-validator next-height precommits.
+- `CrosslinkFixtureAuthenticatedEvidence.qnt` bridges generated checked-in
+  fixture constants into that authenticated observer pipeline. The
+  one-signature fixture wire is accepted only after its matching abstract
+  precommit is gossiped, and is rejected before gossip.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
