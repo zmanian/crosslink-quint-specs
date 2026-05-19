@@ -155,6 +155,11 @@ the Zebra Crosslink working branch:
   its matching downstream Tenderlink, Malachite, dynamic-sigma, or
   production-finality lane, and raw wrong-lane or cross-protocol injections
   violate ingress safety.
+- `spec/CrosslinkProductionFinalityIngressBridge.qnt` connects the
+  production-finality ingress lanes to the finality projection boundary: the
+  checked-in BFT-block proposal and fat-pointer wire cannot become
+  projection-ready, or finalizable, until the matching production-finality
+  ingress records have been accepted.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
@@ -474,6 +479,9 @@ The current spec surface has three first-class Crosslink variants:
   raised and recovered sigma updates, while the finality lanes use compact byte
   labels whose route validity directly checks the generated fixture metadata
   also validated by `CrosslinkProductionFinalityProjectionContractModel`.
+  `CrosslinkProductionFinalityIngressBridgeModel` then checks that those
+  accepted production-finality ingress records are the prerequisite for
+  projection-ready proposal/fat-pointer evidence and finality.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
@@ -611,6 +619,7 @@ quint typecheck spec/CrosslinkMalachiteGossipRouter.qnt
 quint typecheck spec/CrosslinkMalachiteGossipRouterSafety.qnt
 quint typecheck spec/CrosslinkProductionGossipRegistry.qnt
 quint typecheck spec/CrosslinkProductionGossipIngress.qnt
+quint typecheck spec/CrosslinkProductionFinalityIngressBridge.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
 quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkHeightedAuthenticatedEvidence.qnt
@@ -759,6 +768,7 @@ quint test spec/CrosslinkMalachiteGossipRouter.qnt --main=CrosslinkMalachiteGoss
 quint test spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkProductionFinalityIngressBridge.qnt --main=CrosslinkProductionFinalityIngressBridgeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --max-samples=100 --backend=rust
@@ -800,6 +810,7 @@ quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMala
 quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --init=RegistryInit --step=RegistryNext --invariants=RegistrySafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --init=IngressInit --step=IngressNext --invariants=IngressSafety --max-steps=5
+quint verify spec/CrosslinkProductionFinalityIngressBridge.qnt --main=CrosslinkProductionFinalityIngressBridgeModel --init=BridgeInit --step=BridgeNext --invariants=FinalityIngressBridgeSafety --max-steps=5
 quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -920,6 +931,7 @@ quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMala
 quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --init=RegistryInit --step=RegistryNext --invariants=RegistrySafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --init=IngressInit --step=IngressNext --invariants=IngressSafety --max-steps=5
+quint verify spec/CrosslinkProductionFinalityIngressBridge.qnt --main=CrosslinkProductionFinalityIngressBridgeModel --init=BridgeInit --step=BridgeNext --invariants=FinalityIngressBridgeSafety --max-steps=8
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt --main=CrosslinkHeightedAuthenticatedGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
@@ -936,6 +948,7 @@ quint verify spec/CrosslinkHeightedProgressProjectionContract.qnt --backend=tlc 
 quint verify spec/CrosslinkHeightedAuthenticatedProgressProjectionContract.qnt --backend=tlc --main=CrosslinkHeightedAuthenticatedProgressProjectionContractModel --init=AuthInit --step=AuthenticatedNext --temporal=EventuallyHeightedAuthenticatedProgressFinalizesTwoHeights --max-steps=70
 quint verify spec/CrosslinkRotatingAuthenticatedProgressProjectionContract.qnt --backend=tlc --main=CrosslinkRotatingAuthenticatedProgressProjectionContractModel --init=Init --step=Next --temporal=EventuallyRotatingAuthenticatedProgressFinalizesTwoHeights --max-steps=70
 quint verify spec/CrosslinkProductionFinalityProjectionContract.qnt --backend=tlc --main=CrosslinkProductionFinalityTemporalProjectionModel --init=Init --step=Next --temporal=EventuallyProductionFixtureFinalized --max-steps=30
+quint verify spec/CrosslinkProductionFinalityIngressBridge.qnt --backend=tlc --main=CrosslinkProductionFinalityIngressBridgeModel --init=BridgeInit --step=BridgeNext --temporal=EventuallyFinalityIngressBridgeFinalizes --max-steps=30
 quint verify spec/CrosslinkValidatorScaleProgressContract.qnt --backend=tlc --main=CrosslinkValidatorScaleProgressContractModel --init=Init --step=Next --temporal=EventuallyResamplingDecision --max-steps=45
 quint verify spec/CrosslinkValidatorScaleFinalityProgressContract.qnt --backend=tlc --main=CrosslinkValidatorScaleFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --temporal=EventuallyValidatorScaleFinalized --max-steps=50
 ```

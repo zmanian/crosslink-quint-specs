@@ -329,6 +329,12 @@ For Crosslink, matching that quality means adding:
   ingress, dynamic-sigma consensus params handed to Tenderlink ingress,
   production-finality records handed to unrelated ingress lanes, and
   cross-protocol raw injections.
+- `CrosslinkProductionFinalityIngressBridge.qnt` connects those
+  production-finality ingress lanes to projection and finality readiness. It
+  checks that the BFT-block proposal and fat-pointer wire cannot be projected
+  before their matching ingress records, that finality waits for both projected
+  records, and that Tenderlink precommit traffic cannot stand in for a
+  production-finality proposal envelope.
 
 ### 2026-05-18
 
