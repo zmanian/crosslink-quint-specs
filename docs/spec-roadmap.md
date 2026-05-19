@@ -151,6 +151,12 @@ For Crosslink, matching that quality means adding:
   future valid rounds, trailing bytes, cross-height replay bytes, and chunk
   ranges past the declared proposal size. Malachite protobuf proposal vectors
   remain a separate fixture-generation task.
+- `CrosslinkTenderlinkVotePacketFormat.qnt` pins the legacy `PacketVotes`
+  batch format: nil/yes counts, round, height, value id, and
+  roster-index/signature entries. It records the struct padding gap separately
+  from the variable-length `write_to` bytes and checks that nil prevote and
+  value precommit packet entries reconstruct the canonical 76-byte vote sign
+  payload before signature verification.
 
 ### 2026-05-18
 
