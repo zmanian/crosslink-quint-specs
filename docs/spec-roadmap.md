@@ -197,6 +197,13 @@ For Crosslink, matching that quality means adding:
   certificates, non-default skip/vote-type encoding, omitted nil value ids,
   included value ids, required validator/signature lengths, and wrong-oneof
   rejection.
+- `CrosslinkMalachiteSyncProtobufFormat.qnt` pins the first Malachite sync
+  protobuf vectors: `ValueRequest`/`SyncRequest`, `CommitCertificate`,
+  `SyncedValue`, and `ValueResponse`/`SyncResponse` with and without an
+  attached value. The witnesses include no-value response handling, the same
+  raw bytes accepted in request versus response context, and rejection of bad
+  heights, wrong oneof tags, missing value ids/certificates, and short signer
+  addresses.
 
 ### 2026-05-18
 
