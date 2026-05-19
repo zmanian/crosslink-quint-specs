@@ -5,10 +5,10 @@ module CrosslinkComposedImportedProgressBridgeModel {
    CrosslinkComposedLivenessModel exposes the end-to-end imported round-machine
    path, but the current Quint-to-TLA/TLC path fails before state exploration on
    that map-heavy imported action graph. This bridge keeps the temporal graph
-   scalar while importing the composed finality predicates and concrete fork tree:
-   after a nil-precommit certificate resamples the round, a stable decision can
-   finalize only through the same Extends/Agrees/TailConfirms checks used by
-   CrosslinkComposed.qnt.
+   scalar while importing the composed quorum, finality predicate, and concrete
+   fork tree logic: after a quorum-checked nil-precommit certificate resamples
+   the round, a quorum-checked stable decision can finalize only through the
+   same Extends/Agrees/TailConfirms checks used by CrosslinkComposed.qnt.
    */
 
   import CrosslinkComposed(
@@ -83,6 +83,9 @@ module CrosslinkComposedImportedProgressBridgeModel {
   pure val StableTip = "a3"
   pure val ForkValue = "b2"
   pure val ForkTip = "b3"
+  pure val CorrectQuorum = Set("p1", "p2", "p3")
+  pure val AbandonedRound = 0
+  pure val StableRound = 1
 
   var nilCertificateReady: bool
   var roundResampled: bool
@@ -104,6 +107,26 @@ module CrosslinkComposedImportedProgressBridgeModel {
     Composed::Extends(StableValue, InitialFinalized) and
     Composed::Height(StableValue) > Composed::Height(InitialFinalized) and
     Composed::TailConfirms(StableTip, StableValue)
+
+  def ImportedQuorum(signers: Set[str]): bool =
+    signers.forall(p => Composed::Corr.union(Composed::Faulty).contains(p)) and
+    Composed::VotingPowerOf(signers) >= Composed::QuorumVotingPower
+
+  def ImportedCorrectQuorum(signers: Set[str]): bool =
+    signers.forall(p => Composed::Corr.contains(p)) and
+    ImportedQuorum(signers)
+
+  def ImportedNilPrecommitCertificate: bool =
+    AbandonedRound == 0 and
+    ImportedCorrectQuorum(CorrectQuorum)
+
+  def ImportedStablePrevoteQuorum: bool =
+    StableRound == 1 and
+    ImportedCorrectQuorum(CorrectQuorum)
+
+  def ImportedStablePrecommitQuorum: bool =
+    StableRound == 1 and
+    ImportedCorrectQuorum(CorrectQuorum)
 
   action Init = all {
     nilCertificateReady' = false,
@@ -139,6 +162,7 @@ module CrosslinkComposedImportedProgressBridgeModel {
   action RecordNilPrecommitCertificate: bool =
     all {
       not(nilCertificateReady),
+      ImportedNilPrecommitCertificate,
       nilCertificateReady' = true,
       roundResampled' = roundResampled,
       stableProposalDelivered' = stableProposalDelivered,
@@ -184,6 +208,7 @@ module CrosslinkComposedImportedProgressBridgeModel {
     all {
       stableProposalDelivered,
       not(stablePrevoteQuorumDelivered),
+      ImportedStablePrevoteQuorum,
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = roundResampled,
       stableProposalDelivered' = stableProposalDelivered,
@@ -199,6 +224,7 @@ module CrosslinkComposedImportedProgressBridgeModel {
     all {
       stablePrevoteQuorumDelivered,
       not(stablePrecommitQuorumDelivered),
+      ImportedStablePrecommitQuorum,
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = roundResampled,
       stableProposalDelivered' = stableProposalDelivered,
@@ -266,6 +292,14 @@ module CrosslinkComposedImportedProgressBridgeModel {
     Composed::TailConfirms(ForkTip, ForkValue) and
     not(Composed::Agrees(StableValue, ForkValue))
 
+  val ImportedQuorumPredicatesCoherent =
+    ImportedNilPrecommitCertificate and
+    ImportedStablePrevoteQuorum and
+    ImportedStablePrecommitQuorum and
+    ImportedCorrectQuorum(CorrectQuorum) and
+    (2 * Composed::QuorumVotingPower - Composed::TotalVotingPower >
+      Composed::FaultyVotingPowerBound)
+
   val StateWellFormed =
     0.to(10).contains(progress) and
     Set(
@@ -300,16 +334,23 @@ module CrosslinkComposedImportedProgressBridgeModel {
     not(bridgeFinalized.contains(StableValue)) or
     StableCandidateValidFromInitial
 
+  val DeliveredCertificatesUseImportedQuorumChecks =
+    (not(nilCertificateReady) or ImportedNilPrecommitCertificate) and
+    (not(stablePrevoteQuorumDelivered) or ImportedStablePrevoteQuorum) and
+    (not(stablePrecommitQuorumDelivered) or ImportedStablePrecommitQuorum)
+
   val ForkValueNotFinalized =
     not(bridgeFinalized.contains(ForkValue))
 
   val Safety =
     ImportedPredicatesCoherent and
+    ImportedQuorumPredicatesCoherent and
     StateWellFormed and
     PhaseOrder and
     FinalizedPrefixLinear and
     LatestFinalExtendsAllFinalized and
     StableFinalityUsesImportedCandidateCheck and
+    DeliveredCertificatesUseImportedQuorumChecks and
     ForkValueNotFinalized
 
   temporal EventuallyImportedPredicateBridgeFinalizes =
@@ -320,10 +361,24 @@ module CrosslinkComposedImportedProgressBridgeModel {
   run importedComposedPredicatesAreCoherentTest = {
     Init.then(all {
       assert(ImportedPredicatesCoherent),
+      assert(ImportedQuorumPredicatesCoherent),
+      assert(ImportedNilPrecommitCertificate),
+      assert(ImportedStablePrevoteQuorum),
+      assert(ImportedStablePrecommitQuorum),
       assert(StableCandidateValidFromInitial),
       assert(BridgeValidFinalityCandidate(StableValue, StableTip)),
       assert(BridgeValidFinalityCandidate(ForkValue, ForkTip)),
       assert(not(Composed::Agrees(StableValue, ForkValue))),
+      assert(Safety),
+      Unchanged,
+    })
+  }
+
+  run importedQuorumBridgeRejectsInsufficientOrFaultyStableQuorumTest = {
+    Init.then(all {
+      assert(not(ImportedQuorum(Set("p1", "p2")))),
+      assert(ImportedQuorum(Set("p1", "p2", "p4"))),
+      assert(not(ImportedCorrectQuorum(Set("p1", "p2", "p4")))),
       assert(Safety),
       Unchanged,
     })
