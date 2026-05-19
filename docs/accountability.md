@@ -211,6 +211,11 @@ wrongBytesTransportRejectedTest
 nonCanonicalEvidenceTransportRejectedTest
 valueValueAccountabilityEvidenceTransportEnvelopeAcceptedTest
 valueValueTransportedAccountabilityEvidenceAcceptedTest
+cannotObserveWithoutTransportedEvidenceTest
+cannotObserveAfterReceiveBeforeAcceptTest
+observesNilValueEquivocationAfterTransportAcceptanceTest
+observesValueValueEquivocationAfterTransportAcceptanceTest
+rejectsNonCanonicalObservedEvidenceTest
 ```
 
 ## Current Limitations
@@ -259,3 +264,7 @@ implementation or cover every future slashing evidence encoding. The
 gap for these envelopes by requiring a Crosslink consensus-topic transport
 envelope with exact evidence bytes and matching height, round, and signer
 metadata before transported accountability evidence can be accepted.
+`CrosslinkTenderlinkAccountabilityObserver.qnt` then narrows the observer side:
+nil/value and value/value precommit-equivocation facts are recorded only after
+the exact transported evidence has been accepted, and receive-without-accept
+does not create observer-local accountability evidence.

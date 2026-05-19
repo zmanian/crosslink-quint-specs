@@ -200,6 +200,11 @@ For Crosslink, matching that quality means adding:
   envelope first carries exact canonical evidence bytes and matching
   height/round/signer metadata; witnesses reject missing transport, wrong
   topic/kind/length/height/signer/bytes, and non-canonical evidence.
+- `CrosslinkTenderlinkAccountabilityObserver.qnt` adds the observer-side bridge
+  after that transport boundary. It records abstract precommit-equivocation
+  facts only after the exact canonical evidence has been accepted through
+  transport, with witnesses for nil/value, value/value, receive-without-accept,
+  and non-canonical evidence.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport
   replay boundary around compact consensus packets. It pins little-endian outer
   nonce prefixes, requires successful abstract Noise decryption before the
