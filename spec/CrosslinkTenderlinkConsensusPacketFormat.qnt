@@ -59,6 +59,8 @@ module CrosslinkTenderlinkConsensusPacketFormat {
   pure val PacketHeaderByteLen = 16
   pure val TagAndAckByteLen = 8
   pure val AckFieldByteLen = 8
+  pure val TestAckLatest = 513
+  pure val TestAckField = 258
 
   pure val ProposalChunkSignedPayloadByteLen = 60
   pure val ProposalSignatureByteLen = 64
@@ -181,6 +183,10 @@ module CrosslinkTenderlinkConsensusPacketFormat {
       not(header.hasStatus) and header.ackLatest == 0 and header.ackField == 0 and
       header.tagAndAck == 8) {
       "08000000000000000000000000000000"
+    } else if (header.byteLen == 16 and header.packetType == 8 and
+      not(header.hasStatus) and header.ackLatest == TestAckLatest and
+      header.ackField == TestAckField and header.tagAndAck == 131336) {
+      "08010200000000000201000000000000"
     } else if (header.byteLen == 16 and header.packetType == 9 and
       not(header.hasStatus) and header.ackLatest == 0 and header.ackField == 0 and
       header.tagAndAck == 9) {
@@ -221,7 +227,12 @@ module CrosslinkTenderlinkConsensusPacketFormat {
       "07000000000000000000000000000000000000000400000000000000ffffffff0100000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcafebabe22222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222222"
     } else if (packet.kind == PrevoteBatchKind and
       ConsensusPacketFieldsValid(packet)) {
-      "080000000000000000000000000000000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+      if (packet.header.ackLatest == TestAckLatest and
+        packet.header.ackField == TestAckField) {
+        "080102000000000002010000000000000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+      } else {
+        "080000000000000000000000000000000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
+      }
     } else if (packet.kind == PrecommitBatchKind and
       ConsensusPacketFieldsValid(packet)) {
       "090000000000000000000000000000000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111"
@@ -281,6 +292,23 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
     hex: hex,
   }
 
+  def HeaderWithAck(
+    packetType: int,
+    hasStatus: bool,
+    ackLatest: int,
+    ackField: int,
+    tagAndAck: int,
+    hex: Bytes_t,
+  ): PacketHeader_t = {
+    byteLen: 16,
+    packetType: packetType,
+    hasStatus: hasStatus,
+    ackLatest: ackLatest,
+    ackField: ackField,
+    tagAndAck: tagAndAck,
+    hex: hex,
+  }
+
   def Packet(
     kind: ConsensusPacketKind_t,
     header: PacketHeader_t,
@@ -301,6 +329,24 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
     Header(PacketTypeProposalChunk, false, 7, "07000000000000000000000000000000")
   pure val prevoteHeader =
     Header(PacketTypePrevoteSignatures, false, 8, "08000000000000000000000000000000")
+  pure val ackedPrevoteHeader =
+    HeaderWithAck(
+      PacketTypePrevoteSignatures,
+      false,
+      TestAckLatest,
+      TestAckField,
+      131336,
+      "08010200000000000201000000000000",
+    )
+  pure val wrongAckPrevoteHeader =
+    HeaderWithAck(
+      PacketTypePrevoteSignatures,
+      false,
+      TestAckLatest,
+      TestAckField,
+      520,
+      "08010200000000000201000000000000",
+    )
   pure val precommitHeader =
     Header(PacketTypePrecommitSignatures, false, 9, "09000000000000000000000000000000")
   pure val statusProposalHeader =
@@ -334,6 +380,16 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       0,
       128,
       "090000000000000000000000000000000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    )
+
+  pure val ackedPrevotePacket =
+    Packet(
+      PrevoteBatchKind,
+      ackedPrevoteHeader,
+      112,
+      0,
+      128,
+      "080102000000000002010000000000000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
     )
 
   pure val statusFlagProposalPacket =
@@ -376,14 +432,26 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       "090000000000000000000000000000000001000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa00001111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111100",
     )
 
+  pure val wrongAckPrevotePacket =
+    Packet(
+      PrevoteBatchKind,
+      wrongAckPrevoteHeader,
+      112,
+      0,
+      128,
+      "080102000000000002010000000000000100000000000100000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa000011111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+    )
+
   pure val TestConsensusPackets = Set(
     proposalPacket,
     prevotePacket,
     precommitPacket,
+    ackedPrevotePacket,
     statusFlagProposalPacket,
     wrongTypeProposalPacket,
     missingProposalSignaturePacket,
     trailingVotePacket,
+    wrongAckPrevotePacket,
   )
 
   action Next: bool =
@@ -421,12 +489,26 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
     })
   }
 
+  run ackHeaderExactHexTest = {
+    Init.then(all {
+      assert(PacketHeaderCanonical(ackedPrevoteHeader)),
+      assert(HeaderPacketType(ackedPrevoteHeader) ==
+        PacketTypePrevoteSignatures),
+      assert(not(HeaderHasStatus(ackedPrevoteHeader))),
+      assert(HeaderAckLatest(ackedPrevoteHeader) == TestAckLatest),
+      assert(ackedPrevoteHeader.hex == "08010200000000000201000000000000"),
+      unchangedAll,
+    })
+  }
+
   run fullConsensusPacketExactHexTest = {
     Init.then(all {
       assert(CanonicalConsensusPacketHex(proposalPacket) == proposalPacket.hex),
       assert(CanonicalConsensusPacketHex(prevotePacket) == prevotePacket.hex),
       assert(CanonicalConsensusPacketHex(precommitPacket) ==
         precommitPacket.hex),
+      assert(CanonicalConsensusPacketHex(ackedPrevotePacket) ==
+        ackedPrevotePacket.hex),
       unchangedAll,
     })
   }
@@ -436,10 +518,12 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
       .then(AcceptConsensusPacket(proposalPacket))
       .then(AcceptConsensusPacket(prevotePacket))
       .then(AcceptConsensusPacket(precommitPacket))
+      .then(AcceptConsensusPacket(ackedPrevotePacket))
       .then(all {
         assert(acceptedConsensusPackets.contains(proposalPacket)),
         assert(acceptedConsensusPackets.contains(prevotePacket)),
         assert(acceptedConsensusPackets.contains(precommitPacket)),
+        assert(acceptedConsensusPackets.contains(ackedPrevotePacket)),
         assert(Safety),
         unchangedAll,
       })
@@ -459,6 +543,10 @@ module CrosslinkTenderlinkConsensusPacketFormatTest {
 
   run trailingVotePacketRejectedTest = {
     Init.then(AcceptConsensusPacket(trailingVotePacket)).fail()
+  }
+
+  run wrongAckHeaderRejectedTest = {
+    Init.then(AcceptConsensusPacket(wrongAckPrevotePacket)).fail()
   }
 
   run consensusPacketSafetyTest = {

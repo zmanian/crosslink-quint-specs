@@ -50,8 +50,8 @@ the Zebra Crosslink working branch:
   the canonical vote sign bytes from packet fields and roster pubkey.
 - `spec/CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the legacy
   Tenderlink compact consensus packet envelopes: the 16-byte `PacketHeader`
-  tag/ack prefix, proposal chunk packet bytes, and prevote/precommit vote batch
-  packet bytes.
+  tag/ack prefix, including nonzero `ack_latest`/`ack_field` bytes, proposal
+  chunk packet bytes, and prevote/precommit vote batch packet bytes.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
