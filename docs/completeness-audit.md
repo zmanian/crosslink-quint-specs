@@ -37,7 +37,7 @@ Status terms:
 | Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `spec/CrosslinkHeightedValidatorEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerProductionVectors.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `test:validator-set-change`; `test:heighted-validator-evidence`; `test:heighted-authenticated-evidence`; `test:heighted-authenticated-gossip-transport`; `test:fat-pointer-format`; `test:fat-pointer-production-vectors`; `test:fat-pointer-authenticated-evidence`; `verify:validator-set-change-safety`; `verify:heighted-validator-evidence-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:heighted-authenticated-gossip-transport-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-production-vectors-safety`; `verify:fat-pointer-authenticated-evidence-safety` | partial | Validator-set rotation is now linked to heighted authenticated evidence signer authorization, a Crosslink-topic transport-envelope boundary, production-shaped fat-pointer signer vectors, and pinned fat-pointer byte vectors; end-to-end integration remains open. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
 | Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt`; `spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureGossipTransport.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `test:heighted-authenticated-evidence`; `test:heighted-authenticated-gossip-transport`; `test:dynamic-sigma-heighted-authenticated-evidence`; `test:dynamic-sigma-authenticated-finality`; `test:fat-pointer-authenticated-evidence`; `test:fixture-authenticated-evidence`; `test:fixture-gossip-transport`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:heighted-authenticated-gossip-transport-safety`; `verify:dynamic-sigma-heighted-authenticated-evidence-safety`; `verify:dynamic-sigma-authenticated-finality-safety`; `verify:fat-pointer-authenticated-evidence-safety`; `verify:fixture-authenticated-evidence-safety`; `verify:fixture-gossip-transport-safety` | partial | Abstract standalone, first authenticated composition, a generic heighted authenticated gossip-transport bridge, dynamic-sigma authenticated evidence/finality composition, production-shaped fat-pointer observer models, generated-fixture observer bridge, and a fixture transport-gossip bridge exist, including exact counted-envelope and Crosslink-topic envelope checks; full concrete production gossip transport remains open. |
-| Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `spec/CrosslinkHeightedMessageGossipTransport.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt`; `spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerProductionVectors.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureGossipTransport.qnt`; `test:message-auth`; `test:heighted-message-auth`; `test:heighted-message-gossip-transport`; `test:heighted-authenticated-evidence`; `test:heighted-authenticated-gossip-transport`; `test:dynamic-sigma-heighted-authenticated-evidence`; `test:dynamic-sigma-authenticated-finality`; `test:fat-pointer-format`; `test:fat-pointer-production-vectors`; `test:fat-pointer-authenticated-evidence`; `test:fixture-authenticated-evidence`; `test:fixture-gossip-transport`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety`; `verify:heighted-message-gossip-transport-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:heighted-authenticated-gossip-transport-safety`; `verify:dynamic-sigma-heighted-authenticated-evidence-safety`; `verify:dynamic-sigma-authenticated-finality-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-production-vectors-safety`; `verify:fat-pointer-authenticated-evidence-safety`; `verify:fixture-authenticated-evidence-safety`; `verify:fixture-gossip-transport-safety` | partial | Abstract signature metadata, a generic heighted proposal/vote/fat-pointer-signature topic/kind envelope bridge, evidence-pipeline composition, generic heighted evidence envelope gating, dynamic-sigma evidence/finality authentication, production-shaped fat-pointer canonical bytes, production byte-vector offsets, generated fixture constants, full generated fixture sign-data/signature hex strings, generated-fixture observer linkage, real Ed25519 verification in the fixture-manifest gate, and fixture-level transport envelope gating exist; concrete serialized Tenderlink messages and full production gossip transport remain open. |
+| Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `spec/CrosslinkHeightedMessageGossipTransport.qnt`; `spec/CrosslinkTenderlinkVoteSignBytes.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt`; `spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt`; `spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt`; `spec/CrosslinkFatPointerFormat.qnt`; `spec/CrosslinkFatPointerProductionVectors.qnt`; `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureAuthenticatedEvidence.qnt`; `spec/CrosslinkFixtureGossipTransport.qnt`; `test:message-auth`; `test:heighted-message-auth`; `test:heighted-message-gossip-transport`; `test:tenderlink-vote-sign-bytes`; `test:heighted-authenticated-evidence`; `test:heighted-authenticated-gossip-transport`; `test:dynamic-sigma-heighted-authenticated-evidence`; `test:dynamic-sigma-authenticated-finality`; `test:fat-pointer-format`; `test:fat-pointer-production-vectors`; `test:fat-pointer-authenticated-evidence`; `test:fixture-authenticated-evidence`; `test:fixture-gossip-transport`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety`; `verify:heighted-message-gossip-transport-safety`; `verify:tenderlink-vote-sign-bytes-safety`; `verify:heighted-authenticated-evidence-safety`; `verify:heighted-authenticated-gossip-transport-safety`; `verify:dynamic-sigma-heighted-authenticated-evidence-safety`; `verify:dynamic-sigma-authenticated-finality-safety`; `verify:fat-pointer-format-safety`; `verify:fat-pointer-production-vectors-safety`; `verify:fat-pointer-authenticated-evidence-safety`; `verify:fixture-authenticated-evidence-safety`; `verify:fixture-gossip-transport-safety` | partial | Abstract signature metadata, a generic heighted proposal/vote/fat-pointer-signature topic/kind envelope bridge, implementation-linked Tenderlink/Malachite vote sign-byte layout, evidence-pipeline composition, generic heighted evidence envelope gating, dynamic-sigma evidence/finality authentication, production-shaped fat-pointer canonical bytes, production byte-vector offsets, generated fixture constants, full generated fixture sign-data/signature hex strings, generated-fixture observer linkage, real Ed25519 verification in the fixture-manifest gate, and fixture-level transport envelope gating exist. The vote layout now pins validator-pubkey/value-or-zero/height/round-type bytes plus the 44-byte fat-pointer payload suffix; proposal chunks, full serialized Tenderlink packet vectors, and full production gossip transport remain open. |
 | Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `CrosslinkFatPointerFormat.qnt` duplicate-pubkey, removed-validator, wrong-payload, cross-height replay, low-power, wire-offset, trailing-byte, truncated-wire, and producer-round-data derivation witnesses; `CrosslinkFatPointerProductionVectors.qnt` `try_from_bytes` reversed-slice gap witness; `CrosslinkFatPointerAuthenticatedEvidence.qnt` gossip-before-observe, missing-signer, and trailing-byte wire witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
 | Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `spec/CrosslinkDynamicSigmaHeightedFinality.qnt`; `spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `test:dynamic-sigma-heighted-finality`; `test:dynamic-sigma-authenticated-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety`; `verify:dynamic-sigma-heighted-finality-safety`; `verify:dynamic-sigma-authenticated-finality-safety` | partial | Heighted finality exists for fixed and dynamic sigma, including authenticated dynamic finality; production data/linkage remains abstract. |
@@ -80,11 +80,11 @@ finality, composed resampling/finality, composed liveness, multi-height finality
 height-indexed round-machine behavior, heighted finality composition, evidence
 gossip, heighted evidence gossip, message authentication, heighted message
 authentication, heighted message gossip transport, validator-set changes,
-heighted validator evidence, heighted authenticated evidence, and heighted
-authenticated gossip transport.
+heighted validator evidence, heighted authenticated evidence, heighted
+authenticated gossip transport, and Tenderlink vote sign bytes.
 
 `npm run verify` currently runs bounded Apalache safety checks, mostly at
-depth 3, with the smaller fat-pointer format model checked at depth 5, for:
+depth 3, with smaller byte-layout and transport models checked at depth 5, for:
 
 ```text
 BaselineCrosslink
@@ -99,6 +99,7 @@ CrosslinkHeightedEvidenceGossipModel
 CrosslinkMessageAuthModel
 CrosslinkHeightedMessageAuthModel
 CrosslinkHeightedMessageGossipTransportModel
+CrosslinkTenderlinkVoteSignBytesModel
 CrosslinkValidatorSetChangeModel
 CrosslinkHeightedValidatorEvidenceModel
 CrosslinkHeightedAuthenticatedEvidenceModel
@@ -142,8 +143,8 @@ dynamic-sigma authenticated-finality,
 head-sigma stream, BFT-block-shape, BFT-block
 validation-gap, BFT-block production-vector, fat-pointer-format, fat-pointer
 production-vector, evidence-composition, fixture-authenticated evidence,
-fixture-gossip transport, heighted message gossip transport, and heighted
-authenticated gossip transport models.
+fixture-gossip transport, heighted message gossip transport, Tenderlink vote
+sign bytes, and heighted authenticated gossip transport models.
 It currently runs depth-5 Apalache checks, with the PoW-reorg stress model
 also checked at depth 8, for:
 
@@ -173,6 +174,7 @@ CrosslinkFatPointerAuthenticatedEvidenceModel
 CrosslinkFixtureAuthenticatedEvidenceModel
 CrosslinkFixtureGossipTransportModel
 CrosslinkHeightedMessageGossipTransportModel
+CrosslinkTenderlinkVoteSignBytesModel
 CrosslinkHeightedValidatorEvidenceModel
 CrosslinkHeightedAuthenticatedEvidenceModel
 CrosslinkHeightedAuthenticatedGossipTransportModel
@@ -211,8 +213,9 @@ The goal is not complete yet. The strongest remaining gaps are:
   header-order, and PoW-solution checks;
 - link message-authentication and evidence-gossip models to concrete production
   serialization, signatures, and full production gossip transport; the abstract
-  heighted message and evidence transport bridges exist, but not real Tenderlink
-  message vectors;
+  heighted message and evidence transport bridges exist, and the concrete
+  Tenderlink vote sign-byte layout is now pinned, but proposal chunks, complete
+  packet vectors, and production gossip integration remain open;
 - link the dynamic-sigma consensus-param format/transport models to real
   implementation serialization vectors, signatures, gossip, and node
   configuration update paths;

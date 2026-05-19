@@ -131,6 +131,20 @@ For Crosslink, matching that quality means adding:
 
 ## Progress Log
 
+### 2026-05-19
+
+- `CrosslinkTenderlinkVoteSignBytes.qnt` pins the concrete vote sign-byte
+  boundary shared by `make_vote_sign_datas` and `MalVote::to_bytes`: 32-byte
+  validator pubkey, 32-byte value id or all-zero nil value, little-endian BFT
+  height, and little-endian round with the precommit high bit. It also checks
+  that value precommit bytes expose the same 44-byte value/height/round-type
+  suffix used by fat pointers after removing the signer pubkey.
+- The new witnesses cover nil prevote, value prevote, nil precommit, and value
+  precommit exact hex vectors, plus rejection of trailing bytes, wrong
+  precommit flags, and cross-height replay bytes. This narrows the remaining
+  concrete-message gap to proposal chunks, full Tenderlink packet vectors, and
+  production gossip integration.
+
 ### 2026-05-18
 
 - Milestone 1 has an initial implementation: `CrosslinkResampling.qnt` now has
