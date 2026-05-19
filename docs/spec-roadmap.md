@@ -162,9 +162,11 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkFatPointerFormat.qnt` adds the first production-shaped fat-pointer
   signer-vector model. It captures the 44-byte vote payload suffix,
   little-endian u16 count, and 96-byte pubkey/signature entries; rejects
-  duplicate pubkeys that could inflate quorum power; scopes signer
-  authorization to the evidence BFT height; and checks canonical signed bytes
-  before a fat pointer can be accepted.
+  truncated or trailing-byte wire envelopes and duplicate pubkeys that could
+  inflate quorum power; scopes signer authorization to the evidence BFT height;
+  checks canonical signed bytes before a fat pointer can be accepted; and
+  models derivation from producer round data so missing signatures, nil
+  precommit signers, and wrong-height fat pointers are rejected.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers

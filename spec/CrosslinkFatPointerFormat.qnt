@@ -28,6 +28,7 @@ module CrosslinkFatPointerFormat {
   const MaxBftHeight: Height_t
   const MaxRound: Round_t
   const MaxSignatures: int
+  const NilBlockHash: BlockHash_t
   const AuthorizedAt: Height_t -> Set[Proc_t]
   const PubKeyOwner: PubKey_t -> Proc_t
   const FatPointerSignBytes: Height_t -> Round_t -> BlockHash_t -> PubKey_t -> Bytes_t
@@ -68,7 +69,27 @@ module CrosslinkFatPointerFormat {
     signatures: SigIndex_t -> FatPointerSignature_t,
   }
 
+  type RoundCommit_t = {
+    pubKey: PubKey_t,
+    blockHash: BlockHash_t,
+    signedBytes: Bytes_t,
+    voteSignature: Signature_t,
+  }
+
+  type RoundData_t = {
+    height: Height_t,
+    round: Round_t,
+    proposalBlockHash: BlockHash_t,
+    commitVotes: SigIndex_t -> RoundCommit_t,
+  }
+
+  type FatPointerWire_t = {
+    fatPointer: FatPointer_t,
+    byteLen: int,
+  }
+
   var acceptedFatPointers: Set[FatPointer_t]
+  var acceptedFatPointerWires: Set[FatPointerWire_t]
   var firedAction: str
 
   pure def VotingPowerOf(voters: Set[Proc_t]): int =
@@ -91,6 +112,9 @@ module CrosslinkFatPointerFormat {
     VotePayloadWithoutSignerByteLen == 44 and
     SignatureCountByteLen == 2 and
     SignatureEntryByteLen == 96
+
+  def FatPointerWireEnvelopeValid(wire: FatPointerWire_t): bool =
+    wire.byteLen == FatPointerWireByteLen(wire.fatPointer)
 
   def SignaturePubKeysKnown(fp: FatPointer_t): bool =
     ActiveSigIndexes(fp).forall(i =>
@@ -132,6 +156,7 @@ module CrosslinkFatPointerFormat {
   def FatPointerFormatValid(fp: FatPointer_t): bool =
     Heights.contains(fp.height) and
     Rounds.contains(fp.round) and
+    fp.blockHash != NilBlockHash and
     ProductionByteLayoutMatchesImplementation and
     SignatureCountInRange(fp) and
     SignaturePubKeysKnown(fp) and
@@ -139,8 +164,53 @@ module CrosslinkFatPointerFormat {
     ActiveSignaturesValid(fp) and
     SignerPower(fp) >= QuorumVotingPower
 
+  def RoundCommitCanonical(rd: RoundData_t, commit: RoundCommit_t): bool =
+    commit.signedBytes ==
+    FatPointerSignBytes.get(rd.height).get(rd.round).get(rd.proposalBlockHash).get(commit.pubKey)
+
+  def RoundCommitAuthentic(commit: RoundCommit_t): bool =
+    commit.voteSignature == SignatureVerifier.get(commit.pubKey).get(commit.signedBytes)
+
+  def RoundCommitMatchesProposal(rd: RoundData_t, commit: RoundCommit_t): bool =
+    commit.blockHash == rd.proposalBlockHash and
+    commit.blockHash != NilBlockHash and
+    PubKeys.contains(commit.pubKey) and
+    RoundCommitCanonical(rd, commit) and
+    RoundCommitAuthentic(commit)
+
+  def FatPointerSignatureFromRoundData(rd: RoundData_t, sig: FatPointerSignature_t): bool =
+    SigIndexes.exists(i => {
+      val commit = rd.commitVotes.get(i)
+      RoundCommitMatchesProposal(rd, commit) and
+      commit.pubKey == sig.pubKey and
+      commit.signedBytes == sig.signedBytes and
+      commit.voteSignature == sig.voteSignature
+    })
+
+  def RoundDataCommitIncludedInFatPointer(rd: RoundData_t, commit: RoundCommit_t, fp: FatPointer_t): bool =
+    RoundCommitMatchesProposal(rd, commit) implies
+    ActiveSigIndexes(fp).exists(i => {
+      val sig = fp.signatures.get(i)
+      sig.pubKey == commit.pubKey and
+      sig.signedBytes == commit.signedBytes and
+      sig.voteSignature == commit.voteSignature
+    })
+
+  def FatPointerDerivedFromRoundData(rd: RoundData_t, fp: FatPointer_t): bool =
+    fp.height == rd.height and
+    fp.round == rd.round and
+    fp.blockHash == rd.proposalBlockHash and
+    FatPointerFormatValid(fp) and
+    ActiveSigIndexes(fp).forall(i =>
+      FatPointerSignatureFromRoundData(rd, fp.signatures.get(i))
+    ) and
+    SigIndexes.forall(i =>
+      RoundDataCommitIncludedInFatPointer(rd, rd.commitVotes.get(i), fp)
+    )
+
   action Init = all {
     acceptedFatPointers' = Set(),
+    acceptedFatPointerWires' = Set(),
     firedAction' = "Init",
   }
 
@@ -148,20 +218,37 @@ module CrosslinkFatPointerFormat {
     all {
       FatPointerFormatValid(fp),
       acceptedFatPointers' = acceptedFatPointers.union(Set(fp)),
+      acceptedFatPointerWires' = acceptedFatPointerWires,
       firedAction' = "AcceptFatPointer",
+    }
+
+  action AcceptFatPointerWire(wire: FatPointerWire_t): bool =
+    all {
+      FatPointerFormatValid(wire.fatPointer),
+      FatPointerWireEnvelopeValid(wire),
+      acceptedFatPointers' = acceptedFatPointers.union(Set(wire.fatPointer)),
+      acceptedFatPointerWires' = acceptedFatPointerWires.union(Set(wire)),
+      firedAction' = "AcceptFatPointerWire",
     }
 
   action Stutter: bool =
     all {
       acceptedFatPointers' = acceptedFatPointers,
+      acceptedFatPointerWires' = acceptedFatPointerWires,
       firedAction' = firedAction,
     }
 
   val AcceptedFatPointersValid =
     acceptedFatPointers.forall(FatPointerFormatValid)
 
+  val AcceptedFatPointerWiresValid =
+    acceptedFatPointerWires.forall(wire =>
+      FatPointerFormatValid(wire.fatPointer) and FatPointerWireEnvelopeValid(wire)
+    )
+
   val Safety =
-    AcceptedFatPointersValid
+    AcceptedFatPointersValid and
+    AcceptedFatPointerWiresValid
 }
 
 module CrosslinkFatPointerFormatTest {
@@ -194,7 +281,39 @@ module CrosslinkFatPointerFormatTest {
     signatures: Map(0 -> s0, 1 -> s1, 2 -> s2, 3 -> s3),
   }
 
+  def Wire(fatPointer: FatPointer_t, byteLen: int): FatPointerWire_t = {
+    fatPointer: fatPointer,
+    byteLen: byteLen,
+  }
+
+  def Commit(
+    pubKey: PubKey_t,
+    blockHash: BlockHash_t,
+    signedBytes: Bytes_t,
+    voteSignature: Signature_t,
+  ): RoundCommit_t = {
+    pubKey: pubKey,
+    blockHash: blockHash,
+    signedBytes: signedBytes,
+    voteSignature: voteSignature,
+  }
+
+  def Rd(
+    height: Height_t,
+    blockHash: BlockHash_t,
+    c0: RoundCommit_t,
+    c1: RoundCommit_t,
+    c2: RoundCommit_t,
+    c3: RoundCommit_t,
+  ): RoundData_t = {
+    height: height,
+    round: 0,
+    proposalBlockHash: blockHash,
+    commitVotes: Map(0 -> c0, 1 -> c1, 2 -> c2, 3 -> c3),
+  }
+
   pure val blankSig = Sig("k1", "blank", "blank-sig")
+  pure val blankCommit = Commit("k1", NilBlockHash, "blank", "blank-sig")
 
   pure val validHeight2FatPointer =
     Fp(
@@ -284,6 +403,46 @@ module CrosslinkFatPointerFormatTest {
       Sig("k4", "h2-r0-bft2-k4", "sig-k4-h2-bft2"),
     )
 
+  pure val validProducerRoundData =
+    Rd(
+      2,
+      "bft2",
+      blankCommit,
+      Commit("k2", "bft2", "h2-r0-bft2-k2", "sig-k2-h2-bft2"),
+      Commit("k3", "bft2", "h2-r0-bft2-k3", "sig-k3-h2-bft2"),
+      Commit("k4", "bft2", "h2-r0-bft2-k4", "sig-k4-h2-bft2"),
+    )
+
+  pure val missingProducerSignatureRoundData =
+    Rd(
+      2,
+      "bft2",
+      blankCommit,
+      Commit("k2", "bft2", "h2-r0-bft2-k2", "sig-k2-h2-bft2"),
+      Commit("k3", "bft2", "h2-r0-bft2-k3", "sig-k3-h2-bft2"),
+      blankCommit,
+    )
+
+  pure val nilProducerPrecommitRoundData =
+    Rd(
+      2,
+      "bft2",
+      blankCommit,
+      Commit("k2", NilBlockHash, "h2-r0-bft2-k2", "sig-k2-h2-bft2"),
+      Commit("k3", "bft2", "h2-r0-bft2-k3", "sig-k3-h2-bft2"),
+      Commit("k4", "bft2", "h2-r0-bft2-k4", "sig-k4-h2-bft2"),
+    )
+
+  pure val oldHeightProducerRoundData =
+    Rd(
+      1,
+      "bft1",
+      Commit("k1", "bft1", "h1-r0-bft1-k1", "sig-k1-h1-bft1"),
+      Commit("k2", "bft1", "h1-r0-bft1-k2", "sig-k2-h1-bft1"),
+      Commit("k3", "bft1", "h1-r0-bft1-k3", "sig-k3-h1-bft1"),
+      blankCommit,
+    )
+
   pure val TestFatPointers = Set(
     validHeight2FatPointer,
     duplicatePubKeyFatPointer,
@@ -295,15 +454,33 @@ module CrosslinkFatPointerFormatTest {
     countTooHighFatPointer,
   )
 
+  pure val validHeight2Wire =
+    Wire(validHeight2FatPointer, 334)
+
+  pure val trailingByteWire =
+    Wire(validHeight2FatPointer, 335)
+
+  pure val truncatedWire =
+    Wire(validHeight2FatPointer, 333)
+
+  pure val TestFatPointerWires = Set(
+    validHeight2Wire,
+    trailingByteWire,
+    truncatedWire,
+  )
+
   action Next: bool =
     any {
       nondet fp = oneOf(TestFatPointers)
       AcceptFatPointer(fp),
+      nondet wire = oneOf(TestFatPointerWires)
+      AcceptFatPointerWire(wire),
       Stutter,
     }
 
   action unchangedAll = all {
     acceptedFatPointers' = acceptedFatPointers,
+    acceptedFatPointerWires' = acceptedFatPointerWires,
     firedAction' = firedAction,
   }
 
@@ -320,6 +497,60 @@ module CrosslinkFatPointerFormatTest {
       assert(FatPointerWireByteLen(validHeight2FatPointer) == 334),
       assert(MaxSignatures <= MaxU16),
       assert(ProductionByteLayoutMatchesImplementation),
+      unchangedAll,
+    })
+  }
+
+  run acceptsExactWireEnvelopeTest = {
+    Init.then(AcceptFatPointerWire(validHeight2Wire)).then(all {
+      assert(acceptedFatPointers.contains(validHeight2FatPointer)),
+      assert(acceptedFatPointerWires.contains(validHeight2Wire)),
+      assert(Safety),
+      unchangedAll,
+    })
+  }
+
+  run rejectsTrailingByteWireEnvelopeTest = {
+    Init.then(AcceptFatPointerWire(trailingByteWire)).fail()
+  }
+
+  run rejectsTruncatedWireEnvelopeTest = {
+    Init.then(AcceptFatPointerWire(truncatedWire)).fail()
+  }
+
+  run validProducerRoundDataDerivesFatPointerTest = {
+    Init.then(all {
+      assert(FatPointerDerivedFromRoundData(validProducerRoundData, validHeight2FatPointer)),
+      unchangedAll,
+    })
+  }
+
+  run producerRoundDataRejectsMissingSignatureTest = {
+    Init.then(all {
+      assert(not(FatPointerDerivedFromRoundData(
+        missingProducerSignatureRoundData,
+        validHeight2FatPointer,
+      ))),
+      unchangedAll,
+    })
+  }
+
+  run producerRoundDataRejectsNilPrecommitSignerTest = {
+    Init.then(all {
+      assert(not(FatPointerDerivedFromRoundData(
+        nilProducerPrecommitRoundData,
+        validHeight2FatPointer,
+      ))),
+      unchangedAll,
+    })
+  }
+
+  run producerRoundDataRejectsWrongHeightFatPointerTest = {
+    Init.then(all {
+      assert(not(FatPointerDerivedFromRoundData(
+        oldHeightProducerRoundData,
+        validHeight2FatPointer,
+      ))),
       unchangedAll,
     })
   }
@@ -366,6 +597,7 @@ module CrosslinkFatPointerFormatModel {
     MaxBftHeight = 2,
     MaxRound = 0,
     MaxSignatures = 4,
+    NilBlockHash = "nil",
     AuthorizedAt = Map(
       1 -> Set("p1", "p2", "p3", "p4"),
       2 -> Set("p2", "p3", "p4"),
