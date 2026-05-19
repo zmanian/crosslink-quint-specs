@@ -545,6 +545,9 @@ For Crosslink, matching that quality means adding:
   unjustified valid-round state.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
+- `docs/dynamic-sigma-telemetry-integration.md` maps the dynamic-sigma
+  calibration and telemetry model inputs to production counters, consensus
+  safety requirements, and acceptance criteria for a future implementation.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW fork-schedule, PoW branch-competition,
