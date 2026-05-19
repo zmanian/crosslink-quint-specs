@@ -377,6 +377,11 @@ For Crosslink, matching that quality means adding:
   linear/quadratic GST growth, the prevote-to-precommit vulnerability window,
   normal PoW head arrivals, sigma's long-reorg-tail mitigation, and the number
   of rounds resampling burns before a stable stream window appears.
+- `CrosslinkValidatorScaleLivenessEnvelope.qnt` tightens the validator-size
+  argument into an executable bounded envelope: a larger globally distributed
+  validator set can exceed the baseline halt-risk budget while remaining
+  inside the nil-resampling round-burn budget, and ordinary head-arrival
+  exposure remains unchanged by larger sigma.
 - `CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs to that
   risk model into an executable assumption profile. It pins Zebra's
   post-Blossom 75-second PoW target spacing, models prevote/precommit window
@@ -633,7 +638,8 @@ For Crosslink, matching that quality means adding:
   safety requirements, and acceptance criteria for a future implementation.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
-  PoW stochastic-assumption, PoW fork-schedule, PoW branch-competition,
+  validator-scale liveness envelope, PoW stochastic-assumption,
+  PoW fork-schedule, PoW branch-competition,
   PoW-reorg-stress, dynamic-sigma, dynamic-sigma calibration,
   dynamic-sigma telemetry,
   dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
@@ -695,6 +701,12 @@ For Crosslink, matching that quality means adding:
   the vulnerable window through GST, global distribution can add quadratic
   delay, sigma lowers only long-reorg-tail exposure, and resampling converts a
   finite number of churn windows into round increments before decision.
+- `CrosslinkValidatorScaleLivenessEnvelopeModel` makes the validator-size
+  liveness claim explicit: at the configured bounded witness, baseline
+  tolerates the smaller globally distributed set, rejects the larger one under
+  the halt-risk budget, while nil-precommit resampling still reaches a stable
+  decision after bounded round burns. It also records that sigma does not
+  mitigate normal head-arrival exposure.
 - `CrosslinkPowStochasticAssumptionsModel` adds the first executable
   calibration profile for that bridge. It uses Zebra's post-Blossom target
   spacing as the denominator for normal PoW-arrival exposure, checks that

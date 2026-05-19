@@ -165,6 +165,11 @@ the Zebra Crosslink working branch:
   create prevote-to-precommit churn exposure, larger sigma only mitigates
   long-tail reorg churn, and nil-precommit resampling burns rounds until a
   stable stream window appears.
+- `spec/CrosslinkValidatorScaleLivenessEnvelope.qnt` tightens that intuition
+  into a bounded validator-scale envelope: a larger globally distributed
+  validator set can exceed the baseline halt-risk budget while still staying
+  inside the resampling round-burn budget, and increasing sigma does not reduce
+  ordinary head-arrival exposure.
 - `spec/CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs for
   that risk layer into an executable assumption profile. It pins Zebra's
   post-Blossom 75-second PoW target spacing as the arrival-risk denominator,
@@ -489,6 +494,7 @@ quint typecheck spec/CrosslinkTimeoutProgressContract.qnt
 quint typecheck spec/CrosslinkFinalityProgressContract.qnt
 quint typecheck spec/CrosslinkComposedProgressContract.qnt
 quint typecheck spec/CrosslinkStreamChurnRisk.qnt
+quint typecheck spec/CrosslinkValidatorScaleLivenessEnvelope.qnt
 quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
 quint typecheck spec/CrosslinkPowForkSchedule.qnt
 quint typecheck spec/CrosslinkPowBranchCompetition.qnt
@@ -535,6 +541,7 @@ quint test spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkScheduler
 quint test spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkValidatorScaleLivenessEnvelope.qnt --main=CrosslinkValidatorScaleLivenessEnvelopeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --max-samples=100 --backend=rust
@@ -650,6 +657,7 @@ quint verify spec/CrosslinkTimeoutProgressContract.qnt --main=CrosslinkTimeoutPr
 quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkValidatorScaleLivenessEnvelope.qnt --main=CrosslinkValidatorScaleLivenessEnvelopeModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -684,6 +692,7 @@ quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinality
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkBftHeights.qnt --main=CrosslinkBftHeightsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkValidatorScaleLivenessEnvelope.qnt --main=CrosslinkValidatorScaleLivenessEnvelopeModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowForkSchedule.qnt --main=CrosslinkPowForkScheduleModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkPowBranchCompetition.qnt --main=CrosslinkPowBranchCompetitionModel --init=Init --step=Next --invariants=Safety --max-steps=8
