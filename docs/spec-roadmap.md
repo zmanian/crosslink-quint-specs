@@ -174,6 +174,14 @@ For Crosslink, matching that quality means adding:
   requires prior gossip, and fat pointers require quorum signer precommits plus
   authenticated fat-pointer signatures authorized by that height's validator
   set.
+- `CrosslinkHeightedAuthenticatedGossipTransport.qnt` inserts a
+  Crosslink-topic transport boundary before that pipeline. Precommit and
+  fat-pointer-signature envelopes must have the expected topic, kind, canonical
+  bytes, signature, BFT height, round, and active validator authorization before
+  they can enter gossip or observer evidence. The witnesses cover accepted
+  precommit/fat-pointer evidence, rotated validator sets, observation before
+  transport, raw gossip without a transport envelope, wrong topic/kind/bytes,
+  and cross-height replay.
 - `CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler liveness
   slice for nil-precommit resampling. It still assumes a bounded post-GST
   window, but it no longer fixes a single validator ordering: unstable rounds
@@ -336,6 +344,11 @@ For Crosslink, matching that quality means adding:
   fat-pointer wire must be gossiped in canonical Crosslink-topic envelopes
   before the observer accepts the wire, and witnesses reject wrong-topic,
   wrong-sign-bytes, wrong-kind, and wrong-wire-length envelopes.
+- `CrosslinkHeightedAuthenticatedGossipTransport.qnt` adds the corresponding
+  non-fixture transport bridge for heighted authenticated evidence. It keeps
+  bytes compact but prevents authenticated precommits or fat-pointer signatures
+  from appearing in gossip or observer evidence unless a matching Crosslink-topic
+  transport envelope was previously accepted.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -392,8 +405,9 @@ For Crosslink, matching that quality means adding:
   dynamic-sigma heighted-authenticated-evidence,
   dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
   BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
-  fat-pointer production-vector, heighted validator-evidence, and heighted
-  authenticated-evidence models. It keeps default CI at bounded depth while
+  fat-pointer production-vector, heighted validator-evidence, heighted
+  authenticated-evidence, and heighted authenticated gossip transport models.
+  It keeps default CI at bounded depth while
   giving reviewers depth-5 Apalache checks, plus a depth-8 PoW-reorg stress
   check, for the models most likely to hide cross-component state-space
   mistakes.
@@ -518,7 +532,9 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
-  and the dynamic-sigma consensus-param/format/transport/heighted-round/
+  the heighted authenticated gossip transport bridge covers the abstract
+  precommit/fat-pointer-signature transport envelope boundary, and the
+  dynamic-sigma consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
   bytes, quorum-signed production-byte gossip, node-config application,
   proposals, precommits, fat-pointer evidence, and finality over

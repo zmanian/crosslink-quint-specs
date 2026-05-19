@@ -43,6 +43,10 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkHeightedAuthenticatedEvidence.qnt` composes heighted
   canonical signatures, gossip-first observer acceptance, and validator-set
   authorization for precommit and fat-pointer evidence.
+- `spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt` inserts a
+  Crosslink-topic transport-envelope boundary before that authenticated evidence
+  pipeline, so precommits and fat-pointer signatures cannot be gossiped or
+  observed without matching topic/kind/canonical-byte envelopes.
 - `spec/CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler
   liveness model for nil-precommit resampling: unstable rounds burn
   nil-precommit certificates, then a stable stream window can deliver the
@@ -265,9 +269,10 @@ dynamic-sigma heighted-finality,
 dynamic-sigma heighted-authenticated-evidence,
 dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
 BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
-fat-pointer production-vector, fat-pointer
-authenticated-evidence, fixture-authenticated evidence, fixture-gossip
-transport, validator-evidence, and authenticated evidence composition models.
+fat-pointer production-vector, fat-pointer authenticated-evidence,
+fixture-authenticated evidence, fixture-gossip transport, heighted
+authenticated gossip transport, validator-evidence, and authenticated evidence
+composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
 small scheduler progress contract, the scheduler-plus-finality contract, and
@@ -291,6 +296,7 @@ quint typecheck spec/CrosslinkHeightedMessageAuth.qnt
 quint typecheck spec/CrosslinkValidatorSetChange.qnt
 quint typecheck spec/CrosslinkHeightedValidatorEvidence.qnt
 quint typecheck spec/CrosslinkHeightedAuthenticatedEvidence.qnt
+quint typecheck spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt
 quint typecheck spec/CrosslinkSchedulerLiveness.qnt
 quint typecheck spec/CrosslinkSchedulerProgressContract.qnt
 quint typecheck spec/CrosslinkFinalityProgressContract.qnt
@@ -370,6 +376,7 @@ quint test spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessage
 quint test spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt --main=CrosslinkHeightedAuthenticatedGossipTransportModel --max-samples=100 --backend=rust
 
 quint verify spec/CrosslinkResampling.qnt --main=BaselineCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -385,6 +392,7 @@ quint verify spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessa
 quint verify spec/CrosslinkValidatorSetChange.qnt --main=CrosslinkValidatorSetChangeModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt --main=CrosslinkHeightedAuthenticatedGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3
 quint verify spec/CrosslinkSchedulerProgressContract.qnt --main=CrosslinkSchedulerProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
@@ -438,6 +446,7 @@ quint verify spec/CrosslinkFixtureAuthenticatedEvidence.qnt --main=CrosslinkFixt
 quint verify spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGossipTransportModel --init=TransportPipelineInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkHeightedAuthenticatedGossipTransport.qnt --main=CrosslinkHeightedAuthenticatedGossipTransportModel --init=TransportInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 
 quint verify spec/CrosslinkSchedulerProgressContract.qnt --backend=tlc --main=CrosslinkSchedulerProgressContractModel --init=Init --step=Next --temporal=EventuallyStableDecision --max-steps=30
 quint verify spec/CrosslinkFinalityProgressContract.qnt --backend=tlc --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --temporal=EventuallyFinalized --max-steps=35
