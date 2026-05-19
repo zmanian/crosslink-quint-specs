@@ -33,12 +33,12 @@ Status terms:
 | Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `test:heighted-round`; `verify:heighted-round-safety` | partial | First receive-reactive heighted slice; not yet composed with auth/evidence rules. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Dynamic validator sets and production signer-set formats remain open. |
 | Message evidence bookkeeping | `CrosslinkMessageEvidenceModel`; `test:message-evidence` | covered | Needs production evidence encoding. |
-| Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `test:evidence-gossip`; `verify:evidence-gossip-safety` | partial | Standalone model; not yet wired into production gossip or the main round model. |
+| Evidence gossip and observer process | `spec/CrosslinkEvidenceGossip.qnt`; `spec/CrosslinkHeightedEvidenceGossip.qnt`; `test:evidence-gossip`; `test:heighted-evidence-gossip`; `verify:evidence-gossip-safety`; `verify:heighted-evidence-gossip-safety` | partial | Abstract standalone models; not yet wired into production gossip. |
 | Message authentication/canonical bytes | `spec/CrosslinkMessageAuth.qnt`; `spec/CrosslinkHeightedMessageAuth.qnt`; `test:message-auth`; `test:heighted-message-auth`; `verify:message-auth-safety`; `verify:heighted-message-auth-safety` | partial | Abstract signature metadata; not yet linked to concrete serialization or crypto. |
 | Accountability witnesses | `ConflictingCommitsAccountable`, nil/value equivocation and invalid-unlock witnesses; `docs/accountability.md` | covered | Production slashing evidence formats remain open. |
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
-| Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; richer evidence-gossip slice is not yet integrated. |
-| Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:composed`; `test:heighted-finality`; `verify:composed-safety`; `verify:heighted-finality-safety` | partial | Heighted composition exists, but without evidence-gossip integration. |
+| Multi-height finalized prefix | `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety` | partial | Heighted finality exists; production data/linkage remains abstract. |
+| Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `test:composed`; `test:heighted-finality`; `verify:composed-safety`; `verify:heighted-finality-safety` | partial | Heighted composition exists; production data/linkage remains abstract. |
 | Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel` | partial | Scripted bounded witnesses only; no general temporal liveness proof yet. |
 | CI for checks | `package.json` scripts and `.github/workflows/quint.yml` | covered | Latest pushed commit may still be running until GitHub Actions completes. |
 | Documentation mapping to Tendermint | `docs/tendermint-crosslink-map.md`, `docs/implementation-correspondence.md`, `docs/spec-roadmap.md` | covered | Should keep updated as models become less abstract. |
@@ -57,8 +57,8 @@ npm run verify
 message evidence, local delivery, timeout, liveness witnesses, proposal
 validity, valid-round evidence, fork finality, composed resampling/finality,
 composed liveness, multi-height finality, height-indexed round-machine
-behavior, heighted finality composition, evidence gossip, message
-authentication, and heighted message authentication.
+behavior, heighted finality composition, evidence gossip, heighted evidence
+gossip, message authentication, and heighted message authentication.
 
 `npm run verify` currently runs bounded Apalache safety checks at depth 3 for:
 
@@ -71,6 +71,7 @@ CrosslinkMultiHeightModel
 CrosslinkHeightedRoundModel
 CrosslinkHeightedFinalityModel
 CrosslinkEvidenceGossipModel
+CrosslinkHeightedEvidenceGossipModel
 CrosslinkMessageAuthModel
 CrosslinkHeightedMessageAuthModel
 ```
@@ -79,7 +80,6 @@ CrosslinkHeightedMessageAuthModel
 
 The goal is not complete yet. The strongest remaining gaps are:
 
-- compose the height-indexed finality slice with evidence-gossip models;
 - replace scripted liveness witnesses with temporal or scheduler-parametric
   liveness checks under post-GST stream stability;
 - link abstract proposal validity to concrete Crosslink block/header data;

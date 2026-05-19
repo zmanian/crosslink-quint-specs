@@ -42,7 +42,7 @@ finality semantics.
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink`, `CrosslinkHeightedRound.qnt` | A `2f + 1 PRECOMMIT nil` cert clears only same-height/same-round cached/lock/valid state. Mixed precommit quorums can advance waiting, but do not unlock. |
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights. |
 | Round recovery plus finality | `CrosslinkComposed.qnt`, `CrosslinkHeightedFinality.qnt` | Wires a resampled BFT decision into Crosslink finality, including a first height-indexed composition. |
-| Evidence gossip | `CrosslinkEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence. |
+| Evidence gossip | `CrosslinkEvidenceGossip.qnt`, `CrosslinkHeightedEvidenceGossip.qnt` | Separates gossiped evidence from observer-local accepted evidence; the heighted variant requires gossip, observed precommits, and fat pointers to agree on BFT height. |
 | Message authentication | `CrosslinkMessageAuth.qnt`, `CrosslinkHeightedMessageAuth.qnt` | Requires canonical payload bytes and validator signatures before proposals, votes, or fat-pointer signatures are accepted; the heighted variant binds BFT height into the sign bytes. |
 
 ## Deliberate Deviations From Tendermint
@@ -163,8 +163,8 @@ branch.
 
 ## Remaining Work To Match Upstream Quality
 
-- Compose the height-indexed finality model with the richer
-  evidence-gossip slice.
+- Connect the heighted authentication and evidence-gossip models to production
+  serialization, signatures, and gossip transport.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

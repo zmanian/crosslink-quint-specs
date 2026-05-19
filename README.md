@@ -26,6 +26,9 @@ the Zebra Crosslink working branch:
   from local heighted decisions and extend the finalized PoW prefix.
 - `spec/CrosslinkEvidenceGossip.qnt` separates evidence gossip from
   observer-local accepted evidence for accountability checks.
+- `spec/CrosslinkHeightedEvidenceGossip.qnt` adds the BFT-height dimension to
+  evidence gossip, requiring observed precommits and fat pointers to be
+  justified by gossip at the same height.
 - `spec/CrosslinkMessageAuth.qnt` models canonical payload bytes and signature
   acceptance before messages become evidence.
 - `spec/CrosslinkHeightedMessageAuth.qnt` adds the BFT-height dimension to
@@ -86,6 +89,7 @@ quint typecheck spec/CrosslinkMultiHeight.qnt
 quint typecheck spec/CrosslinkHeightedRound.qnt
 quint typecheck spec/CrosslinkHeightedFinality.qnt
 quint typecheck spec/CrosslinkEvidenceGossip.qnt
+quint typecheck spec/CrosslinkHeightedEvidenceGossip.qnt
 quint typecheck spec/CrosslinkMessageAuth.qnt
 quint typecheck spec/CrosslinkHeightedMessageAuth.qnt
 
@@ -106,6 +110,7 @@ quint test spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --max-
 quint test spec/CrosslinkHeightedRound.qnt --main=CrosslinkHeightedRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedFinality.qnt --main=CrosslinkHeightedFinalityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkHeightedEvidenceGossip.qnt --main=CrosslinkHeightedEvidenceGossipModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --max-samples=100 --backend=rust
 
@@ -117,6 +122,7 @@ quint verify spec/CrosslinkMultiHeight.qnt --main=CrosslinkMultiHeightModel --in
 quint verify spec/CrosslinkHeightedRound.qnt --main=CrosslinkHeightedRoundModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedFinality.qnt --main=CrosslinkHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=ComposedSafety --max-steps=3
 quint verify spec/CrosslinkEvidenceGossip.qnt --main=CrosslinkEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3
+quint verify spec/CrosslinkHeightedEvidenceGossip.qnt --main=CrosslinkHeightedEvidenceGossipModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkMessageAuth.qnt --main=CrosslinkMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedMessageAuth.qnt --main=CrosslinkHeightedMessageAuthModel --init=Init --step=Next --invariants=Safety --max-steps=3
 ```

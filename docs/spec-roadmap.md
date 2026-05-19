@@ -125,6 +125,10 @@ For Crosslink, matching that quality means adding:
   model: observers can only accept gossiped consensus messages, observed
   precommit quorums require corresponding gossip quorums, and observed fat
   pointers must be locally justified by already-observed signer precommits.
+- `CrosslinkHeightedEvidenceGossip.qnt` adds the same observer-process shape
+  for height-indexed evidence. Observed precommit quorums and fat pointers are
+  justified only by gossip and signer precommit evidence at the same BFT
+  height, including a cross-height fat-pointer rejection witness.
 - `CrosslinkMessageAuth.qnt` adds a first canonical payload/signature boundary:
   proposals, prevotes, precommits, and fat-pointer signatures are only accepted
   when the bytes match the claimed message and the signature verifies for the
@@ -182,6 +186,6 @@ For Crosslink, matching that quality means adding:
   prefix. The witnesses cover nil-precommit resampling followed by finality,
   rejection of undecided-height finality, and rejection of a later fork after
   an earlier BFT height is final.
-- The remaining multi-height work is to compose the height-indexed model with
-  the richer evidence-gossip slice and connect both heighted auth and evidence
-  to production serialization, signatures, and gossip transport.
+- The remaining multi-height work is to connect the heighted auth and evidence
+  models to production serialization, signatures, and gossip transport, and to
+  replace the scripted liveness witnesses with temporal properties.

@@ -49,6 +49,7 @@ implementation that each rule has a clear code counterpart.
 | `ObservedFatPointerQuorum(r, v)` | Decided/fat-pointer evidence whose signer set has quorum voting power and matching observed precommits. |
 | `MessageEvidenceSoundness` | Invariant that live protocol messages are mirrored into observer evidence and fat-pointer evidence validates against observed signatures. |
 | `CrosslinkEvidenceGossip.qnt` / `ObservedMessagesWereGossiped` | Evidence gossip and observer ingestion pipeline | Observer-local evidence is only accepted after the corresponding signed message or fat pointer appears in gossip. |
+| `CrosslinkHeightedEvidenceGossip.qnt` / `ObservedMessagesWereGossiped` | Height-indexed evidence gossip and observer ingestion pipeline | Observer-local evidence is only accepted after same-height gossip, and heighted fat pointers require same-height observed signer precommits. |
 | `CrosslinkMessageAuth.qnt` / `ProposalAuthentic` / `VoteAuthentic` | Signature verification and canonical sign bytes | Signed messages are accepted only when their bytes match the claimed proposal/vote/fat-pointer payload and verify for the claimed validator. |
 | `CrosslinkHeightedMessageAuth.qnt` / `ProposalAuthentic` / `VoteAuthentic` | Height-indexed signature verification and canonical sign bytes | The heighted authentication slice binds BFT height into proposal, vote, and fat-pointer sign bytes, including a cross-height replay rejection witness. |
 | `CorrectNilValueEquivocationEvidence` | Same validator signs both nil and value precommit in the same round. |
@@ -61,7 +62,8 @@ implementation that each rule has a clear code counterpart.
 - Connect the abstract message-authentication, evidence, and standalone gossip
   models to concrete signature verification, serialized message bytes, and
   production gossip.
-- Compose the height-indexed finality slice with the richer evidence-gossip
-  model.
+- Connect the height-indexed authentication and evidence-gossip slices to
+  concrete signature verification, serialized message bytes, and production
+  gossip.
 - Add implementation-linked test vectors once the Tenderlink message format and
   Crosslink BFT block encoding stabilize.
