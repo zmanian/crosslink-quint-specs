@@ -544,7 +544,10 @@ For Crosslink, matching that quality means adding:
   checked-in fixture classes. For `test_pos_block_*.bin` envelopes, the first
   fixture has a zero-signature previous fat pointer, later fixtures have one
   previous signature, all current fixtures carry three version-4 PoW headers,
-  and all include one trailing fat-pointer signature. For raw
+  and all include one trailing fat-pointer signature. The generated constants
+  now also pin the serialized BFT-block version, serialized BFT height,
+  finalization-candidate field, and finalization/header-count/header-start
+  offsets for both fixture classes. For raw
   `test_pow_block_*.bin` blocks, the manifest pins the 24 current samples
   across heights 0..29, their version-4 serialized header length, body length
   split, and header/body byte probes. The generator also records which raw PoW
@@ -594,7 +597,8 @@ For Crosslink, matching that quality means adding:
   generated BFT-block fixture shape, a production-shaped BFT-block proposal
   transport envelope, the fixture transport boundary, and authenticated
   fat-pointer observer evidence at the finality boundary. The composed safety
-  model rejects candidate observation before proposal transport and rejects
+  model rejects candidate observation before proposal transport, rejects
+  proposal envelopes with wrong serialized BFT-block prefix fields, and rejects
   finality without both the transported checked-in BFT-block candidate and
   transported fat-pointer wire; the scalar TLC projection proves eventual
   fixture finality under fair progress through the same gates.

@@ -450,6 +450,15 @@ function validateManifest(manifest) {
     const prefix = `${fixture.file}: `
     const previousFatPointerByteLen = fatPointerByteLen(fixture.previousFatPointerSignatureCount)
     assert(
+      Number.isInteger(fixture.bftBlockVersion) && fixture.bftBlockVersion >= 0,
+      `${prefix}BFT block version missing`,
+    )
+    assert(Number.isInteger(fixture.bftHeight), `${prefix}BFT height missing`)
+    assert(
+      Number.isInteger(fixture.finalizationCandidateHeight),
+      `${prefix}finalization candidate height missing`,
+    )
+    assert(
       fixture.previousFatPointerByteLen === previousFatPointerByteLen,
       `${prefix}previous fat-pointer byte length mismatch`,
     )
@@ -587,6 +596,18 @@ function renderGeneratedQuintModule(manifest) {
     ['GeneratedPowBlockFixtureCount', manifest.powBlockFixtures.length],
     ['FixtureHeaderLogicalVersion', later.headers[0].logicalVersion],
     ['FixtureHeaderCount', later.headerCount],
+    ['FixtureFirstBftBlockVersion', first.bftBlockVersion],
+    ['FixtureLaterBftBlockVersion', later.bftBlockVersion],
+    ['FixtureFirstBftHeight', first.bftHeight],
+    ['FixtureLaterBftHeight', later.bftHeight],
+    ['FixtureFirstFinalizationCandidateHeightOffset', first.finalizationCandidateHeightOffset],
+    ['FixtureFirstFinalizationCandidateHeight', first.finalizationCandidateHeight],
+    ['FixtureFirstHeaderCountOffset', first.headerCountOffset],
+    ['FixtureFirstHeadersStartOffset', first.headersStartOffset],
+    ['FixtureLaterFinalizationCandidateHeightOffset', later.finalizationCandidateHeightOffset],
+    ['FixtureLaterFinalizationCandidateHeight', later.finalizationCandidateHeight],
+    ['FixtureLaterHeaderCountOffset', later.headerCountOffset],
+    ['FixtureLaterHeadersStartOffset', later.headersStartOffset],
     ['FixtureFirstPowBlockHeight', firstPow.height],
     ['FixtureLastPowBlockHeight', lastPow.height],
     ['FixtureFirstPowBlockLogicalVersion', firstPow.logicalVersion],

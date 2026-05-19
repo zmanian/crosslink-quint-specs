@@ -6,8 +6,9 @@ module CrosslinkProductionFinalityProjectionContractModel {
    height-scoped precommit/fat-pointer evidence. The fixture transport models
    prove that a checked-in production fat-pointer wire can pass through a
    production-shaped gossip boundary. The BFT-block production-vector model
-   pins the checked-in block byte lengths, header offsets, PoW-header backing,
-   and trailing fat-pointer offset.
+   pins the checked-in serialized BFT-block version/height, prefix offsets,
+   block byte lengths, header offsets, PoW-header backing, and trailing
+   fat-pointer offset.
 
    This finite projection composes those pieces at the finality boundary:
    finality can advance only after the exact generated BFT-block fixture shape
@@ -72,6 +73,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
     height: int,
     round: int,
     blockHash: str,
+    serializedBftBlockVersion: int,
+    serializedBftHeight: int,
+    finalizationCandidateHeight: int,
+    finalizationCandidateHeightOffset: int,
+    headerCountOffset: int,
+    headersStartOffset: int,
     payloadByteLen: int,
     blockAndFatPointerByteLen: int,
     headerCount: int,
@@ -128,6 +135,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
     height: int,
     round: int,
     blockHash: str,
+    serializedBftBlockVersion: int,
+    serializedBftHeight: int,
+    finalizationCandidateHeight: int,
+    finalizationCandidateHeightOffset: int,
+    headerCountOffset: int,
+    headersStartOffset: int,
     payloadByteLen: int,
     blockAndFatPointerByteLen: int,
     headerCount: int,
@@ -138,6 +151,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
     height: height,
     round: round,
     blockHash: blockHash,
+    serializedBftBlockVersion: serializedBftBlockVersion,
+    serializedBftHeight: serializedBftHeight,
+    finalizationCandidateHeight: finalizationCandidateHeight,
+    finalizationCandidateHeightOffset: finalizationCandidateHeightOffset,
+    headerCountOffset: headerCountOffset,
+    headersStartOffset: headersStartOffset,
     payloadByteLen: payloadByteLen,
     blockAndFatPointerByteLen: blockAndFatPointerByteLen,
     headerCount: headerCount,
@@ -241,6 +260,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
       Transport::FixtureBftHeight,
       Transport::FixtureRound,
       Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockVersion,
+      BftVectors::FixtureLaterBftHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeightOffset,
+      BftVectors::FixtureLaterHeaderCountOffset,
+      BftVectors::FixtureLaterHeadersStartOffset,
       BftVectors::FixtureLaterBftBlockByteLen,
       BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
       BftVectors::FixtureHeaderCount,
@@ -254,6 +279,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
       Transport::FixtureBftHeight,
       Transport::FixtureRound,
       Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockVersion,
+      BftVectors::FixtureLaterBftHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeightOffset,
+      BftVectors::FixtureLaterHeaderCountOffset,
+      BftVectors::FixtureLaterHeadersStartOffset,
       BftVectors::FixtureLaterBftBlockByteLen,
       BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
       BftVectors::FixtureHeaderCount,
@@ -267,6 +298,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
       Transport::FixtureBftHeight,
       Transport::FixtureRound,
       Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockVersion,
+      BftVectors::FixtureLaterBftHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeightOffset,
+      BftVectors::FixtureLaterHeaderCountOffset,
+      BftVectors::FixtureLaterHeadersStartOffset,
       BftVectors::FixtureLaterBftBlockByteLen,
       BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
       BftVectors::FixtureHeaderCount,
@@ -280,7 +317,32 @@ module CrosslinkProductionFinalityProjectionContractModel {
       Transport::FixtureBftHeight,
       Transport::FixtureRound,
       Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockVersion,
+      BftVectors::FixtureLaterBftHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeightOffset,
+      BftVectors::FixtureLaterHeaderCountOffset,
+      BftVectors::FixtureLaterHeadersStartOffset,
       BftVectors::FixtureLaterBftBlockByteLen + 1,
+      BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
+      BftVectors::FixtureHeaderCount,
+      BftVectors::CheckedInFixtureTrailingFatPointerOffset,
+    )
+
+  pure val WrongSerializedHeightBftBlockProposalEnvelope =
+    ProposalEnvelope(
+      Transport::CrosslinkGossipTopic,
+      BftBlockProposalEnvelopeKind,
+      Transport::FixtureBftHeight,
+      Transport::FixtureRound,
+      Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockVersion,
+      BftVectors::FixtureLaterBftHeight + 1,
+      BftVectors::FixtureLaterFinalizationCandidateHeight,
+      BftVectors::FixtureLaterFinalizationCandidateHeightOffset,
+      BftVectors::FixtureLaterHeaderCountOffset,
+      BftVectors::FixtureLaterHeadersStartOffset,
+      BftVectors::FixtureLaterBftBlockByteLen,
       BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
       BftVectors::FixtureHeaderCount,
       BftVectors::CheckedInFixtureTrailingFatPointerOffset,
@@ -301,11 +363,19 @@ module CrosslinkProductionFinalityProjectionContractModel {
       WrongTopicBftBlockProposalEnvelope,
       WrongKindBftBlockProposalEnvelope,
       WrongByteLenBftBlockProposalEnvelope,
+      WrongSerializedHeightBftBlockProposalEnvelope,
     )
 
   def ProductionBftBlockFixtureConstantsCoherent: bool =
     BftVectors::Safety and
     Transport::GeneratedFixtureWireConstantsCoherent and
+    BftVectors::FixtureLaterBftBlockVersion == 0 and
+    BftVectors::FixtureLaterBftHeight == 2 and
+    BftVectors::FixtureLaterFinalizationCandidateHeight == 0 and
+    BftVectors::FixtureLaterFinalizationCandidateHeightOffset == 150 and
+    BftVectors::FixtureLaterHeaderCountOffset == 154 and
+    BftVectors::FixtureLaterHeadersStartOffset ==
+      BftVectors::FixtureLaterHeader0StartOffset and
     BftVectors::CheckedInFixtureTrailingFatPointerOffset ==
       BftVectors::FixtureLaterBftBlockByteLen and
     BftVectors::FixtureLaterBftBlockAndFatPointerByteLen ==
@@ -357,6 +427,15 @@ module CrosslinkProductionFinalityProjectionContractModel {
     env.height == Transport::FixtureBftHeight and
     env.round == Transport::FixtureRound and
     env.blockHash == Transport::FixtureBlockHash and
+    env.serializedBftBlockVersion ==
+      BftVectors::FixtureLaterBftBlockVersion and
+    env.serializedBftHeight == BftVectors::FixtureLaterBftHeight and
+    env.finalizationCandidateHeight ==
+      BftVectors::FixtureLaterFinalizationCandidateHeight and
+    env.finalizationCandidateHeightOffset ==
+      BftVectors::FixtureLaterFinalizationCandidateHeightOffset and
+    env.headerCountOffset == BftVectors::FixtureLaterHeaderCountOffset and
+    env.headersStartOffset == BftVectors::FixtureLaterHeadersStartOffset and
     env.payloadByteLen == BftVectors::FixtureLaterBftBlockByteLen and
     env.blockAndFatPointerByteLen ==
       BftVectors::FixtureLaterBftBlockAndFatPointerByteLen and
@@ -592,6 +671,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
         assert(not(ProductionBftBlockProposalEnvelopeValid(WrongTopicBftBlockProposalEnvelope))),
         assert(not(ProductionBftBlockProposalEnvelopeValid(WrongKindBftBlockProposalEnvelope))),
         assert(not(ProductionBftBlockProposalEnvelopeValid(WrongByteLenBftBlockProposalEnvelope))),
+        assert(not(ProductionBftBlockProposalEnvelopeValid(WrongSerializedHeightBftBlockProposalEnvelope))),
         assert(ProductionFinalitySafety),
         Unchanged,
       })
@@ -606,6 +686,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
   run wrongBftBlockProposalEnvelopeRejectedTest = {
     Init
       .then(GossipFixtureBftBlockProposalForFinality(WrongTopicBftBlockProposalEnvelope))
+      .fail()
+  }
+
+  run wrongSerializedHeightBftBlockProposalEnvelopeRejectedTest = {
+    Init
+      .then(GossipFixtureBftBlockProposalForFinality(WrongSerializedHeightBftBlockProposalEnvelope))
       .fail()
   }
 
@@ -698,6 +784,12 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
     GeneratedFixtureCount == 7 and
     GeneratedPowBlockFixtureCount == 24 and
     FixtureBftHeight == 1 and
+    FixtureLaterBftBlockVersion == 0 and
+    FixtureLaterBftHeight == 2 and
+    FixtureLaterFinalizationCandidateHeight == 0 and
+    FixtureLaterFinalizationCandidateHeightOffset == 150 and
+    FixtureLaterHeaderCountOffset == 154 and
+    FixtureLaterHeadersStartOffset == 158 and
     FixtureHeaderLogicalVersion == 4 and
     FixtureHeaderCount == 3 and
     FixtureLaterPreviousFatPointerSignatureCount == 1 and

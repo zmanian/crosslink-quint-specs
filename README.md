@@ -310,7 +310,10 @@ the Zebra Crosslink working branch:
   the first fixture has a zero-signature previous fat pointer, later fixtures
   have one previous fat-pointer signature, all current fixtures carry three
   version-4 PoW headers without header fat pointers, and all have one trailing
-  fat pointer signature. For raw `test_pow_block_*.bin` blocks, the manifest
+  fat pointer signature. The generated constants also pin the serialized
+  BFT-block version, serialized BFT height, finalization-candidate field, and
+  finalization/header-count/header-start offsets for both fixture classes. For
+  raw `test_pow_block_*.bin` blocks, the manifest
   pins the 24 current samples across heights 0..29, their version-4 serialized
   header length, body length split, and header/body byte probes. The same
   generator links each embedded BFT-envelope header to matching raw PoW fixture
@@ -321,9 +324,10 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkProductionFixtureVectorsGenerated.qnt` is generated from that
   fixture manifest and is imported by the BFT-block and fat-pointer production
   vector specs so checked-in fixture constants do not have to be copied by hand.
-  The manifest/module also pin the fixture payload, pubkey, vote signature, and
-  `pubkey || payload` sign-data hex strings; `test:fixture-manifest` verifies
-  those Ed25519 signatures with Node's built-in crypto.
+  The manifest/module also pin the serialized BFT-block prefix fields, fixture
+  payload, pubkey, vote signature, and `pubkey || payload` sign-data hex
+  strings; `test:fixture-manifest` verifies those Ed25519 signatures with
+  Node's built-in crypto.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -354,9 +358,10 @@ the Zebra Crosslink working branch:
   generated production BFT-block fixture, a production-shaped proposal
   transport envelope, the fixture transport boundary, and authenticated
   fat-pointer evidence at finality: the composed safety model rejects finality
-  until the checked-in BFT-block candidate has arrived through transport and
-  the transported fat-pointer wire is observed, while a scalar TLC projection
-  proves the same gates eventually finalize under fair progress.
+  until the checked-in BFT-block candidate has arrived through transport with
+  the generated serialized BFT-block version/height/finalization/header-prefix
+  fields and the transported fat-pointer wire is observed, while a scalar TLC
+  projection proves the same gates eventually finalize under fair progress.
 
 The current spec surface has three first-class Crosslink variants:
 

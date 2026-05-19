@@ -301,9 +301,11 @@ envelopes are rejected, and a fixture precommit cannot enter gossip unless its
 matching transport envelope was seen. The production-finality projection then
 uses a production-shaped BFT-block proposal envelope plus that fixture
 transport bridge at the finality boundary: candidate observation cannot happen
-before proposal transport, and finality cannot advance from the generated
-fixture unless both the transported checked-in BFT-block shape and the
-transported authenticated fat-pointer wire have been observed.
+before proposal transport, proposal transport must match the generated
+serialized BFT-block version, serialized BFT height, finalization-candidate
+field, and header-prefix offsets, and finality cannot advance from the
+generated fixture unless both the transported checked-in BFT-block shape and
+the transported authenticated fat-pointer wire have been observed.
 `CrosslinkTenderlinkAccountabilityEvidenceFormat.qnt`
 adds concrete slashing-evidence envelopes for nil/value precommit equivocation
 under the nil-precommit rule and ordinary value/value precommit equivocation by
@@ -313,9 +315,10 @@ wrong-height/round evidence, wrong byte lengths, same-value packets,
 wrong-signer claims, and non-canonical envelope bytes. This is still partial:
 the model now covers the authentication boundary, wire shape,
 gossip-before-observe rule, fixture-level transport gate, production-fixture
-proposal/finality gate, fixture-manifest Ed25519 verification, and nil/value
-plus value/value precommit equivocation evidence envelopes, but does not yet
-call a full production gossip transport implementation or cover every future
+proposal/finality gate with generated serialized prefix-field checks,
+fixture-manifest Ed25519 verification, and nil/value plus value/value
+precommit equivocation evidence envelopes, but does not yet call a full
+production gossip transport implementation or cover every future
 slashing evidence encoding. The
 `CrosslinkTenderlinkAccountabilityEvidenceTransport.qnt` bridge narrows that
 gap for these envelopes by requiring a Crosslink consensus-topic transport

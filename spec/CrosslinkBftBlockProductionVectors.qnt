@@ -225,6 +225,18 @@ module CrosslinkBftBlockProductionVectors {
     DeserializationBypassesTryFromSigma(Sigma + 1)
 
   val CheckedInFirstFixtureEnvelopePinned =
+    FixtureFirstBftBlockVersion == 0 and
+    FixtureFirstBftHeight == 1 and
+    FixtureFirstFinalizationCandidateHeightOffset ==
+      FinalizationCandidateHeightOffset(FixtureFirstPreviousFatPointerSignatureCount) and
+    FixtureFirstFinalizationCandidateHeightOffset == 54 and
+    FixtureFirstFinalizationCandidateHeight == 0 and
+    FixtureFirstHeaderCountOffset ==
+      HeaderCountOffset(FixtureFirstPreviousFatPointerSignatureCount) and
+    FixtureFirstHeaderCountOffset == 58 and
+    FixtureFirstHeadersStartOffset ==
+      HeadersStartOffset(FixtureFirstPreviousFatPointerSignatureCount) and
+    FixtureFirstHeadersStartOffset == FixtureFirstHeader0StartOffset and
     BftBlockWireByteLenForHeaderVersion(
       FixtureFirstPreviousFatPointerSignatureCount,
       FixtureHeaderCount,
@@ -264,6 +276,18 @@ module CrosslinkBftBlockProductionVectors {
     ) == FixtureFirstHeader2EndOffset
 
   val CheckedInLaterFixtureEnvelopePinned =
+    FixtureLaterBftBlockVersion == 0 and
+    FixtureLaterBftHeight == 2 and
+    FixtureLaterFinalizationCandidateHeightOffset ==
+      FinalizationCandidateHeightOffset(FixtureLaterPreviousFatPointerSignatureCount) and
+    FixtureLaterFinalizationCandidateHeightOffset == 150 and
+    FixtureLaterFinalizationCandidateHeight == 0 and
+    FixtureLaterHeaderCountOffset ==
+      HeaderCountOffset(FixtureLaterPreviousFatPointerSignatureCount) and
+    FixtureLaterHeaderCountOffset == 154 and
+    FixtureLaterHeadersStartOffset ==
+      HeadersStartOffset(FixtureLaterPreviousFatPointerSignatureCount) and
+    FixtureLaterHeadersStartOffset == FixtureLaterHeader0StartOffset and
     BftBlockWireByteLenForHeaderVersion(
       FixtureLaterPreviousFatPointerSignatureCount,
       FixtureHeaderCount,
@@ -433,6 +457,12 @@ module CrosslinkBftBlockProductionVectorsTest {
   run checkedInFirstBftBlockAndFatPointerFixtureEnvelopeTest = {
     Init
       .then(all {
+        assert(FixtureFirstBftBlockVersion == 0),
+        assert(FixtureFirstBftHeight == 1),
+        assert(FixtureFirstFinalizationCandidateHeightOffset == 54),
+        assert(FixtureFirstFinalizationCandidateHeight == 0),
+        assert(FixtureFirstHeaderCountOffset == 58),
+        assert(FixtureFirstHeadersStartOffset == FixtureFirstHeader0StartOffset),
         assert(BftBlockWireByteLenForHeaderVersion(0, 3, 0, 4) == FixtureFirstBftBlockByteLen),
         assert(BftBlockAndFatPointerWireByteLenForHeaderVersion(
           0,
@@ -452,6 +482,12 @@ module CrosslinkBftBlockProductionVectorsTest {
   run checkedInLaterBftBlockAndFatPointerFixtureEnvelopeTest = {
     Init
       .then(all {
+        assert(FixtureLaterBftBlockVersion == 0),
+        assert(FixtureLaterBftHeight == 2),
+        assert(FixtureLaterFinalizationCandidateHeightOffset == 150),
+        assert(FixtureLaterFinalizationCandidateHeight == 0),
+        assert(FixtureLaterHeaderCountOffset == 154),
+        assert(FixtureLaterHeadersStartOffset == FixtureLaterHeader0StartOffset),
         assert(BftBlockWireByteLenForHeaderVersion(1, 3, 0, 4) == FixtureLaterBftBlockByteLen),
         assert(BftBlockAndFatPointerWireByteLenForHeaderVersion(
           1,
