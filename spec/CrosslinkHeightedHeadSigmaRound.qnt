@@ -227,6 +227,31 @@ module CrosslinkHeightedHeadSigmaRoundTest {
         unchangedAll,
       })
   }
+
+  run timeoutWithoutValueLockNextFreshProposalResamplesTest = {
+    Init
+      .then(InsertProposal("p1"))
+      .then(TimeoutProposePrevoteNil("p1"))
+      .then(TimeoutPrevotePrecommitNil("p1"))
+      .then(TimeoutPrecommitStartNextRound("p1"))
+      .then(InsertProposal("p1"))
+      .then(all {
+        assert(round.get("p1").get(1) == 1),
+        assert(lockedValue.get("p1").get(1) == NilSnapshot),
+        assert(validValue.get("p1").get(1) == NilSnapshot),
+        assert(cachedProposal.get("p1").get(1) == "b1"),
+        assert(msgsPropose.get(1).get(1).contains({
+          src: "p1",
+          height: 1,
+          round: 1,
+          proposal: "b1",
+          validRound: NilRound,
+        })),
+        assert(CorrectFreshProposalMessagesCarryHeadSigma),
+        assert(HeadSigmaSafety),
+        unchangedAll,
+      })
+  }
 }
 
 module CrosslinkHeightedHeadSigmaRoundModel {

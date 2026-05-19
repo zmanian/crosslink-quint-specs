@@ -51,7 +51,13 @@
     "verify:scheduler-liveness-safety": "quint verify spec/CrosslinkSchedulerLiveness.qnt --main=CrosslinkSchedulerLivenessModel --init=SchedulerInit --step=SchedulerStep --invariants=SchedulerSafety --max-steps=3",
     "verify:head-sigma-safety": "quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3",
     "verify:heighted-head-sigma-safety": "quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3",
-    "verify:bft-block-shape-safety": "quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3"
+    "verify:bft-block-shape-safety": "quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3",
+    "verify:extended": "npm run verify:extended:head-sigma && npm run verify:extended:heighted-head-sigma && npm run verify:extended:bft-block-shape && npm run verify:extended:heighted-validator-evidence && npm run verify:extended:heighted-authenticated-evidence",
+    "verify:extended:head-sigma": "quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5",
+    "verify:extended:heighted-head-sigma": "quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5",
+    "verify:extended:bft-block-shape": "quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5",
+    "verify:extended:heighted-validator-evidence": "quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5",
+    "verify:extended:heighted-authenticated-evidence": "quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5"
   },
   "devDependencies": {
     "@informalsystems/quint": "0.31.0"

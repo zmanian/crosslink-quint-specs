@@ -22,14 +22,14 @@ Status terms:
 | Shared protocol core with explicit variants | Shared `CrosslinkResampling` core with baseline/resampling modules | covered | None at current abstraction level. |
 | Proposal values as PoW stream snapshots | `Stream(round)`, `StickyOrStreamProposal`, `IsFreshForRound`, `CrosslinkHeadSigmaSamplingModel`, `CrosslinkHeightedHeadSigmaRoundModel`, `CrosslinkBftBlockShapeModel`; `test:head-sigma`; `test:heighted-head-sigma`; `test:bft-block-shape`; `verify:head-sigma-safety`; `verify:heighted-head-sigma-safety`; `verify:bft-block-shape-safety` | partial | Abstract, heighted, and first production-shape `head - sigma` models exist; need captured production data vectors. |
 | Proposal validity split | `StaticProposalValidity`, `StructurallyValid`, `PowChainValid`, `FinalityCandidateValid`, `IsFreshForRound`; `CrosslinkBftBlockShape.qnt`; `test:proposal-validity`; `test:bft-block-shape` | partial | Abstract validity split exists; the first concrete BFT-block header-vector shape and stateless version/order/PoW guards are modeled, but production header validation remains abstract. |
-| Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
+| Tendermint lock and valid-value rules | `lockedValue`, `lockedRound`, `validValue`, `validRound`, `ProposalUnlocksCurrentLock`; `ProposalFor` reuses only real `validValue`/`validRound` state; per-height lock/valid state and height-scoped valid-round unlock in `CrosslinkHeightedRound.qnt` | partial | Needs production proposal evidence encoding and broader finality/auth/evidence composition. |
 | Valid-round/POL evidence | `LocalValidRoundJustified`, `CorrectProposalValidRoundSound`; `test:valid-round`; `unjustifiedHeightedValidRoundProposalPrevotesNilTest`; `justifiedHeightedValidRoundUnlocksOlderLockTest` | covered | Needs production proposal evidence encoding. |
 | Stream change between prevote and precommit | `UponStreamChangePrecommitNil`; baseline and resampling witnesses | covered | Needs broader temporal liveness and adversarial scheduling. |
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
 | Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
 | Local receive/delivery semantics | `seenPropose`, `seenPrevote`, `seenPrecommit`, `Deliver*`; `test:local-delivery` | covered | Needs network scheduling/fairness assumptions. |
-| Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout`; `precommitTimeoutDoesNotClearHeightedLockTest` | partial | Needs fuller timeout scheduling and temporal properties. |
+| Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `test:timeout`; `precommitTimeoutDoesNotClearHeightedLockTest`; `timeoutWithoutValueLockNextFreshProposalResamplesTest` | partial | Needs fuller timeout scheduling and temporal properties. |
 | Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedHeadSigmaRound.qnt`; `test:heighted-round`; `test:heighted-head-sigma`; `verify:heighted-round-safety`; `verify:heighted-head-sigma-safety` | partial | First receive-reactive heighted slice now has concrete head-sigma stream linkage; not yet composed with auth/evidence rules. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted` | covered | Production signer-set formats remain open. |
 | Dynamic validator-set changes | `spec/CrosslinkValidatorSetChange.qnt`; `spec/CrosslinkHeightedValidatorEvidence.qnt`; `spec/CrosslinkHeightedAuthenticatedEvidence.qnt`; `test:validator-set-change`; `test:heighted-validator-evidence`; `test:heighted-authenticated-evidence`; `verify:validator-set-change-safety`; `verify:heighted-validator-evidence-safety`; `verify:heighted-authenticated-evidence-safety` | partial | Validator-set rotation is now linked to heighted authenticated evidence signer authorization; production signer-set formats remain open. |
@@ -52,6 +52,7 @@ The package scripts currently cover:
 npm run typecheck
 npm test
 npm run verify
+npm run verify:extended
 ```
 
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
@@ -87,6 +88,18 @@ CrosslinkHeightedHeadSigmaRoundModel
 CrosslinkBftBlockShapeModel
 ```
 
+`npm run verify:extended` is a non-default deeper gate for the newest moving
+stream, BFT-block-shape, and evidence-composition models. It currently runs
+depth-5 Apalache checks for:
+
+```text
+CrosslinkHeadSigmaSamplingModel
+CrosslinkHeightedHeadSigmaRoundModel
+CrosslinkBftBlockShapeModel
+CrosslinkHeightedValidatorEvidenceModel
+CrosslinkHeightedAuthenticatedEvidenceModel
+```
+
 ## Remaining Work
 
 The goal is not complete yet. The strongest remaining gaps are:
@@ -98,5 +111,6 @@ The goal is not complete yet. The strongest remaining gaps are:
 - link message-authentication and evidence-gossip models to production
   serialization, signatures, and gossip transport;
 - link dynamic validator-set changes to production signer-set formats;
-- expand bounded verification depth and add targeted counterexample searches
-  for the new standalone models.
+- continue expanding bounded verification depth and targeted counterexample
+  searches beyond the current depth-5 extended gate for the new standalone
+  models.

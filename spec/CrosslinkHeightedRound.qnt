@@ -97,10 +97,13 @@ module CrosslinkHeightedRound {
     h.in(Heights) and height.get(p) == h
 
   def ProposalFor(p: Proc_t, h: Height_t, r: Round_t): Snapshot_t =
-    if (cachedProposal.get(p).get(h) == NilSnapshot) {
-      Stream.get(h).get(r)
+    if (
+      validValue.get(p).get(h) != NilSnapshot and
+      validRound.get(p).get(h) != NilRound
+    ) {
+      validValue.get(p).get(h)
     } else {
-      cachedProposal.get(p).get(h)
+      Stream.get(h).get(r)
     }
 
   def HasPrecommitFrom(p: Proc_t, h: Height_t, r: Round_t): bool =

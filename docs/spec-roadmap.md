@@ -186,6 +186,11 @@ For Crosslink, matching that quality means adding:
   propose timeout broadcasts a nil prevote, prevote timeout broadcasts a nil
   precommit, and precommit timeout advances the round without clearing
   lock/valid/cache state unless a nil-precommit certificate exists.
+- The heighted round model now distinguishes a cached proposal from a real
+  Tendermint `validValue`/`validRound` lock. After a timeout-only round advance
+  with no value lock, the next fresh proposal resamples the current
+  `head - sigma` stream; older value locks remain preserved across timeout and
+  mixed-precommit paths.
 - Valid-round handling now has a first Tendermint-style rule: a proposal with a
   non-`-1` `validRound` must be justified by a prevote quorum for that value in
   the referenced round, `CorrectProposalValidRoundSound` makes this a safety
@@ -195,6 +200,11 @@ For Crosslink, matching that quality means adding:
   unjustified valid-round state.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
+- `npm run verify:extended` adds a non-default deeper bounded-check gate for
+  the newest head-sigma, BFT-block-shape, heighted validator-evidence, and
+  heighted authenticated-evidence models. It keeps default CI at depth 3 while
+  giving reviewers a depth-5 Apalache check for the models most likely to hide
+  cross-component state-space mistakes.
 
 - Milestone 5 has an initial stream-stability witness:
   `NilPrecommitResamplingStableWindowLiveness` shows two stream-change aborts
