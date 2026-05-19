@@ -168,6 +168,11 @@ For Crosslink, matching that quality means adding:
   be accepted; and models derivation from producer round data so missing
   signatures, nil precommit signers, and wrong-height fat pointers are
   rejected.
+- `CrosslinkFatPointerProductionVectors.qnt` pins implementation-linked
+  fat-pointer byte vectors: count bytes 44..46, exact wire lengths for 0-4
+  signatures, contiguous 96-byte entry offsets, streaming
+  serializer/deserializer agreement, and the current prototype
+  `try_from_bytes` reversed-count-slice gap.
 - `CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
   production-shaped signer vector to the authenticated observer pipeline. A
   production fat-pointer wire can only be observed after its counted envelope
@@ -222,8 +227,9 @@ For Crosslink, matching that quality means adding:
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
-  the newest head-sigma, BFT-block-shape, fat-pointer-format, heighted
-  validator-evidence, and heighted authenticated-evidence models. It keeps
+  the newest head-sigma, BFT-block-shape, fat-pointer-format, fat-pointer
+  production-vector, heighted validator-evidence, and heighted
+  authenticated-evidence models. It keeps
   default CI at bounded depth while giving reviewers a depth-5 Apalache check
   for the models most likely to hide cross-component state-space mistakes.
 
@@ -266,6 +272,6 @@ For Crosslink, matching that quality means adding:
   an earlier BFT height is final.
 - The remaining multi-height work is to connect the heighted auth, evidence,
   validator-set, BFT-block-shape, fat-pointer-format, and production-shaped
-  fat-pointer observer models to concrete serialization vectors, real
+  fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and gossip transport, and to lift the
   scheduler temporal contract into a full composed protocol temporal proof.
