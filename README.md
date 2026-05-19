@@ -166,6 +166,10 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkMixedWaitProgressContract.qnt` captures the runtime boundary
   for mixed precommit sets: a mixed quorum can make validators wait, but it
   cannot unlock or resample until an actual nil-precommit certificate appears.
+- `spec/CrosslinkHeightedProgressProjectionContract.qnt` is a TLC-friendly
+  projection of the heighted round/finality composition: height 1 burns a
+  nil-certified unstable round, height 2 remains pristine until height 1
+  decides, and finality applies the decided heights in order.
 - `spec/CrosslinkStreamChurnRisk.qnt` adds a parameterized integer-risk model
   for the liveness intuition behind resampling: GST grows with validator-set
   size, global distribution can add quadratic delay, normal PoW head arrivals
@@ -431,7 +435,8 @@ npm run verify:temporal
 
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
-composed-progress, baseline-churn progress, mixed-wait progress, delivery-fairness,
+composed-progress, baseline-churn progress, mixed-wait progress,
+heighted progress projection, delivery-fairness,
 timeout-progress, stream-churn risk, validator-scale progress,
 validator-scale finality progress,
 PoW stochastic-assumption,
@@ -461,7 +466,8 @@ validator-evidence, and authenticated evidence composition models.
 small scheduler progress contract, the local-delivery fairness contract, the
 timeout-recovery contract, the scheduler-plus-finality contract, the composed
 nil-resampling/finality progress contract, the baseline sticky-churn recovery
-contract, the mixed-precommit wait/recovery contract, the validator-scale
+contract, the mixed-precommit wait/recovery contract, the heighted
+round/finality progress projection, the validator-scale
 resampling progress contract, and the
 validator-scale finality progress contract, because TLC has mature
 temporal property support while Apalache's temporal support is still
@@ -516,6 +522,7 @@ quint typecheck spec/CrosslinkFinalityProgressContract.qnt
 quint typecheck spec/CrosslinkComposedProgressContract.qnt
 quint typecheck spec/CrosslinkBaselineChurnProgressContract.qnt
 quint typecheck spec/CrosslinkMixedWaitProgressContract.qnt
+quint typecheck spec/CrosslinkHeightedProgressProjectionContract.qnt
 quint typecheck spec/CrosslinkStreamChurnRisk.qnt
 quint typecheck spec/CrosslinkValidatorScaleLivenessEnvelope.qnt
 quint typecheck spec/CrosslinkValidatorScaleProgressContract.qnt
@@ -567,6 +574,7 @@ quint test spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityPr
 quint test spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBaselineChurnProgressContract.qnt --main=CrosslinkBaselineChurnProgressContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkMixedWaitProgressContract.qnt --main=CrosslinkMixedWaitProgressContractModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkHeightedProgressProjectionContract.qnt --main=CrosslinkHeightedProgressProjectionContractModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkValidatorScaleLivenessEnvelope.qnt --main=CrosslinkValidatorScaleLivenessEnvelopeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkValidatorScaleProgressContract.qnt --main=CrosslinkValidatorScaleProgressContractModel --max-samples=100 --backend=rust
@@ -687,6 +695,7 @@ quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinality
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkBaselineChurnProgressContract.qnt --main=CrosslinkBaselineChurnProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMixedWaitProgressContract.qnt --main=CrosslinkMixedWaitProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkHeightedProgressProjectionContract.qnt --main=CrosslinkHeightedProgressProjectionContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkValidatorScaleLivenessEnvelope.qnt --main=CrosslinkValidatorScaleLivenessEnvelopeModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkValidatorScaleProgressContract.qnt --main=CrosslinkValidatorScaleProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -725,6 +734,7 @@ quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinality
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkBaselineChurnProgressContract.qnt --main=CrosslinkBaselineChurnProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkMixedWaitProgressContract.qnt --main=CrosslinkMixedWaitProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkHeightedProgressProjectionContract.qnt --main=CrosslinkHeightedProgressProjectionContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkBftHeights.qnt --main=CrosslinkBftHeightsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkValidatorScaleLivenessEnvelope.qnt --main=CrosslinkValidatorScaleLivenessEnvelopeModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -793,6 +803,7 @@ quint verify spec/CrosslinkFinalityProgressContract.qnt --backend=tlc --main=Cro
 quint verify spec/CrosslinkComposedProgressContract.qnt --backend=tlc --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --temporal=EventuallyFinalizesStableDecision --max-steps=35
 quint verify spec/CrosslinkBaselineChurnProgressContract.qnt --backend=tlc --main=CrosslinkBaselineChurnProgressContractModel --init=Init --step=Next --temporal=EventuallyResamplingOutrunsBaselineHalt --max-steps=35
 quint verify spec/CrosslinkMixedWaitProgressContract.qnt --backend=tlc --main=CrosslinkMixedWaitProgressContractModel --init=Init --step=Next --temporal=EventuallyNilCertUnlocksMixedWait --max-steps=35
+quint verify spec/CrosslinkHeightedProgressProjectionContract.qnt --backend=tlc --main=CrosslinkHeightedProgressProjectionContractModel --init=Init --step=Next --temporal=EventuallyHeightedProgressFinalizesTwoHeights --max-steps=45
 quint verify spec/CrosslinkValidatorScaleProgressContract.qnt --backend=tlc --main=CrosslinkValidatorScaleProgressContractModel --init=Init --step=Next --temporal=EventuallyResamplingDecision --max-steps=45
 quint verify spec/CrosslinkValidatorScaleFinalityProgressContract.qnt --backend=tlc --main=CrosslinkValidatorScaleFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --temporal=EventuallyValidatorScaleFinalized --max-steps=50
 ```

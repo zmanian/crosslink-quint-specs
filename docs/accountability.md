@@ -92,9 +92,14 @@ The model checks this with:
 mixedPrecommitQuorumDoesNotUnlockTest
 mixedPrecommitQuorumDoesNotClearHeightedLockTest
 CrosslinkMixedWaitProgressContractModel / EventuallyNilCertUnlocksMixedWait
+CrosslinkHeightedProgressProjectionContractModel / EventuallyHeightedProgressFinalizesTwoHeights
 precommitTimeoutDoesNotUnlockWithoutNilCertificateTest
 precommitTimeoutDoesNotClearHeightedLockTest
 ```
+
+The heighted progress projection adds the multi-height boundary: a nil
+certificate can clear the active height's same-round recovery state without
+touching the next BFT height before the current height has decided.
 
 ## Conflicting Commit Accountability
 

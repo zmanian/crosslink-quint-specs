@@ -394,6 +394,11 @@ For Crosslink, matching that quality means adding:
   waiting contract: a mixed quorum does not clear same-round lock/cache state,
   but a later actual nil-precommit certificate can unlock that round and let
   the stable resampling path decide.
+- `CrosslinkHeightedProgressProjectionContract.qnt` adds a TLC-friendly
+  projection of heighted round recovery plus finality: height 1 burns an
+  unstable nil-certified round, height 2 remains pristine until height 1
+  decides, and a fair finality applicator advances the finalized prefix through
+  both decided heights in order.
 - `CrosslinkValidatorScaleFinalityProgressContract.qnt` composes that scale
   progress path with Crosslink finality. It reuses the scale-progress machine,
   adds a linear finalized-prefix cursor, and TLC checks eventual finalization
@@ -859,6 +864,9 @@ For Crosslink, matching that quality means adding:
   proposals, precommits, fat-pointer evidence, and finality over
   `head - sigma(h)`, but not the broader production message
   transport or real implementation vectors for dynamic-sigma consensus params.
+  The heighted progress projection now gives TLC a finite temporal bridge for
+  two ordered BFT heights while preserving same-height nil-resampling and
+  pristine future-height obligations.
   The remaining work is also to lift the current TLC-friendly progress contracts
   into a full imported-protocol
   temporal proof. A direct TLC run over the current imported composed model is
