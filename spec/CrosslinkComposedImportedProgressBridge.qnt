@@ -5,10 +5,12 @@ module CrosslinkComposedImportedProgressBridgeModel {
    CrosslinkComposedLivenessModel exposes the end-to-end imported round-machine
    path, but the current Quint-to-TLA/TLC path fails before state exploration on
    that map-heavy imported action graph. This bridge keeps the temporal graph
-   scalar while importing the composed quorum, finality predicate, and concrete
-   fork tree logic: after a quorum-checked nil-precommit certificate resamples
-   the round, a quorum-checked stable decision can finalize only through the
-   same Extends/Agrees/TailConfirms checks used by CrosslinkComposed.qnt.
+   scalar while importing the composed quorum, lock-scope, finality predicate,
+   and concrete fork tree logic: after a quorum-checked nil-precommit
+   certificate resamples the round, it can clear only same-round recovery state,
+   older locks remain outside the nil-certificate scope, and a quorum-checked
+   stable decision can finalize only through the same Extends/Agrees/TailConfirms
+   checks used by CrosslinkComposed.qnt.
    */
 
   import CrosslinkComposed(
@@ -84,11 +86,17 @@ module CrosslinkComposedImportedProgressBridgeModel {
   pure val ForkValue = "b2"
   pure val ForkTip = "b3"
   pure val CorrectQuorum = Set("p1", "p2", "p3")
-  pure val AbandonedRound = 0
-  pure val StableRound = 1
+  pure val SameRoundResidualValueLockers = Set("p1")
+  pure val OlderRoundValueLockers = CorrectQuorum
+  pure val OlderLockRound = 0
+  pure val AbandonedRound = 1
+  pure val StableProposalValidRound = AbandonedRound
+  pure val StableRound = 2
 
   var nilCertificateReady: bool
   var roundResampled: bool
+  var sameRoundRecoveryStateCleared: bool
+  var olderLockPreserved: bool
   var stableProposalDelivered: bool
   var stablePrevoteQuorumDelivered: bool
   var stablePrecommitQuorumDelivered: bool
@@ -117,20 +125,46 @@ module CrosslinkComposedImportedProgressBridgeModel {
     ImportedQuorum(signers)
 
   def ImportedNilPrecommitCertificate: bool =
-    AbandonedRound == 0 and
+    AbandonedRound == OlderLockRound + 1 and
+    ImportedCorrectQuorum(CorrectQuorum)
+
+  def ImportedStableValidRoundPrevoteQuorum: bool =
+    StableProposalValidRound == AbandonedRound and
     ImportedCorrectQuorum(CorrectQuorum)
 
   def ImportedStablePrevoteQuorum: bool =
-    StableRound == 1 and
+    StableRound == AbandonedRound + 1 and
     ImportedCorrectQuorum(CorrectQuorum)
 
   def ImportedStablePrecommitQuorum: bool =
-    StableRound == 1 and
+    StableRound == AbandonedRound + 1 and
     ImportedCorrectQuorum(CorrectQuorum)
+
+  def ImportedCurrentRoundLockPowerAtMostF(lockers: Set[str]): bool =
+    lockers.forall(p => Composed::Corr.contains(p)) and
+    Composed::VotingPowerOf(lockers) <= Composed::FaultyVotingPowerBound
+
+  def ImportedOlderLockQuorum(lockers: Set[str]): bool =
+    lockers.forall(p => Composed::Corr.contains(p)) and
+    Composed::VotingPowerOf(lockers) >= Composed::QuorumVotingPower
+
+  def ImportedSameRoundResidualLocksAtMostF: bool =
+    ImportedCurrentRoundLockPowerAtMostF(SameRoundResidualValueLockers)
+
+  def ImportedOlderLockOutsideNilCertScope: bool =
+    OlderLockRound < AbandonedRound and
+    ImportedOlderLockQuorum(OlderRoundValueLockers)
+
+  def ImportedStableProposalJustifiesOlderLock: bool =
+    OlderLockRound < StableProposalValidRound and
+    StableProposalValidRound < StableRound and
+    ImportedStableValidRoundPrevoteQuorum
 
   action Init = all {
     nilCertificateReady' = false,
     roundResampled' = false,
+    sameRoundRecoveryStateCleared' = false,
+    olderLockPreserved' = false,
     stableProposalDelivered' = false,
     stablePrevoteQuorumDelivered' = false,
     stablePrecommitQuorumDelivered' = false,
@@ -144,6 +178,8 @@ module CrosslinkComposedImportedProgressBridgeModel {
   action Unchanged = all {
     nilCertificateReady' = nilCertificateReady,
     roundResampled' = roundResampled,
+    sameRoundRecoveryStateCleared' = sameRoundRecoveryStateCleared,
+    olderLockPreserved' = olderLockPreserved,
     stableProposalDelivered' = stableProposalDelivered,
     stablePrevoteQuorumDelivered' = stablePrevoteQuorumDelivered,
     stablePrecommitQuorumDelivered' = stablePrecommitQuorumDelivered,
@@ -165,6 +201,8 @@ module CrosslinkComposedImportedProgressBridgeModel {
       ImportedNilPrecommitCertificate,
       nilCertificateReady' = true,
       roundResampled' = roundResampled,
+      sameRoundRecoveryStateCleared' = sameRoundRecoveryStateCleared,
+      olderLockPreserved' = olderLockPreserved,
       stableProposalDelivered' = stableProposalDelivered,
       stablePrevoteQuorumDelivered' = stablePrevoteQuorumDelivered,
       stablePrecommitQuorumDelivered' = stablePrecommitQuorumDelivered,
@@ -178,8 +216,12 @@ module CrosslinkComposedImportedProgressBridgeModel {
     all {
       nilCertificateReady,
       not(roundResampled),
+      ImportedSameRoundResidualLocksAtMostF,
+      ImportedOlderLockOutsideNilCertScope,
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = true,
+      sameRoundRecoveryStateCleared' = true,
+      olderLockPreserved' = true,
       stableProposalDelivered' = stableProposalDelivered,
       stablePrevoteQuorumDelivered' = stablePrevoteQuorumDelivered,
       stablePrecommitQuorumDelivered' = stablePrecommitQuorumDelivered,
@@ -192,9 +234,14 @@ module CrosslinkComposedImportedProgressBridgeModel {
   action DeliverStableProposal: bool =
     all {
       roundResampled,
+      sameRoundRecoveryStateCleared,
+      olderLockPreserved,
+      ImportedStableProposalJustifiesOlderLock,
       not(stableProposalDelivered),
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = roundResampled,
+      sameRoundRecoveryStateCleared' = sameRoundRecoveryStateCleared,
+      olderLockPreserved' = olderLockPreserved,
       stableProposalDelivered' = true,
       stablePrevoteQuorumDelivered' = stablePrevoteQuorumDelivered,
       stablePrecommitQuorumDelivered' = stablePrecommitQuorumDelivered,
@@ -211,6 +258,8 @@ module CrosslinkComposedImportedProgressBridgeModel {
       ImportedStablePrevoteQuorum,
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = roundResampled,
+      sameRoundRecoveryStateCleared' = sameRoundRecoveryStateCleared,
+      olderLockPreserved' = olderLockPreserved,
       stableProposalDelivered' = stableProposalDelivered,
       stablePrevoteQuorumDelivered' = true,
       stablePrecommitQuorumDelivered' = stablePrecommitQuorumDelivered,
@@ -227,6 +276,8 @@ module CrosslinkComposedImportedProgressBridgeModel {
       ImportedStablePrecommitQuorum,
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = roundResampled,
+      sameRoundRecoveryStateCleared' = sameRoundRecoveryStateCleared,
+      olderLockPreserved' = olderLockPreserved,
       stableProposalDelivered' = stableProposalDelivered,
       stablePrevoteQuorumDelivered' = stablePrevoteQuorumDelivered,
       stablePrecommitQuorumDelivered' = true,
@@ -242,6 +293,8 @@ module CrosslinkComposedImportedProgressBridgeModel {
       decidedValue == NilSnapshot,
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = roundResampled,
+      sameRoundRecoveryStateCleared' = sameRoundRecoveryStateCleared,
+      olderLockPreserved' = olderLockPreserved,
       stableProposalDelivered' = stableProposalDelivered,
       stablePrevoteQuorumDelivered' = stablePrevoteQuorumDelivered,
       stablePrecommitQuorumDelivered' = stablePrecommitQuorumDelivered,
@@ -258,6 +311,8 @@ module CrosslinkComposedImportedProgressBridgeModel {
       BridgeValidFinalityCandidate(candidate, tip),
       nilCertificateReady' = nilCertificateReady,
       roundResampled' = roundResampled,
+      sameRoundRecoveryStateCleared' = sameRoundRecoveryStateCleared,
+      olderLockPreserved' = olderLockPreserved,
       stableProposalDelivered' = stableProposalDelivered,
       stablePrevoteQuorumDelivered' = stablePrevoteQuorumDelivered,
       stablePrecommitQuorumDelivered' = stablePrecommitQuorumDelivered,
@@ -300,6 +355,13 @@ module CrosslinkComposedImportedProgressBridgeModel {
     (2 * Composed::QuorumVotingPower - Composed::TotalVotingPower >
       Composed::FaultyVotingPowerBound)
 
+  val ImportedLockScopePredicatesCoherent =
+    ImportedSameRoundResidualLocksAtMostF and
+    ImportedOlderLockOutsideNilCertScope and
+    ImportedStableValidRoundPrevoteQuorum and
+    ImportedStableProposalJustifiesOlderLock and
+    not(ImportedCurrentRoundLockPowerAtMostF(CorrectQuorum))
+
   val StateWellFormed =
     0.to(10).contains(progress) and
     Set(
@@ -316,6 +378,10 @@ module CrosslinkComposedImportedProgressBridgeModel {
 
   val PhaseOrder =
     (roundResampled implies nilCertificateReady) and
+    (sameRoundRecoveryStateCleared implies roundResampled) and
+    (olderLockPreserved implies roundResampled) and
+    (stableProposalDelivered implies
+      sameRoundRecoveryStateCleared and olderLockPreserved) and
     (stableProposalDelivered implies roundResampled) and
     (stablePrevoteQuorumDelivered implies stableProposalDelivered) and
     (stablePrecommitQuorumDelivered implies stablePrevoteQuorumDelivered) and
@@ -339,18 +405,31 @@ module CrosslinkComposedImportedProgressBridgeModel {
     (not(stablePrevoteQuorumDelivered) or ImportedStablePrevoteQuorum) and
     (not(stablePrecommitQuorumDelivered) or ImportedStablePrecommitQuorum)
 
+  val NilResamplingUsesImportedLockScope =
+    (not(sameRoundRecoveryStateCleared) or (
+      nilCertificateReady and
+      ImportedNilPrecommitCertificate and
+      ImportedSameRoundResidualLocksAtMostF and
+      olderLockPreserved and
+      ImportedOlderLockOutsideNilCertScope
+    )) and
+    (not(stableProposalDelivered) or
+      ImportedStableProposalJustifiesOlderLock)
+
   val ForkValueNotFinalized =
     not(bridgeFinalized.contains(ForkValue))
 
   val Safety =
     ImportedPredicatesCoherent and
     ImportedQuorumPredicatesCoherent and
+    ImportedLockScopePredicatesCoherent and
     StateWellFormed and
     PhaseOrder and
     FinalizedPrefixLinear and
     LatestFinalExtendsAllFinalized and
     StableFinalityUsesImportedCandidateCheck and
     DeliveredCertificatesUseImportedQuorumChecks and
+    NilResamplingUsesImportedLockScope and
     ForkValueNotFinalized
 
   temporal EventuallyImportedPredicateBridgeFinalizes =
@@ -363,8 +442,13 @@ module CrosslinkComposedImportedProgressBridgeModel {
       assert(ImportedPredicatesCoherent),
       assert(ImportedQuorumPredicatesCoherent),
       assert(ImportedNilPrecommitCertificate),
+      assert(ImportedStableValidRoundPrevoteQuorum),
       assert(ImportedStablePrevoteQuorum),
       assert(ImportedStablePrecommitQuorum),
+      assert(ImportedLockScopePredicatesCoherent),
+      assert(ImportedSameRoundResidualLocksAtMostF),
+      assert(ImportedOlderLockOutsideNilCertScope),
+      assert(ImportedStableProposalJustifiesOlderLock),
       assert(StableCandidateValidFromInitial),
       assert(BridgeValidFinalityCandidate(StableValue, StableTip)),
       assert(BridgeValidFinalityCandidate(ForkValue, ForkTip)),
@@ -382,6 +466,31 @@ module CrosslinkComposedImportedProgressBridgeModel {
       assert(Safety),
       Unchanged,
     })
+  }
+
+  run importedLockScopeRejectsOverFCurrentRoundLocksTest = {
+    Init.then(all {
+      assert(ImportedCurrentRoundLockPowerAtMostF(Set("p1"))),
+      assert(not(ImportedCurrentRoundLockPowerAtMostF(CorrectQuorum))),
+      assert(ImportedOlderLockQuorum(CorrectQuorum)),
+      assert(Safety),
+      Unchanged,
+    })
+  }
+
+  run importedNilResamplingPreservesOlderLockScopeTest = {
+    Init
+      .then(RecordNilPrecommitCertificate)
+      .then(ResampleRoundAfterNilCertificate)
+      .then(all {
+        assert(sameRoundRecoveryStateCleared),
+        assert(olderLockPreserved),
+        assert(ImportedSameRoundResidualLocksAtMostF),
+        assert(ImportedOlderLockOutsideNilCertScope),
+        assert(NilResamplingUsesImportedLockScope),
+        assert(Safety),
+        Unchanged,
+      })
   }
 
   run importedPredicateBridgeFinalizesStableDecisionTest = {

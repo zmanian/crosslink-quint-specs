@@ -369,9 +369,11 @@ For Crosslink, matching that quality means adding:
   proposal/vote/precommit delivery, finality-candidate validation, fork-prefix
   safety, and eventual finality of the stable candidate.
 - `CrosslinkComposedImportedProgressBridge.qnt` imports the composed
-  Crosslink quorum-power, finality, and fork-prefix predicates into a
-  TLC-sized scalar temporal graph. It checks that the nil-certificate
-  resampling path uses imported quorum checks and finalizes the stable
+  Crosslink quorum-power, lock-scope, finality, and fork-prefix predicates
+  into a TLC-sized scalar temporal graph. It checks that the nil-certificate
+  resampling path uses imported quorum checks, clears only same-round recovery
+  state, preserves older-lock scope, requires valid-round-style quorum
+  justification before voting across that older lock, and finalizes the stable
   candidate only through imported candidate validation, while the full imported
   round-machine action graph remains a separate temporal-proof target.
 - `CrosslinkBftHeights.qnt` adds a compact scheduled BFT-height finality
@@ -751,8 +753,9 @@ For Crosslink, matching that quality means adding:
   PoW prefix and rejecting the competing fork candidate.
 - `CrosslinkComposedImportedProgressBridgeModel` keeps that temporal check
   close to the imported composed spec by calling `CrosslinkComposed.qnt`
-  predicates for quorum power, candidate validity, height, tail confirmation,
-  and prefix extension inside a TLC-friendly scalar graph.
+  predicates for quorum power, same-round lock bounds, older-lock scope,
+  valid-round-style older-lock justification, candidate validity, height, tail
+  confirmation, and prefix extension inside a TLC-friendly scalar graph.
 - `CrosslinkComposedLivenessModel` now has an executable end-to-end liveness
   script that includes explicit local delivery of the proposal, prevotes, and
   precommits before finalizing the fresh candidate.
@@ -912,10 +915,10 @@ For Crosslink, matching that quality means adding:
   The heighted progress projection now gives TLC a finite temporal bridge for
   mixed-precommit waiting, nil-certificate recovery, two ordered BFT heights,
   same-height nil-resampling, and pristine future-height obligations.
-  The imported-predicate bridge now checks the composed quorum and finality
-  predicates inside a TLC temporal progress graph. The remaining work is to
-  lift that bridge all the way into a full imported-protocol temporal proof
-  over the imported action graph. A direct TLC run over the current imported
+  The imported-predicate bridge now checks the composed quorum, lock-scope, and
+  finality predicates inside a TLC temporal progress graph. The remaining work
+  is to lift that bridge all the way into a full imported-protocol temporal
+  proof over the imported action graph. A direct TLC run over the current imported
   composed model is blocked by nested helper actions over map-heavy
   round-machine state in the Quint-to-TLA/TLC path, so this likely needs either
   a TLC-oriented imported-state refactor or improved backend support.
