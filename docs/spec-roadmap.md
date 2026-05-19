@@ -78,6 +78,9 @@ Required pieces:
   Crosslink-participating hash power.
 - Compatibility witnesses showing that nil-precommit resampling burns rounds
   while dynamic sigma only affects future BFT heights.
+- A bridge from the dynamic sigma schedule into concrete `head - sigma(h)`
+  proposal-stream sampling, so future BFT heights use updated sigma while the
+  active height remains fixed.
 
 ## Tendermint-Quality Target
 
@@ -206,6 +209,14 @@ For Crosslink, matching that quality means adding:
   sigma-relevant, and applies hysteresis so long-reorg/low-coverage/low-hash
   participation failures can raise sigma while stable covered,
   high-participation windows lower it slowly.
+- `CrosslinkDynamicSigmaHeadSampling.qnt` connects that controller to concrete
+  proposal-stream sampling. It imports the dynamic-sigma schedule, samples
+  `head - sigma(h)` for the active BFT height, checks that nil-precommit round
+  burns preserve same-height sigma and already sampled candidates, and shows
+  that telemetry-raised sigma samples a deeper candidate at the next height
+  while later stable high-participation telemetry can sample shallower again.
+  A low Crosslink-participating hash-power witness prevents that relaxation
+  and keeps the future proposal stream at the deeper sampled candidate.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
@@ -272,6 +283,11 @@ For Crosslink, matching that quality means adding:
   one-signature fixture wire is accepted only after its matching abstract
   precommit is gossiped, and is rejected before gossip. The generated artifacts
   also carry the real fixture byte strings for later crypto verification.
+- `CrosslinkFixtureGossipTransport.qnt` inserts a fixture-level transport
+  boundary before that observer path. The generated fixture precommit and
+  fat-pointer wire must be gossiped in canonical Crosslink-topic envelopes
+  before the observer accepts the wire, and witnesses reject wrong-topic,
+  wrong-sign-bytes, wrong-kind, and wrong-wire-length envelopes.
 - Message-domain evidence now covers proposals, prevotes, precommits, and
   decided/fat-pointer certificates. `MessageEvidenceSoundness` checks that
   protocol messages are mirrored into observer evidence and that fat pointers
@@ -320,7 +336,8 @@ For Crosslink, matching that quality means adding:
   `docs/implementation-correspondence.md`.
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
-  PoW stochastic-assumption, PoW-reorg-stress, head-sigma,
+  PoW stochastic-assumption, PoW-reorg-stress, dynamic-sigma,
+  dynamic-sigma head-sampling, head-sigma,
   BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
   fat-pointer-format, fat-pointer production-vector, heighted
   validator-evidence, and heighted authenticated-evidence models. It keeps
@@ -377,6 +394,14 @@ For Crosslink, matching that quality means adding:
   telemetry can raise future-height sigma, that same-branch failures do not,
   that low Crosslink-participating hash power prevents sigma relaxation, and
   that stable covered high-participation windows lower sigma at most one step.
+- `CrosslinkDynamicSigmaHeadSamplingModel` composes that controller with
+  `head - sigma(h)` sampling. It verifies that height 0 samples with the
+  initial sigma, a nil-round burn leaves that sample and same-height sigma
+  untouched, long-reorg telemetry raises future sigma and samples a deeper
+  candidate, and stable high-participation telemetry lowers future sigma and
+  samples a shallower candidate. It also checks that low Crosslink-participating
+  hash power prevents future sigma relaxation and preserves the deeper
+  `head - sigma(h)` sample.
 - The first multi-height finality model is in `CrosslinkMultiHeight.qnt`.
   It makes BFT decision heights sequential, permits a decision to skip PoW
   heights on the same branch, rejects skipped or duplicate BFT-height
@@ -399,8 +424,10 @@ For Crosslink, matching that quality means adding:
 - The remaining multi-height work is to connect the heighted auth, evidence,
   validator-set, BFT-block-shape, fat-pointer-format, and production-shaped
   fat-pointer observer models to more concrete serialization vectors, real
-  signatures, header validity checks, and gossip transport, and to lift the
-  current TLC-friendly progress contracts into a full imported-protocol
+  signatures, header validity checks, and full production gossip transport.
+  The fixture-gossip bridge now covers the checked-in fixture transport boundary,
+  but not the broader production message transport. The remaining work is also
+  to lift the current TLC-friendly progress contracts into a full imported-protocol
   temporal proof. A direct TLC run over the current imported composed model is
   blocked by the map-heavy round-machine state in the Quint-to-TLA/TLC path, so
   this likely needs either a TLC-oriented imported-state refactor or improved

@@ -79,6 +79,10 @@ the Zebra Crosslink working branch:
   boundaries from committed round-failure telemetry and a quorum-backed network
   coverage model, including the percentage of PoW hash power participating in
   Crosslink.
+- `spec/CrosslinkDynamicSigmaHeadSampling.qnt` composes that third variant with
+  concrete `head - sigma(h)` sampling: already-sampled same-height candidates
+  survive nil-precommit round burns, while committed telemetry changes the
+  candidate depth only for future BFT heights.
 - `spec/CrosslinkHeadSigmaSampling.qnt` makes the proposal stream source
   explicit: `Stream(round)` corresponds to the `head - sigma` ancestor of the
   locally observed PoW head, including same-branch progress, fork switches, and
@@ -136,6 +140,10 @@ the Zebra Crosslink working branch:
   one-signature checked-in fixture wire is accepted only after its matching
   abstract precommit is gossiped. The executable model keeps signature tokens
   compact while the generated fixture artifacts pin the real byte strings.
+- `spec/CrosslinkFixtureGossipTransport.qnt` adds a fixture transport boundary:
+  the generated fixture precommit and fat-pointer wire must first be gossiped
+  in canonical Crosslink-topic envelopes before the observer accepts the wire;
+  wrong topic, wrong sign bytes, wrong kind, and wrong wire length are rejected.
 
 The current spec surface has three first-class Crosslink variants:
 
@@ -192,10 +200,11 @@ npm run verify:temporal
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
-PoW-reorg stress, dynamic-sigma, head-sigma, BFT-block-shape, BFT-block validation-gap,
-BFT-block production-vector, fat-pointer-format, fat-pointer
-production-vector, fat-pointer authenticated-evidence, fixture-authenticated
-evidence, validator-evidence, and authenticated evidence composition models.
+PoW-reorg stress, dynamic-sigma, dynamic-sigma head-sampling, head-sigma,
+BFT-block-shape, BFT-block validation-gap, BFT-block production-vector,
+fat-pointer-format, fat-pointer production-vector, fat-pointer
+authenticated-evidence, fixture-authenticated evidence, fixture-gossip
+transport, validator-evidence, and authenticated evidence composition models.
 
 `npm run verify:temporal` runs in CI as a separate TLC-backed step for the
 small scheduler progress contract, the scheduler-plus-finality contract, and
@@ -227,6 +236,7 @@ quint typecheck spec/CrosslinkStreamChurnRisk.qnt
 quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
+quint typecheck spec/CrosslinkDynamicSigmaHeadSampling.qnt
 quint typecheck spec/CrosslinkHeadSigmaSampling.qnt
 quint typecheck spec/CrosslinkHeightedHeadSigmaRound.qnt
 quint typecheck spec/CrosslinkBftBlockShape.qnt
@@ -237,6 +247,7 @@ quint typecheck spec/CrosslinkFatPointerFormat.qnt
 quint typecheck spec/CrosslinkFatPointerProductionVectors.qnt
 quint typecheck spec/CrosslinkFatPointerAuthenticatedEvidence.qnt
 quint typecheck spec/CrosslinkFixtureAuthenticatedEvidence.qnt
+quint typecheck spec/CrosslinkFixtureGossipTransport.qnt
 
 quint test spec/CrosslinkResampling.qnt --main=BaselineCrosslink --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=NilPrecommitResamplingCrosslink --max-samples=100 --backend=rust
@@ -254,6 +265,7 @@ quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskMode
 quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --max-samples=100 --backend=rust
@@ -265,6 +277,7 @@ quint test spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormatMo
 quint test spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkFixtureAuthenticatedEvidence.qnt --main=CrosslinkFixtureAuthenticatedEvidenceModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGossipTransportModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkProposalValidityModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkResampling.qnt --main=CrosslinkValidRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkForkFinality.qnt --main=CrosslinkForkFinalityModel --max-samples=100 --backend=rust
@@ -303,6 +316,7 @@ quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskMo
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=3
@@ -312,6 +326,7 @@ quint verify spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormat
 quint verify spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --init=Init --step=Next --invariants=Safety --max-steps=3
 quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
 quint verify spec/CrosslinkFixtureAuthenticatedEvidence.qnt --main=CrosslinkFixtureAuthenticatedEvidenceModel --init=PipelineInit --step=FixtureNext --invariants=FixtureSafety --max-steps=5
+quint verify spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGossipTransportModel --init=TransportPipelineInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 
 quint verify spec/CrosslinkFinalityProgressContract.qnt --main=CrosslinkFinalityProgressContractModel --init=FinalityInit --step=FinalityNext --invariants=FinalitySafety --max-steps=5
 quint verify spec/CrosslinkComposedProgressContract.qnt --main=CrosslinkComposedProgressContractModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -319,6 +334,7 @@ quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskMo
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=8
 quint verify spec/CrosslinkHeadSigmaSampling.qnt --main=CrosslinkHeadSigmaSamplingModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedHeadSigmaRound.qnt --main=CrosslinkHeightedHeadSigmaRoundModel --init=Init --step=Next --invariants=HeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkBftBlockShape.qnt --main=CrosslinkBftBlockShapeModel --init=Init --step=Next --invariants=Safety --max-steps=5
@@ -328,6 +344,7 @@ quint verify spec/CrosslinkFatPointerFormat.qnt --main=CrosslinkFatPointerFormat
 quint verify spec/CrosslinkFatPointerProductionVectors.qnt --main=CrosslinkFatPointerProductionVectorsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkFatPointerAuthenticatedEvidence.qnt --main=CrosslinkFatPointerAuthenticatedEvidenceModel --init=PipelineInit --step=PipelineNext --invariants=PipelineSafety --max-steps=5
 quint verify spec/CrosslinkFixtureAuthenticatedEvidence.qnt --main=CrosslinkFixtureAuthenticatedEvidenceModel --init=PipelineInit --step=FixtureNext --invariants=FixtureSafety --max-steps=5
+quint verify spec/CrosslinkFixtureGossipTransport.qnt --main=CrosslinkFixtureGossipTransportModel --init=TransportPipelineInit --step=TransportNext --invariants=TransportSafety --max-steps=5
 quint verify spec/CrosslinkHeightedValidatorEvidence.qnt --main=CrosslinkHeightedValidatorEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkHeightedAuthenticatedEvidence.qnt --main=CrosslinkHeightedAuthenticatedEvidenceModel --init=Init --step=Next --invariants=Safety --max-steps=5
 
