@@ -493,6 +493,57 @@ module CrosslinkComposedImportedProgressBridgeModel {
       })
   }
 
+  run importedBridgeRejectsResampleWithoutNilCertificateTest = {
+    Init
+      .then(ResampleRoundAfterNilCertificate)
+      .fail()
+  }
+
+  run importedBridgeRejectsStableProposalBeforeResamplingTest = {
+    Init
+      .then(RecordNilPrecommitCertificate)
+      .then(DeliverStableProposal)
+      .fail()
+  }
+
+  run importedBridgeRejectsPrevoteBeforeProposalTest = {
+    Init
+      .then(RecordNilPrecommitCertificate)
+      .then(ResampleRoundAfterNilCertificate)
+      .then(DeliverStablePrevoteQuorum)
+      .fail()
+  }
+
+  run importedBridgeRejectsPrecommitBeforePrevoteTest = {
+    Init
+      .then(RecordNilPrecommitCertificate)
+      .then(ResampleRoundAfterNilCertificate)
+      .then(DeliverStableProposal)
+      .then(DeliverStablePrecommitQuorum)
+      .fail()
+  }
+
+  run importedBridgeRejectsDecisionBeforePrecommitTest = {
+    Init
+      .then(RecordNilPrecommitCertificate)
+      .then(ResampleRoundAfterNilCertificate)
+      .then(DeliverStableProposal)
+      .then(DeliverStablePrevoteQuorum)
+      .then(DecideStableValue)
+      .fail()
+  }
+
+  run importedBridgeRejectsFinalityBeforeDecisionTest = {
+    Init
+      .then(RecordNilPrecommitCertificate)
+      .then(ResampleRoundAfterNilCertificate)
+      .then(DeliverStableProposal)
+      .then(DeliverStablePrevoteQuorum)
+      .then(DeliverStablePrecommitQuorum)
+      .then(FinalizeDecision(StableValue, StableTip))
+      .fail()
+  }
+
   run importedPredicateBridgeFinalizesStableDecisionTest = {
     Init
       .then(RecordNilPrecommitCertificate)

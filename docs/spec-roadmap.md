@@ -401,8 +401,11 @@ For Crosslink, matching that quality means adding:
   resampling path uses imported quorum checks, clears only same-round recovery
   state, preserves older-lock scope, requires valid-round-style quorum
   justification before voting across that older lock, and finalizes the stable
-  candidate only through imported candidate validation, while the full imported
-  round-machine action graph remains a separate temporal-proof target.
+  candidate only through imported candidate validation. It also rejects phase
+  skips, including resampling without a nil certificate, stable proposal
+  delivery before recovery, prevote or precommit delivery before their gates,
+  and finality before a decision while the full imported round-machine action
+  graph remains a separate temporal-proof target.
 - `CrosslinkBftHeights.qnt` adds a compact scheduled BFT-height finality
   harness. It checks that consecutive consensus-height decisions can advance
   the Crosslink finality cursor, while skipped BFT heights and fork decisions

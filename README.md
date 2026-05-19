@@ -187,8 +187,11 @@ the Zebra Crosslink working branch:
   scalar progress bridge, checking the nil-certificate resampling path through
   imported quorum-power, same-round-lock bounds, older-lock preservation,
   valid-round justification over an older lock, candidate validation, and
-  fork-prefix validation while the full imported round-machine temporal graph
-  remains a backend/refactor target.
+  fork-prefix validation. It also rejects phase skips: resampling without a
+  nil certificate, stable proposal delivery before recovery, prevote or
+  precommit delivery before their gates, and finality before a decision while
+  the full imported round-machine temporal graph remains a backend/refactor
+  target.
 - `spec/CrosslinkBaselineChurnProgressContract.qnt` isolates the baseline
   sticky-state failure mode under prevote-to-precommit stream churn, then
   checks that nil-precommit resampling can burn the unstable rounds and decide
