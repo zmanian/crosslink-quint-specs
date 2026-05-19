@@ -153,9 +153,9 @@ negative boundary for invalid-unlock evidence. A correct signer with a value
 precommit in round `r` and a different value precommit in a later round is an
 abstract bad-unlock signal only while there is no observed nil-precommit
 certificate for `r`. That absence is not standalone slashing evidence: a valid
-nil certificate can be learned later and justify the switch. Mixed precommits
-still do not cancel the signal, because only nil itself having quorum is unlock
-evidence.
+nil certificate can be learned later and justify the switch. Low-power nil
+observations, mixed precommits, and value precommit certificates still do not
+cancel the signal, because only nil itself having quorum is unlock evidence.
 
 The executable witnesses are:
 
@@ -181,6 +181,8 @@ nilValueObserverBridgeNeedsQuorumContextForAggregateTest
 valueSwitchWithoutNilCertIsAbstractSignalTest
 nilCertContextCancelsBadUnlockSignalTest
 mixedPrecommitDoesNotCancelBadUnlockSignalTest
+lowPowerNilDoesNotCancelBadUnlockSignalTest
+valuePrecommitCertDoesNotCancelBadUnlockSignalTest
 absenceBasedStandaloneSwitchAcceptanceIsUnsafeTest
 safeBoundaryNeverAcceptsStandaloneSwitchTest
 validFatPointerEvidenceWitnessTest

@@ -97,7 +97,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkTenderlinkUnlockAccountabilityBoundary.qnt` captures the
   accountability boundary for cross-round value switches: a missing nil
   certificate is an abstract bad-unlock signal, not standalone slashing
-  evidence, because a valid nil certificate can be learned later.
+  evidence, because a valid nil certificate can be learned later. Low-power nil
+  observations, mixed precommits, and value precommit certificates do not cancel
+  that signal.
 - `spec/CrosslinkTenderlinkNonceAckTransport.qnt` models the known-peer
   stateless Noise transport boundary around those packets: little-endian outer
   nonce prefixes, decrypted canonical consensus packets, `nonce_is_ok`

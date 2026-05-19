@@ -67,6 +67,9 @@ module CrosslinkTenderlinkUnlockAccountabilityBoundary {
   def ObservedNilPrecommitCert(r: Round_t): bool =
     ObservedPrecommitQuorum(r, NilSnapshot)
 
+  def ObservedValuePrecommitCert(r: Round_t, v: Snapshot_t): bool =
+    ObservedPrecommitQuorum(r, v)
+
   def ObservedAnyPrecommitQuorum(r: Round_t): bool =
     VotingPowerOf(Voters(observedPrecommit.get(r))) >= QuorumVotingPower
 
@@ -127,10 +130,26 @@ module CrosslinkTenderlinkUnlockAccountabilityBoundary {
     ValueSwitchObserved(SignerValueSwitch) implies
       AbstractValueSwitchWithoutNilUnlock(SignerValueSwitch)
 
+  val LowPowerNilDoesNotCancelBadUnlockSignal =
+    observedPrecommit
+      .get(FirstRound)
+      .exists(vote => vote.id == NilSnapshot) and
+    not(ObservedNilPrecommitCert(FirstRound)) and
+    ValueSwitchObserved(SignerValueSwitch) implies
+      AbstractValueSwitchWithoutNilUnlock(SignerValueSwitch)
+
+  val ValuePrecommitCertDoesNotCancelBadUnlockSignal =
+    ObservedValuePrecommitCert(FirstRound, Value0) and
+    not(ObservedNilPrecommitCert(FirstRound)) and
+    ValueSwitchObserved(SignerValueSwitch) implies
+      AbstractValueSwitchWithoutNilUnlock(SignerValueSwitch)
+
   val BoundarySafety =
     NoStandaloneAbsenceBasedSlashing and
     NilCertificateCancelsBadUnlockSignal and
-    MixedPrecommitDoesNotCancelBadUnlockSignal
+    MixedPrecommitDoesNotCancelBadUnlockSignal and
+    LowPowerNilDoesNotCancelBadUnlockSignal and
+    ValuePrecommitCertDoesNotCancelBadUnlockSignal
 
   action BoundaryInit = all {
     observedPrecommit' = Rounds.mapBy(_ => Set()),
@@ -179,6 +198,30 @@ module CrosslinkTenderlinkUnlockAccountabilityBoundary {
       firedAction' = "ObserveNilCertForFirstRound",
     }
 
+  action ObserveLowPowerNilForFirstRound: bool =
+    all {
+      observedPrecommit' =
+        observedPrecommit.setBy(FirstRound, old =>
+          old
+            .union(Set({ src: Other1, round: FirstRound, id: NilSnapshot }))
+            .union(Set({ src: Other2, round: FirstRound, id: NilSnapshot }))
+        ),
+      acceptedStandaloneSwitches' = acceptedStandaloneSwitches,
+      firedAction' = "ObserveLowPowerNilForFirstRound",
+    }
+
+  action ObserveValueCertForFirstRound: bool =
+    all {
+      observedPrecommit' =
+        observedPrecommit.setBy(FirstRound, old =>
+          old
+            .union(Set({ src: Other1, round: FirstRound, id: Value0 }))
+            .union(Set({ src: Other2, round: FirstRound, id: Value0 }))
+        ),
+      acceptedStandaloneSwitches' = acceptedStandaloneSwitches,
+      firedAction' = "ObserveValueCertForFirstRound",
+    }
+
   action ObserveMixedPrecommitsForFirstRound: bool =
     all {
       observedPrecommit' =
@@ -212,6 +255,8 @@ module CrosslinkTenderlinkUnlockAccountabilityBoundary {
       ObserveSignerFromValue,
       ObserveSignerToValue,
       ObserveNilCertForFirstRound,
+      ObserveLowPowerNilForFirstRound,
+      ObserveValueCertForFirstRound,
       ObserveMixedPrecommitsForFirstRound,
       BoundaryStutter,
     }
@@ -249,6 +294,34 @@ module CrosslinkTenderlinkUnlockAccountabilityBoundary {
       .then(ObserveSignerToValue)
       .then(all {
         assert(ObservedMixedPrecommitQuorumWithoutNilCert(FirstRound)),
+        assert(not(ObservedNilPrecommitCert(FirstRound))),
+        assert(AbstractValueSwitchWithoutNilUnlock(SignerValueSwitch)),
+        assert(BoundarySafety),
+        BoundaryStutter,
+      })
+  }
+
+  run lowPowerNilDoesNotCancelBadUnlockSignalTest = {
+    BoundaryInit
+      .then(ObserveSignerFromValue)
+      .then(ObserveLowPowerNilForFirstRound)
+      .then(ObserveSignerToValue)
+      .then(all {
+        assert(observedPrecommit.get(FirstRound).exists(vote => vote.id == NilSnapshot)),
+        assert(not(ObservedNilPrecommitCert(FirstRound))),
+        assert(AbstractValueSwitchWithoutNilUnlock(SignerValueSwitch)),
+        assert(BoundarySafety),
+        BoundaryStutter,
+      })
+  }
+
+  run valuePrecommitCertDoesNotCancelBadUnlockSignalTest = {
+    BoundaryInit
+      .then(ObserveSignerFromValue)
+      .then(ObserveValueCertForFirstRound)
+      .then(ObserveSignerToValue)
+      .then(all {
+        assert(ObservedValuePrecommitCert(FirstRound, Value0)),
         assert(not(ObservedNilPrecommitCert(FirstRound))),
         assert(AbstractValueSwitchWithoutNilUnlock(SignerValueSwitch)),
         assert(BoundarySafety),

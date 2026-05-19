@@ -228,7 +228,8 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkTenderlinkUnlockAccountabilityBoundary.qnt` records the bad-unlock
   accountability boundary around cross-round value switches. The witnesses show
   that a missing nil certificate is an abstract accountability signal, a later
-  nil certificate cancels that signal, mixed precommits do not cancel it, and
+  nil certificate cancels that signal, low-power nil observations, mixed
+  precommits, and value precommit certificates do not cancel it, and
   absence-based standalone slashing evidence would be unsafe.
 - `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport
   replay boundary around compact consensus packets. It pins little-endian outer
