@@ -203,6 +203,13 @@ For Crosslink, matching that quality means adding:
   certificates, non-default skip/vote-type encoding, omitted nil value ids,
   included value ids, required validator/signature lengths, and wrong-oneof
   rejection.
+- `CrosslinkMalachiteLivenessGossipTransport.qnt` adds a transport-envelope
+  bridge for those exact liveness protobuf bytes. It requires a Crosslink
+  liveness topic, polka/round envelope kinds, and byte equality with the
+  canonical protobuf payload before accepting liveness messages; witnesses
+  reject raw decoder acceptance, wrong topics/kinds, wrong bytes, wrong oneof
+  tags, missing polka values, precommit-nil round certificates, and skip-value
+  round certificates.
 - `CrosslinkMalachiteSyncProtobufFormat.qnt` pins the first Malachite sync
   protobuf vectors: `ValueRequest`/`SyncRequest`, `CommitCertificate`,
   `SyncedValue`, and `ValueResponse`/`SyncResponse` with and without an
