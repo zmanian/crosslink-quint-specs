@@ -574,9 +574,11 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkBftBlockValidationGap.qnt` makes the current implementation
   correspondence gap executable: the intended constructor boundary rejects bad
   version, header-order, and PoW-solution inputs, while the current prototype
-  `BftBlock::try_from` only rejects an incorrect sigma header count. The
-  shape model also records that deserialization has only a 2048-header
-  envelope cap and bypasses `try_from`.
+  `BftBlock::try_from` only rejects an incorrect sigma header count. It now also
+  records the repaired-constructor target that matches intended acceptance
+  exactly and rejects bad version, bad order, bad PoW, and wrong sigma count
+  inputs. The shape model also records that deserialization has only a
+  2048-header envelope cap and bypasses `try_from`.
 - `CrosslinkBftBlockProductionVectors.qnt` pins the production BFT-block wire
   prefix from `BftBlock::zcash_serialize`: u32 version, u32 BFT height,
   counted previous-block fat pointer, u32 finalization-candidate height, u32

@@ -12,8 +12,10 @@ module CrosslinkBftBlockValidationGap {
    The current prototype implementation only rejects an incorrect confirmation
    depth and then logs that the other documented validations are not yet
    implemented. This model keeps that implementation gap executable: intended
-   acceptance is stricter than current prototype acceptance, and the witnesses
-   show exactly which malformed blocks can pass the current boundary.
+   acceptance is stricter than current prototype acceptance, the witnesses show
+   exactly which malformed blocks can pass the current boundary, and the
+   repaired-constructor target records the acceptance rule that should replace
+   the prototype once production code closes the gap.
    */
 
   type BftBlockInput_t = {
@@ -54,8 +56,15 @@ module CrosslinkBftBlockValidationGap {
   def PrototypeBftBlockTryFromAccepts(input: BftBlockInput_t): bool =
     HeaderCountMatchesSigma(input)
 
+  def RepairedBftBlockTryFromAccepts(input: BftBlockInput_t): bool =
+    IntendedBftBlockTryFromAccepts(input)
+
   def PrototypeOverAccepts(input: BftBlockInput_t): bool =
     PrototypeBftBlockTryFromAccepts(input) and
+    not(IntendedBftBlockTryFromAccepts(input))
+
+  def RepairedOverAccepts(input: BftBlockInput_t): bool =
+    RepairedBftBlockTryFromAccepts(input) and
     not(IntendedBftBlockTryFromAccepts(input))
 
   val IntendedAcceptanceSubsetOfPrototype =
@@ -81,13 +90,40 @@ module CrosslinkBftBlockValidationGap {
     PrototypeOverAccepts(Input(Sigma, true, false, true)) and
     PrototypeOverAccepts(Input(Sigma, true, true, false))
 
+  val RepairedConstructorClosesValidationGap =
+    HeaderCounts.forall(headerCount =>
+      Set(true, false).forall(versionsKnown =>
+        Set(true, false).forall(headersConsecutive =>
+          Set(true, false).forall(powSolutionsValid => {
+            val input = Input(
+              headerCount,
+              versionsKnown,
+              headersConsecutive,
+              powSolutionsValid,
+            )
+            RepairedBftBlockTryFromAccepts(input) ==
+              IntendedBftBlockTryFromAccepts(input) and
+            not(RepairedOverAccepts(input))
+          })
+        )
+      )
+    )
+
   val WrongHeaderCountStillRejected =
     not(PrototypeBftBlockTryFromAccepts(Input(Sigma + 1, true, true, true)))
+
+  val RepairedConstructorRejectsKnownMalformedInputs =
+    not(RepairedBftBlockTryFromAccepts(Input(Sigma, false, true, true))) and
+    not(RepairedBftBlockTryFromAccepts(Input(Sigma, true, false, true))) and
+    not(RepairedBftBlockTryFromAccepts(Input(Sigma, true, true, false))) and
+    not(RepairedBftBlockTryFromAccepts(Input(Sigma + 1, true, true, true)))
 
   val Safety =
     IntendedAcceptanceSubsetOfPrototype and
     PrototypeValidationGapRecorded and
-    WrongHeaderCountStillRejected
+    RepairedConstructorClosesValidationGap and
+    WrongHeaderCountStillRejected and
+    RepairedConstructorRejectsKnownMalformedInputs
 
   var checked: bool
 
@@ -137,7 +173,9 @@ module CrosslinkBftBlockValidationGapTest {
       .then(all {
         assert(not(IntendedBftBlockTryFromAccepts(BadVersionInput))),
         assert(PrototypeBftBlockTryFromAccepts(BadVersionInput)),
+        assert(not(RepairedBftBlockTryFromAccepts(BadVersionInput))),
         assert(PrototypeOverAccepts(BadVersionInput)),
+        assert(not(RepairedOverAccepts(BadVersionInput))),
         unchangedAll,
       })
   }
@@ -147,7 +185,9 @@ module CrosslinkBftBlockValidationGapTest {
       .then(all {
         assert(not(IntendedBftBlockTryFromAccepts(BadOrderInput))),
         assert(PrototypeBftBlockTryFromAccepts(BadOrderInput)),
+        assert(not(RepairedBftBlockTryFromAccepts(BadOrderInput))),
         assert(PrototypeOverAccepts(BadOrderInput)),
+        assert(not(RepairedOverAccepts(BadOrderInput))),
         unchangedAll,
       })
   }
@@ -157,7 +197,9 @@ module CrosslinkBftBlockValidationGapTest {
       .then(all {
         assert(not(IntendedBftBlockTryFromAccepts(BadPowInput))),
         assert(PrototypeBftBlockTryFromAccepts(BadPowInput)),
+        assert(not(RepairedBftBlockTryFromAccepts(BadPowInput))),
         assert(PrototypeOverAccepts(BadPowInput)),
+        assert(not(RepairedOverAccepts(BadPowInput))),
         unchangedAll,
       })
   }
@@ -167,6 +209,17 @@ module CrosslinkBftBlockValidationGapTest {
       .then(all {
         assert(not(IntendedBftBlockTryFromAccepts(WrongCountInput))),
         assert(not(PrototypeBftBlockTryFromAccepts(WrongCountInput))),
+        assert(not(RepairedBftBlockTryFromAccepts(WrongCountInput))),
+        unchangedAll,
+      })
+  }
+
+  run repairedConstructorMatchesIntendedRuleTest = {
+    Init
+      .then(all {
+        assert(RepairedConstructorClosesValidationGap),
+        assert(RepairedConstructorRejectsKnownMalformedInputs),
+        assert(RepairedBftBlockTryFromAccepts(ValidInput)),
         unchangedAll,
       })
   }

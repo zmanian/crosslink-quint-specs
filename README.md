@@ -335,9 +335,11 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkBftBlockValidationGap.qnt` records the current prototype
   implementation gap in `BftBlock::try_from`: incorrect header count is
   rejected, but documented version, header-order, and PoW-solution checks are
-  not yet enforced at that constructor boundary. The shape model also records
-  that deserialization currently has only a 2048-header envelope cap and does
-  not delegate through `try_from`.
+  not yet enforced at that constructor boundary. It also records the repaired
+  constructor target: exact intended acceptance with no over-acceptance for bad
+  version, bad order, bad PoW, or wrong sigma count. The shape model also
+  records that deserialization currently has only a 2048-header envelope cap and
+  does not delegate through `try_from`.
 - `spec/CrosslinkBftBlockProductionVectors.qnt` pins the production BFT-block
   wire layout: u32 version, u32 BFT height, counted previous-block fat pointer,
   u32 finalization-candidate height, u32 header count, and contiguous serialized
