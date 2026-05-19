@@ -30,7 +30,7 @@ Status terms:
 | Nil-precommit same-round unlock | `StartNextRoundAfterPrecommitQuorum`, `ApplyLateNilPrecommitCertificate` | covered | None at current one-height abstraction level. |
 | Preserve older locks | `nilPrecommitPreservesOlderTendermintValueLockTest`, `laterNilCertificateDoesNotUnlockOlderValueLockTest`, `nilResamplingDoesNotClearOtherHeightStateTest` | covered | Needs full composition with finality and production evidence formats. |
 | Mixed precommit is not unlock evidence | `mixedPrecommitQuorumDoesNotUnlockTest` | covered | None. |
-| Local receive/delivery semantics | `seenPropose`, `seenPrevote`, `seenPrecommit`, `Deliver*`; `test:local-delivery` | covered | Needs network scheduling/fairness assumptions. |
+| Local receive/delivery semantics | `seenPropose`, `seenPrevote`, `seenPrecommit`, `Deliver*`; `CrosslinkDeliveryFairnessContract.qnt`; `test:local-delivery`; `test:delivery-fairness-contract`; `verify:delivery-fairness-contract-safety`; `verify:temporal:delivery-fairness-contract` | partial | Local delivery is modeled in the round machine and a TLC-sized fairness envelope now checks that delivered receiver-local messages, not broadcast alone, create local quorum evidence and eventually let a correct decider see a precommit quorum. Full imported network scheduling and timing proof remains open. |
 | Timeout transitions | `TimeoutProposePrevoteNil`, `TimeoutPrevotePrecommitNil`, `TimeoutPrecommitStartNextRound`; `CrosslinkTimeoutProgressContract.qnt`; `test:timeout`; `test:timeout-progress-contract`; `precommitTimeoutDoesNotClearHeightedLockTest`; `timeoutWithoutValueLockNextFreshProposalResamplesTest`; `verify:timeout-progress-contract-safety`; `verify:temporal:timeout-progress-contract` | partial | Timeout temporal envelope now checks round burn, nil-certificate recovery, older-lock preservation, and stable justified decision; full imported round-machine/network timing temporal proof remains open. |
 | Height-indexed round machine | `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedHeadSigmaRound.qnt`; `spec/CrosslinkDynamicSigmaHeightedRound.qnt`; `spec/CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt`; `test:heighted-round`; `test:heighted-head-sigma`; `test:dynamic-sigma-heighted-round`; `test:dynamic-sigma-heighted-authenticated-evidence`; `verify:heighted-round-safety`; `verify:heighted-head-sigma-safety`; `verify:dynamic-sigma-heighted-round-safety`; `verify:dynamic-sigma-heighted-authenticated-evidence-safety` | partial | First receive-reactive heighted slice now has fixed-sigma and dynamic-sigma head-sigma stream linkage, plus a dynamic-sigma authenticated-evidence bridge; full production auth/evidence integration remains open. |
 | Weighted voting power | `VotingPowerOf`, `QuorumVotingPower`; `test:weighted`; `CrosslinkFatPointerFormat.qnt`; `CrosslinkFatPointerProductionVectors.qnt`; `test:fat-pointer-production-vectors`; `verify:fat-pointer-production-vectors-safety` | covered | Production fat-pointer signer-vector, exact wire-envelope offset/length, checked-in fixture offsets/byte probes, and producer-round-data derivation shapes are modeled; broader production integration remains open. |
@@ -43,7 +43,7 @@ Status terms:
 | Fork finality over PoW branches | `spec/CrosslinkForkFinality.qnt`; `test:finality`; `verify:finality-safety` | covered | Needs concrete PoW-chain data. |
 | Multi-height finalized prefix | `spec/CrosslinkBftHeights.qnt`; `spec/CrosslinkMultiHeight.qnt`; `spec/CrosslinkHeightedRound.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `spec/CrosslinkDynamicSigmaHeightedFinality.qnt`; `spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt`; `test:bft-heights`; `test:multi-height`; `test:heighted-round`; `test:heighted-finality`; `test:dynamic-sigma-heighted-finality`; `test:dynamic-sigma-authenticated-finality`; `verify:bft-heights-safety`; `verify:multi-height-safety`; `verify:heighted-round-safety`; `verify:heighted-finality-safety`; `verify:dynamic-sigma-heighted-finality-safety`; `verify:dynamic-sigma-authenticated-finality-safety` | partial | Heighted finality exists for fixed and dynamic sigma, including authenticated dynamic finality; `CrosslinkBftHeights` keeps a compact scheduled-height sanity harness; production data/linkage remains abstract. |
 | Composed round recovery plus finality | `spec/CrosslinkComposed.qnt`; `spec/CrosslinkHeightedFinality.qnt`; `spec/CrosslinkDynamicSigmaHeightedFinality.qnt`; `spec/CrosslinkDynamicSigmaAuthenticatedFinality.qnt`; `spec/CrosslinkComposedProgressContract.qnt`; `test:composed`; `test:heighted-finality`; `test:dynamic-sigma-heighted-finality`; `test:dynamic-sigma-authenticated-finality`; `test:composed-progress-contract`; `verify:composed-safety`; `verify:heighted-finality-safety`; `verify:dynamic-sigma-heighted-finality-safety`; `verify:dynamic-sigma-authenticated-finality-safety`; `verify:composed-progress-contract-safety` | partial | Heighted fixed-sigma, dynamic-sigma, and authenticated dynamic-sigma finality compositions plus a TLC-sized composed progress contract exist; production data/linkage and a temporal proof over the full imported protocol remain abstract. |
-| Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel`, `CrosslinkSchedulerLivenessModel`, `CrosslinkSchedulerProgressContractModel`, `CrosslinkTimeoutProgressContractModel`, `CrosslinkFinalityProgressContractModel`, `CrosslinkComposedProgressContractModel`; `test:scheduler-liveness`; `test:scheduler-progress-contract`; `test:timeout-progress-contract`; `test:finality-progress-contract`; `test:composed-progress-contract`; `verify:scheduler-liveness-safety`; `verify:scheduler-progress-contract-safety`; `verify:timeout-progress-contract-safety`; `verify:finality-progress-contract-safety`; `verify:composed-progress-contract-safety`; `verify:temporal` | partial | Bounded scheduler-parametric checks and TLC temporal contracts now cover scheduler progress, timeout recovery, decision-to-finality progress, and a self-contained composed nil-resampling/finality progress slice; no full imported round-machine temporal liveness proof yet. |
+| Liveness under stream stability | `NilPrecommitResamplingStableWindowLiveness`, `CrosslinkComposedLivenessModel`, `CrosslinkSchedulerLivenessModel`, `CrosslinkSchedulerProgressContractModel`, `CrosslinkDeliveryFairnessContractModel`, `CrosslinkTimeoutProgressContractModel`, `CrosslinkFinalityProgressContractModel`, `CrosslinkComposedProgressContractModel`; `test:scheduler-liveness`; `test:scheduler-progress-contract`; `test:delivery-fairness-contract`; `test:timeout-progress-contract`; `test:finality-progress-contract`; `test:composed-progress-contract`; `verify:scheduler-liveness-safety`; `verify:scheduler-progress-contract-safety`; `verify:delivery-fairness-contract-safety`; `verify:timeout-progress-contract-safety`; `verify:finality-progress-contract-safety`; `verify:composed-progress-contract-safety`; `verify:temporal` | partial | Bounded scheduler-parametric checks and TLC temporal contracts now cover scheduler progress, local-delivery fairness, timeout recovery, decision-to-finality progress, and a self-contained composed nil-resampling/finality progress slice; no full imported round-machine temporal liveness proof yet. |
 | CI for checks | `package.json` scripts and `.github/workflows/quint.yml` | covered | Latest pushed commit may still be running until GitHub Actions completes. |
 | Documentation mapping to Tendermint | `docs/tendermint-crosslink-map.md`, `docs/implementation-correspondence.md`, `docs/spec-roadmap.md`, `docs/dynamic-sigma-telemetry-integration.md` | covered | Should keep updated as models become less abstract. |
 
@@ -60,7 +60,7 @@ npm run verify:temporal
 ```
 
 `npm test` covers baseline, resampling, evidence bookkeeping, weighted quorum,
-message evidence, local delivery, timeout, timeout progress contract, liveness
+message evidence, local delivery, delivery fairness, timeout, timeout progress contract, liveness
 witnesses, scheduler liveness, scheduler progress contract, finality progress
 contract, composed progress contract, stream-churn risk, PoW stochastic assumptions,
 PoW fork schedule, PoW branch competition, PoW-reorg stress,
@@ -126,6 +126,7 @@ CrosslinkHeightedAuthenticatedEvidenceModel
 CrosslinkHeightedAuthenticatedGossipTransportModel
 CrosslinkSchedulerLivenessModel
 CrosslinkSchedulerProgressContractModel
+CrosslinkDeliveryFairnessContractModel
 CrosslinkTimeoutProgressContractModel
 CrosslinkFinalityProgressContractModel
 CrosslinkComposedProgressContractModel
@@ -161,7 +162,7 @@ CrosslinkFixtureGossipTransportModel
 ```
 
 `npm run verify:extended` is a non-default deeper gate for the newest
-finality-progress, composed-progress, timeout-progress, stream-churn, PoW stochastic-assumption,
+finality-progress, composed-progress, delivery-fairness, timeout-progress, stream-churn, PoW stochastic-assumption,
 PoW fork-schedule, PoW branch-competition, PoW-reorg stress,
 BFT-height finality, dynamic-sigma controller, dynamic-sigma calibration,
 dynamic-sigma telemetry,
@@ -241,13 +242,15 @@ CrosslinkHeightedAuthenticatedGossipTransportModel
 
 ```text
 CrosslinkSchedulerProgressContractModel / EventuallyStableDecision
+CrosslinkDeliveryFairnessContractModel / EventuallyLocalDecision
 CrosslinkTimeoutProgressContractModel / EventuallyTimeoutRecoveryDecides
 CrosslinkFinalityProgressContractModel / EventuallyFinalized
 CrosslinkComposedProgressContractModel / EventuallyFinalizesStableDecision
 ```
 
-These are temporal progress contracts for the scheduler envelope, the timeout
-recovery envelope, the scheduler-to-finality handoff, and a self-contained composed
+These are temporal progress contracts for the scheduler envelope, the
+local-delivery fairness envelope, the timeout recovery envelope, the
+scheduler-to-finality handoff, and a self-contained composed
 nil-resampling/finality slice. They are not yet temporal proofs over the full
 imported protocol state.
 

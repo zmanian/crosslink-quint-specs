@@ -295,6 +295,11 @@ For Crosslink, matching that quality means adding:
   state from `CrosslinkSchedulerLiveness.qnt`, keeps only progress transitions
   before decision, and TLC checks eventual entry into the stable decision
   phase over the complete finite state graph.
+- `CrosslinkDeliveryFairnessContract.qnt` adds a TLC-sized local-delivery
+  fairness envelope. It keeps proposal, prevote, and precommit broadcast
+  separate from receiver-local delivery, checks that broadcast alone cannot
+  create local quorum evidence, and checks that fair post-GST delivery
+  eventually gives a correct decider a local precommit quorum.
 - `CrosslinkFinalityProgressContract.qnt` adds the next temporal handoff:
   once the scheduler contract reaches a stable decision, a fair finality
   applicator eventually advances the Crosslink finality cursor.
@@ -523,6 +528,12 @@ For Crosslink, matching that quality means adding:
   `DeliverProposal`/`DeliverPrevote`/`DeliverPrecommit` refuse messages that
   were not broadcast, and `CrosslinkLocalDeliveryModel` shows that local quorum
   evidence only appears after delivery.
+- `CrosslinkDeliveryFairnessContractModel` adds the TLC-friendly fairness
+  envelope around that local-delivery split: broadcasted messages do not count
+  as local quorum evidence until delivered, precommit broadcast requires the
+  signer to have a receiver-local prevote quorum, and weak fairness over the
+  finite delivery schedule eventually gives the decider a local precommit
+  quorum.
 - The main round machine now uses local receive guards for proposal prevote,
   value precommit, precommit-quorum round advancement, late nil-certificate
   recovery, and decision. Global quorum predicates remain as broadcast-level
@@ -588,6 +599,10 @@ For Crosslink, matching that quality means adding:
   contract for that scheduler envelope. It is not yet a full composed protocol
   liveness proof, because current temporal backends have trouble with the full
   imported round-machine state.
+- `CrosslinkDeliveryFairnessContractModel` supplies a separate TLC-checked
+  local-delivery fairness contract. It fills the gap between broadcast-level
+  evidence and receiver-local receive guards by requiring delivery before local
+  prevote/precommit quorum evidence can drive progress.
 - `CrosslinkTimeoutProgressContractModel` supplies the matching TLC-checked
   timeout envelope. It proves that an ordinary timeout round cannot be the
   unlock event, that nil-precommit recovery clears only recovery-round state,

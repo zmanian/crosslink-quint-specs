@@ -91,6 +91,12 @@ actions copy those messages into the receiver's `seen*` state. The local quorum
 predicates (`LocalPrevoteQuorum` and `LocalPrecommitQuorum`) only use delivered
 messages.
 
+`CrosslinkDeliveryFairnessContract.qnt` adds a TLC-checked envelope around this
+split. It keeps broadcast, receiver-local delivery, precommit broadcast, and
+decision as separate steps, rejects quorum evidence from broadcast-only state,
+and checks that fair delivery after GST eventually gives a correct decider a
+local precommit quorum.
+
 The active receive rules now use this local state:
 
 ```text
