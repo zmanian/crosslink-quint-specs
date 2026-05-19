@@ -139,9 +139,9 @@ For Crosslink, matching that quality means adding:
   and precommit duties until a correct validator decides.
 - `CrosslinkSchedulerProgressContract.qnt` adds the first explicit temporal
   liveness check for the scheduler envelope. It abstracts away the protocol
-  state from `CrosslinkSchedulerLiveness.qnt`, keeps only progress transitions
-  before decision, and TLC checks eventual entry into the stable decision
-  phase over the complete finite state graph.
+  state from `CrosslinkSchedulerLiveness.qnt`, adds a monotone progress rank,
+  and TLC checks that weak-fair progress steps imply eventual entry into the
+  stable decision phase over the complete finite state graph.
 - `CrosslinkHeadSigmaSampling.qnt` makes the source of `Stream(round)`
   explicit. It samples the `head - sigma` ancestor of each locally observed
   PoW head and checks same-branch progress, fork-switch churn, stable-head
