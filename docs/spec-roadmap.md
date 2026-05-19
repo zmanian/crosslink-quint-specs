@@ -144,6 +144,13 @@ For Crosslink, matching that quality means adding:
   precommit flags, and cross-height replay bytes. This narrows the remaining
   concrete-message gap to proposal chunks, full Tenderlink packet vectors, and
   production gossip integration.
+- `CrosslinkTenderlinkProposalChunkSignBytes.qnt` pins the legacy Tenderlink
+  proposal chunk signing bytes: 56-byte little-endian header plus chunk data.
+  The header witness covers chunk index, proposal size, round, valid round,
+  BFT height, proposal id, `valid_round = -1` as `u32::MAX`, and rejection of
+  future valid rounds, trailing bytes, cross-height replay bytes, and chunk
+  ranges past the declared proposal size. Malachite protobuf proposal vectors
+  remain a separate fixture-generation task.
 
 ### 2026-05-18
 
