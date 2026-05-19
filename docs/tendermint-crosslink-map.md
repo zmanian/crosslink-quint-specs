@@ -67,6 +67,9 @@ obligation over reachable correct proposal messages, and `UponProposalPrevote`
 only lets an older lock vote for a different value when the proposal carries
 justified valid-round evidence. `CrosslinkValidRoundModel` has executable
 witnesses for both the nil-prevote rejection path and the justified unlock path.
+`CrosslinkTenderlinkProposalPolEvidence.qnt` adds the production-shaped bridge:
+non-nil `validRound` proposal chunks must be paired with canonical Tenderlink
+prevote packet evidence for the same height, valid round, and value id.
 
 ### Moving Values
 

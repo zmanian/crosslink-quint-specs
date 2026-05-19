@@ -142,8 +142,8 @@ For Crosslink, matching that quality means adding:
 - The new witnesses cover nil prevote, value prevote, nil precommit, and value
   precommit exact hex vectors, plus rejection of trailing bytes, wrong
   precommit flags, and cross-height replay bytes. This narrows the remaining
-  concrete-message gap to proposal chunks, full Tenderlink packet vectors, and
-  production gossip integration.
+  concrete-message gap to full-sized Tenderlink packet fixtures and production
+  gossip integration.
 - `CrosslinkTenderlinkProposalChunkSignBytes.qnt` pins the legacy Tenderlink
   proposal chunk signing bytes: 56-byte little-endian header plus chunk data.
   The header witness covers chunk index, proposal size, round, valid round,
@@ -154,9 +154,15 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkTenderlinkVotePacketFormat.qnt` pins the legacy `PacketVotes`
   batch format: nil/yes counts, round, height, value id, and
   roster-index/signature entries. It records the struct padding gap separately
-  from the variable-length `write_to` bytes and checks that nil prevote and
-  value precommit packet entries reconstruct the canonical 76-byte vote sign
-  payload before signature verification.
+  from the variable-length `write_to` bytes and checks that nil prevote,
+  value prevote, and value precommit packet entries reconstruct the canonical
+  76-byte vote sign payload before signature verification.
+- `CrosslinkTenderlinkProposalPolEvidence.qnt` bridges the valid-round rule to
+  those production-shaped bytes: a proposal chunk with a non-`-1` valid round
+  is accepted only when paired with a canonical prevote packet for the same
+  height, valid round, and value id. The bounded fixture models one canonical
+  signer as the minimal quorum threshold; full production-size 2f+1 packet
+  fixtures remain future work.
 - `CrosslinkTenderlinkConsensusPacketFormat.qnt` pins the compact Tenderlink
   consensus packet envelopes around those payloads: a 16-byte little-endian
   `PacketHeader` tag/ack prefix, including a nonzero
@@ -558,7 +564,10 @@ For Crosslink, matching that quality means adding:
   obligation for correct proposal messages, and an older lock only votes across
   values when that evidence is present. `CrosslinkValidRoundModel` covers
   unjustified rejection, justified unlock, and correct-proposer rejection for
-  unjustified valid-round state.
+  unjustified valid-round state. `CrosslinkTenderlinkProposalPolEvidence.qnt`
+  now pins the production-shaped bridge for this rule by requiring non-nil
+  `validRound` proposal chunks to match canonical prevote-packet POL evidence
+  by height, round, and value id.
 - The implementation-correspondence track has a first document in
   `docs/implementation-correspondence.md`.
 - `docs/dynamic-sigma-telemetry-integration.md` maps the dynamic-sigma

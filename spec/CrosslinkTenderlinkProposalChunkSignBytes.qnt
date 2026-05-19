@@ -37,13 +37,15 @@ module CrosslinkTenderlinkProposalChunkSignBytes {
 
   pure val TestProposalIdHex =
     "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+  pure val PolEvidenceProposalIdHex =
+    "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
   pure val TestChunkDataHex = "cafebabe"
   pure val NilValidRound = -1
 
   pure val Heights = 1.to(2)
   pure val Rounds = 0.to(2)
   pure val ChunkIndexes = 0.to(1)
-  pure val ProposalIds = Set(TestProposalIdHex)
+  pure val ProposalIds = Set(TestProposalIdHex, PolEvidenceProposalIdHex)
   pure val ChunkDatas = Set(TestChunkDataHex)
 
   pure val U32ByteLen = 4
@@ -141,6 +143,10 @@ module CrosslinkTenderlinkProposalChunkSignBytes {
       wire.round == 2 and wire.validRound == 1 and
       wire.height == 2 and wire.proposalId == TestProposalIdHex) {
       "010000000800000002000000010000000200000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    } else if (wire.chunkIndex == 1 and wire.proposalSize == 8 and
+      wire.round == 2 and wire.validRound == 1 and
+      wire.height == 2 and wire.proposalId == PolEvidenceProposalIdHex) {
+      "010000000800000002000000010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
     } else {
       UnmodeledProposalChunkHeaderHex
     }
@@ -156,6 +162,11 @@ module CrosslinkTenderlinkProposalChunkSignBytes {
       wire.height == 2 and wire.proposalId == TestProposalIdHex and
       wire.chunkDataByteLen == 4 and wire.chunkDataHex == TestChunkDataHex) {
       "010000000800000002000000010000000200000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcafebabe"
+    } else if (wire.byteLen == 60 and wire.chunkIndex == 1 and
+      wire.proposalSize == 8 and wire.round == 2 and wire.validRound == 1 and
+      wire.height == 2 and wire.proposalId == PolEvidenceProposalIdHex and
+      wire.chunkDataByteLen == 4 and wire.chunkDataHex == TestChunkDataHex) {
+      "010000000800000002000000010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacafebabe"
     } else {
       UnmodeledProposalChunkSignBytesHex
     }
@@ -243,6 +254,20 @@ module CrosslinkTenderlinkProposalChunkSignBytesTest {
       "010000000800000002000000010000000200000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbcafebabe",
     )
 
+  pure val polValidRoundValueIdChunk = {
+    byteLen: 60,
+    chunkIndex: 1,
+    proposalSize: 8,
+    round: 2,
+    validRound: 1,
+    height: 2,
+    proposalId: PolEvidenceProposalIdHex,
+    chunkDataByteLen: 4,
+    chunkDataHex: TestChunkDataHex,
+    hex:
+      "010000000800000002000000010000000200000000000000aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaacafebabe",
+  }
+
   pure val futureValidRoundChunk =
     ChunkWire(
       60,
@@ -294,6 +319,7 @@ module CrosslinkTenderlinkProposalChunkSignBytesTest {
   pure val TestProposalChunks = Set(
     nilValidRoundChunk,
     polValidRoundChunk,
+    polValidRoundValueIdChunk,
     futureValidRoundChunk,
     trailingByteChunk,
     crossHeightReplayChunk,
@@ -346,6 +372,8 @@ module CrosslinkTenderlinkProposalChunkSignBytesTest {
         "010000000800000002000000010000000200000000000000bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"),
       assert(CanonicalProposalChunkSignBytesHex(polValidRoundChunk) ==
         polValidRoundChunk.hex),
+      assert(CanonicalProposalChunkSignBytesHex(polValidRoundValueIdChunk) ==
+        polValidRoundValueIdChunk.hex),
       unchangedAll,
     })
   }
@@ -354,9 +382,11 @@ module CrosslinkTenderlinkProposalChunkSignBytesTest {
     Init
       .then(AcceptProposalChunk(nilValidRoundChunk))
       .then(AcceptProposalChunk(polValidRoundChunk))
+      .then(AcceptProposalChunk(polValidRoundValueIdChunk))
       .then(all {
         assert(acceptedProposalChunks.contains(nilValidRoundChunk)),
         assert(acceptedProposalChunks.contains(polValidRoundChunk)),
+        assert(acceptedProposalChunks.contains(polValidRoundValueIdChunk)),
         assert(Safety),
         unchangedAll,
       })
