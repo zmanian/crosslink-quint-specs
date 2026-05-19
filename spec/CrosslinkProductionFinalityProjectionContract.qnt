@@ -11,7 +11,8 @@ module CrosslinkProductionFinalityProjectionContractModel {
 
    This finite projection composes those pieces at the finality boundary:
    finality can advance only after the exact generated BFT-block fixture shape
-   and the exact authenticated fat-pointer wire have both been observed.
+   has arrived through a proposal transport envelope and the exact
+   authenticated fat-pointer wire has been observed.
    */
 
   import CrosslinkFixtureGossipTransport(
@@ -65,8 +66,24 @@ module CrosslinkProductionFinalityProjectionContractModel {
     header2RawPowMatchCount: int,
   }
 
-  pure val NoFinalizedBlockHash = "none"
+  type ProductionBftBlockProposalEnvelope_t = {
+    topic: str,
+    kind: str,
+    height: int,
+    round: int,
+    blockHash: str,
+    payloadByteLen: int,
+    blockAndFatPointerByteLen: int,
+    headerCount: int,
+    trailingFatPointerOffset: int,
+  }
 
+  pure val NoFinalizedBlockHash = "none"
+  pure val BftBlockProposalEnvelopeKind = "bft-block-proposal"
+  pure val WrongProposalEnvelopeKind = "headers"
+
+  var gossipedProductionBftBlockProposalEnvelope:
+    Set[ProductionBftBlockProposalEnvelope_t]
   var productionBftBlockObserved: bool
   var finalizedProductionBlock: bool
   var latestFinalizedProductionBlockHash: str
@@ -103,6 +120,28 @@ module CrosslinkProductionFinalityProjectionContractModel {
     header0RawPowMatchCount: header0RawPowMatchCount,
     header1RawPowMatchCount: header1RawPowMatchCount,
     header2RawPowMatchCount: header2RawPowMatchCount,
+  }
+
+  pure def ProposalEnvelope(
+    topic: str,
+    kind: str,
+    height: int,
+    round: int,
+    blockHash: str,
+    payloadByteLen: int,
+    blockAndFatPointerByteLen: int,
+    headerCount: int,
+    trailingFatPointerOffset: int,
+  ): ProductionBftBlockProposalEnvelope_t = {
+    topic: topic,
+    kind: kind,
+    height: height,
+    round: round,
+    blockHash: blockHash,
+    payloadByteLen: payloadByteLen,
+    blockAndFatPointerByteLen: blockAndFatPointerByteLen,
+    headerCount: headerCount,
+    trailingFatPointerOffset: trailingFatPointerOffset,
   }
 
   pure val FixtureProductionBftBlockCandidate =
@@ -195,6 +234,58 @@ module CrosslinkProductionFinalityProjectionContractModel {
       BftVectors::FixtureLaterHeader2RawPowMatchCount,
     )
 
+  pure val FixtureBftBlockProposalEnvelope =
+    ProposalEnvelope(
+      Transport::CrosslinkGossipTopic,
+      BftBlockProposalEnvelopeKind,
+      Transport::FixtureBftHeight,
+      Transport::FixtureRound,
+      Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockByteLen,
+      BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
+      BftVectors::FixtureHeaderCount,
+      BftVectors::CheckedInFixtureTrailingFatPointerOffset,
+    )
+
+  pure val WrongTopicBftBlockProposalEnvelope =
+    ProposalEnvelope(
+      Transport::WrongGossipTopic,
+      BftBlockProposalEnvelopeKind,
+      Transport::FixtureBftHeight,
+      Transport::FixtureRound,
+      Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockByteLen,
+      BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
+      BftVectors::FixtureHeaderCount,
+      BftVectors::CheckedInFixtureTrailingFatPointerOffset,
+    )
+
+  pure val WrongKindBftBlockProposalEnvelope =
+    ProposalEnvelope(
+      Transport::CrosslinkGossipTopic,
+      WrongProposalEnvelopeKind,
+      Transport::FixtureBftHeight,
+      Transport::FixtureRound,
+      Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockByteLen,
+      BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
+      BftVectors::FixtureHeaderCount,
+      BftVectors::CheckedInFixtureTrailingFatPointerOffset,
+    )
+
+  pure val WrongByteLenBftBlockProposalEnvelope =
+    ProposalEnvelope(
+      Transport::CrosslinkGossipTopic,
+      BftBlockProposalEnvelopeKind,
+      Transport::FixtureBftHeight,
+      Transport::FixtureRound,
+      Transport::FixtureBlockHash,
+      BftVectors::FixtureLaterBftBlockByteLen + 1,
+      BftVectors::FixtureLaterBftBlockAndFatPointerByteLen,
+      BftVectors::FixtureHeaderCount,
+      BftVectors::CheckedInFixtureTrailingFatPointerOffset,
+    )
+
   pure val ProductionBftBlockCandidateFixtures =
     Set(
       FixtureProductionBftBlockCandidate,
@@ -202,6 +293,14 @@ module CrosslinkProductionFinalityProjectionContractModel {
       WrongHeaderCountCandidate,
       WrongTrailingFatPointerOffsetCandidate,
       WrongPowBackingCandidate,
+    )
+
+  pure val ProductionBftBlockProposalEnvelopeFixtures =
+    Set(
+      FixtureBftBlockProposalEnvelope,
+      WrongTopicBftBlockProposalEnvelope,
+      WrongKindBftBlockProposalEnvelope,
+      WrongByteLenBftBlockProposalEnvelope,
     )
 
   def ProductionBftBlockFixtureConstantsCoherent: bool =
@@ -249,11 +348,34 @@ module CrosslinkProductionFinalityProjectionContractModel {
     candidate.header2RawPowMatchCount ==
       BftVectors::FixtureLaterHeader2RawPowMatchCount
 
+  pure def ProductionBftBlockProposalEnvelopeValid(
+    env: ProductionBftBlockProposalEnvelope_t,
+  ): bool =
+    ProductionBftBlockFixtureConstantsCoherent and
+    env.topic == Transport::CrosslinkGossipTopic and
+    env.kind == BftBlockProposalEnvelopeKind and
+    env.height == Transport::FixtureBftHeight and
+    env.round == Transport::FixtureRound and
+    env.blockHash == Transport::FixtureBlockHash and
+    env.payloadByteLen == BftVectors::FixtureLaterBftBlockByteLen and
+    env.blockAndFatPointerByteLen ==
+      BftVectors::FixtureLaterBftBlockAndFatPointerByteLen and
+    env.headerCount == BftVectors::FixtureHeaderCount and
+    env.trailingFatPointerOffset ==
+      BftVectors::CheckedInFixtureTrailingFatPointerOffset
+
+  def ProductionBftBlockProposalTransportObserved: bool =
+    gossipedProductionBftBlockProposalEnvelope.exists(
+      ProductionBftBlockProposalEnvelopeValid
+    )
+
   def ProductionFatPointerWireObserved: bool =
     Transport::observedProductionFatPointerWire.contains(Transport::FixtureWire) and
     Transport::observedProductionFatPointer.contains(Transport::FixtureFatPointer)
 
   action KeepProductionFinalityState = all {
+    gossipedProductionBftBlockProposalEnvelope' =
+      gossipedProductionBftBlockProposalEnvelope,
     productionBftBlockObserved' = productionBftBlockObserved,
     finalizedProductionBlock' = finalizedProductionBlock,
     latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
@@ -269,6 +391,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
   action Init = all {
     Transport::TransportPipelineInit,
     BftVectors::Init,
+    gossipedProductionBftBlockProposalEnvelope' = Set(),
     productionBftBlockObserved' = false,
     finalizedProductionBlock' = false,
     latestFinalizedProductionBlockHash' = NoFinalizedBlockHash,
@@ -282,6 +405,22 @@ module CrosslinkProductionFinalityProjectionContractModel {
     KeepProductionFinalityState,
   }
 
+  action GossipFixtureBftBlockProposalForFinality(
+    env: ProductionBftBlockProposalEnvelope_t,
+  ): bool =
+    all {
+      not(gossipedProductionBftBlockProposalEnvelope.contains(env)),
+      ProductionBftBlockProposalEnvelopeValid(env),
+      Transport::TransportPipelineStutter,
+      BftVectors::Next,
+      gossipedProductionBftBlockProposalEnvelope' =
+        gossipedProductionBftBlockProposalEnvelope.union(Set(env)),
+      productionBftBlockObserved' = productionBftBlockObserved,
+      finalizedProductionBlock' = finalizedProductionBlock,
+      latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
+      MarkProductionFinalityAction("GossipFixtureBftBlockProposalForFinality"),
+    }
+
   action GossipFixturePrecommitForFinality: bool =
     all {
       not(Transport::gossipedFixturePrecommitEnvelope.contains(
@@ -289,6 +428,8 @@ module CrosslinkProductionFinalityProjectionContractModel {
       )),
       Transport::GossipFixturePrecommitTransport(Transport::FixturePrecommitEnvelope),
       BftVectors::Next,
+      gossipedProductionBftBlockProposalEnvelope' =
+        gossipedProductionBftBlockProposalEnvelope,
       productionBftBlockObserved' = productionBftBlockObserved,
       finalizedProductionBlock' = finalizedProductionBlock,
       latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
@@ -304,6 +445,8 @@ module CrosslinkProductionFinalityProjectionContractModel {
         Transport::FixtureFatPointerWireEnvelope
       ),
       BftVectors::Next,
+      gossipedProductionBftBlockProposalEnvelope' =
+        gossipedProductionBftBlockProposalEnvelope,
       productionBftBlockObserved' = productionBftBlockObserved,
       finalizedProductionBlock' = finalizedProductionBlock,
       latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
@@ -317,6 +460,8 @@ module CrosslinkProductionFinalityProjectionContractModel {
         Transport::FixtureFatPointerWireEnvelope
       ),
       BftVectors::Next,
+      gossipedProductionBftBlockProposalEnvelope' =
+        gossipedProductionBftBlockProposalEnvelope,
       productionBftBlockObserved' = productionBftBlockObserved,
       finalizedProductionBlock' = finalizedProductionBlock,
       latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
@@ -329,8 +474,11 @@ module CrosslinkProductionFinalityProjectionContractModel {
     all {
       not(productionBftBlockObserved),
       ProductionBftBlockCandidateValid(candidate),
+      ProductionBftBlockProposalTransportObserved,
       Transport::TransportPipelineStutter,
       BftVectors::Next,
+      gossipedProductionBftBlockProposalEnvelope' =
+        gossipedProductionBftBlockProposalEnvelope,
       productionBftBlockObserved' = true,
       finalizedProductionBlock' = finalizedProductionBlock,
       latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
@@ -348,6 +496,8 @@ module CrosslinkProductionFinalityProjectionContractModel {
       Transport::TransportSafety,
       Transport::TransportPipelineStutter,
       BftVectors::Next,
+      gossipedProductionBftBlockProposalEnvelope' =
+        gossipedProductionBftBlockProposalEnvelope,
       productionBftBlockObserved' = productionBftBlockObserved,
       finalizedProductionBlock' = true,
       latestFinalizedProductionBlockHash' = candidate.blockHash,
@@ -359,6 +509,8 @@ module CrosslinkProductionFinalityProjectionContractModel {
 
   action Next: bool =
     any {
+      nondet env = oneOf(ProductionBftBlockProposalEnvelopeFixtures)
+      GossipFixtureBftBlockProposalForFinality(env),
       GossipFixturePrecommitForFinality,
       GossipFixtureFatPointerWireForFinality,
       ObserveFixtureFatPointerWireForFinality,
@@ -373,6 +525,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
     productionFinalityProgress >= 0 and
     Set(
       "Init",
+      "GossipFixtureBftBlockProposalForFinality",
       "GossipFixturePrecommitForFinality",
       "GossipFixtureFatPointerWireForFinality",
       "ObserveFixtureFatPointerWireForFinality",
@@ -380,9 +533,22 @@ module CrosslinkProductionFinalityProjectionContractModel {
       "FinalizeProductionBftBlock",
     ).contains(productionFiredAction)
 
+  val GossipedProductionBftBlockProposalEnvelopesValid =
+    gossipedProductionBftBlockProposalEnvelope.forall(
+      ProductionBftBlockProposalEnvelopeValid
+    )
+
+  val ProductionCandidateRequiresProposalTransport =
+    if (productionBftBlockObserved) {
+      ProductionBftBlockProposalTransportObserved
+    } else {
+      true
+    }
+
   val ProductionFinalityRequiresCandidateAndWire =
     if (finalizedProductionBlock) {
       productionBftBlockObserved and
+      ProductionBftBlockProposalTransportObserved and
       ProductionFatPointerWireObserved and
       latestFinalizedProductionBlockHash == Transport::FixtureBlockHash and
       ProductionBftBlockCandidateValid(FixtureProductionBftBlockCandidate)
@@ -392,6 +558,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
 
   val ProductionFinalityRequiresTransportedEvidence =
     if (finalizedProductionBlock) {
+      ProductionBftBlockProposalTransportObserved and
       Transport::gossipedFixturePrecommitEnvelope.contains(
         Transport::FixturePrecommitEnvelope
       ) and
@@ -406,6 +573,8 @@ module CrosslinkProductionFinalityProjectionContractModel {
     Transport::TransportSafety and
     BftVectors::Safety and
     ProductionStateWellFormed and
+    GossipedProductionBftBlockProposalEnvelopesValid and
+    ProductionCandidateRequiresProposalTransport and
     ProductionBftBlockFixtureConstantsCoherent and
     ProductionFinalityRequiresCandidateAndWire and
     ProductionFinalityRequiresTransportedEvidence
@@ -419,13 +588,30 @@ module CrosslinkProductionFinalityProjectionContractModel {
         assert(not(ProductionBftBlockCandidateValid(WrongHeaderCountCandidate))),
         assert(not(ProductionBftBlockCandidateValid(WrongTrailingFatPointerOffsetCandidate))),
         assert(not(ProductionBftBlockCandidateValid(WrongPowBackingCandidate))),
+        assert(ProductionBftBlockProposalEnvelopeValid(FixtureBftBlockProposalEnvelope)),
+        assert(not(ProductionBftBlockProposalEnvelopeValid(WrongTopicBftBlockProposalEnvelope))),
+        assert(not(ProductionBftBlockProposalEnvelopeValid(WrongKindBftBlockProposalEnvelope))),
+        assert(not(ProductionBftBlockProposalEnvelopeValid(WrongByteLenBftBlockProposalEnvelope))),
         assert(ProductionFinalitySafety),
         Unchanged,
       })
   }
 
+  run productionBftBlockProposalRejectedBeforeTransportTest = {
+    Init
+      .then(ObserveProductionBftBlockCandidate(FixtureProductionBftBlockCandidate))
+      .fail()
+  }
+
+  run wrongBftBlockProposalEnvelopeRejectedTest = {
+    Init
+      .then(GossipFixtureBftBlockProposalForFinality(WrongTopicBftBlockProposalEnvelope))
+      .fail()
+  }
+
   run productionFinalityRejectsBadBftBlockCandidateTest = {
     Init
+      .then(GossipFixtureBftBlockProposalForFinality(FixtureBftBlockProposalEnvelope))
       .then(ObserveProductionBftBlockCandidate(WrongBlockByteLenCandidate))
       .fail()
   }
@@ -441,6 +627,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
 
   run productionFinalityRequiresFatPointerWireTest = {
     Init
+      .then(GossipFixtureBftBlockProposalForFinality(FixtureBftBlockProposalEnvelope))
       .then(ObserveProductionBftBlockCandidate(FixtureProductionBftBlockCandidate))
       .then(FinalizeProductionBftBlock(FixtureProductionBftBlockCandidate))
       .fail()
@@ -448,6 +635,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
 
   run productionFinalityRequiresTransportedPrecommitTest = {
     Init
+      .then(GossipFixtureBftBlockProposalForFinality(FixtureBftBlockProposalEnvelope))
       .then(GossipFixtureFatPointerWireForFinality)
       .then(ObserveProductionBftBlockCandidate(FixtureProductionBftBlockCandidate))
       .then(ObserveFixtureFatPointerWireForFinality)
@@ -456,6 +644,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
 
   run productionFinalityCompletesFromFixtureTransportAndBftBlockTest = {
     Init
+      .then(GossipFixtureBftBlockProposalForFinality(FixtureBftBlockProposalEnvelope))
       .then(ObserveProductionBftBlockCandidate(FixtureProductionBftBlockCandidate))
       .then(GossipFixturePrecommitForFinality)
       .then(GossipFixtureFatPointerWireForFinality)
@@ -464,6 +653,7 @@ module CrosslinkProductionFinalityProjectionContractModel {
       .then(all {
         assert(finalizedProductionBlock),
         assert(latestFinalizedProductionBlockHash == Transport::FixtureBlockHash),
+        assert(ProductionBftBlockProposalTransportObserved),
         assert(productionBftBlockObserved),
         assert(ProductionFatPointerWireObserved),
         assert(ProductionFinalitySafety),
@@ -479,8 +669,9 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
    TLC currently trips over the alias-composed authenticated transport actions
    in CrosslinkProductionFinalityProjectionContractModel. This module keeps the
    same finite obligations as scalar gates: a generated production BFT-block
-   fixture, a transported precommit envelope, a transported fat-pointer wire
-   envelope, and an observed fat-pointer wire must all precede finality.
+   fixture transported as a proposal envelope, a transported precommit
+   envelope, a transported fat-pointer wire envelope, and an observed
+   fat-pointer wire must all precede finality.
    */
 
   import CrosslinkProductionFixtureVectorsGenerated.* from
@@ -494,6 +685,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
     CheckedInFixtureTrailingFatPointerOffset
 
   var productionBftBlockObserved: bool
+  var proposalEnvelopeTransported: bool
   var precommitEnvelopeTransported: bool
   var fatPointerWireEnvelopeTransported: bool
   var fatPointerWireObserved: bool
@@ -540,8 +732,23 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
     fatPointerWireEnvelopeTransported and
     fatPointerWireObserved
 
+  action TransportProposalEnvelope: bool =
+    all {
+      not(proposalEnvelopeTransported),
+      productionBftBlockObserved' = productionBftBlockObserved,
+      proposalEnvelopeTransported' = true,
+      precommitEnvelopeTransported' = precommitEnvelopeTransported,
+      fatPointerWireEnvelopeTransported' = fatPointerWireEnvelopeTransported,
+      fatPointerWireObserved' = fatPointerWireObserved,
+      finalizedProductionBlock' = finalizedProductionBlock,
+      latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
+      progress' = progress + 1,
+      firedAction' = "TransportProposalEnvelope",
+    }
+
   action Init = all {
     productionBftBlockObserved' = false,
+    proposalEnvelopeTransported' = false,
     precommitEnvelopeTransported' = false,
     fatPointerWireEnvelopeTransported' = false,
     fatPointerWireObserved' = false,
@@ -553,6 +760,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
 
   action Unchanged = all {
     productionBftBlockObserved' = productionBftBlockObserved,
+    proposalEnvelopeTransported' = proposalEnvelopeTransported,
     precommitEnvelopeTransported' = precommitEnvelopeTransported,
     fatPointerWireEnvelopeTransported' = fatPointerWireEnvelopeTransported,
     fatPointerWireObserved' = fatPointerWireObserved,
@@ -565,8 +773,10 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
   action ObserveProductionBftBlockCandidate: bool =
     all {
       ProductionFixtureConstantsCoherent,
+      proposalEnvelopeTransported,
       not(productionBftBlockObserved),
       productionBftBlockObserved' = true,
+      proposalEnvelopeTransported' = proposalEnvelopeTransported,
       precommitEnvelopeTransported' = precommitEnvelopeTransported,
       fatPointerWireEnvelopeTransported' = fatPointerWireEnvelopeTransported,
       fatPointerWireObserved' = fatPointerWireObserved,
@@ -580,6 +790,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
     all {
       not(precommitEnvelopeTransported),
       productionBftBlockObserved' = productionBftBlockObserved,
+      proposalEnvelopeTransported' = proposalEnvelopeTransported,
       precommitEnvelopeTransported' = true,
       fatPointerWireEnvelopeTransported' = fatPointerWireEnvelopeTransported,
       fatPointerWireObserved' = fatPointerWireObserved,
@@ -593,6 +804,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
     all {
       not(fatPointerWireEnvelopeTransported),
       productionBftBlockObserved' = productionBftBlockObserved,
+      proposalEnvelopeTransported' = proposalEnvelopeTransported,
       precommitEnvelopeTransported' = precommitEnvelopeTransported,
       fatPointerWireEnvelopeTransported' = true,
       fatPointerWireObserved' = fatPointerWireObserved,
@@ -608,6 +820,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
       fatPointerWireEnvelopeTransported,
       not(fatPointerWireObserved),
       productionBftBlockObserved' = productionBftBlockObserved,
+      proposalEnvelopeTransported' = proposalEnvelopeTransported,
       precommitEnvelopeTransported' = precommitEnvelopeTransported,
       fatPointerWireEnvelopeTransported' = fatPointerWireEnvelopeTransported,
       fatPointerWireObserved' = true,
@@ -623,6 +836,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
       ProductionFatPointerWireEvidenceObserved,
       not(finalizedProductionBlock),
       productionBftBlockObserved' = productionBftBlockObserved,
+      proposalEnvelopeTransported' = proposalEnvelopeTransported,
       precommitEnvelopeTransported' = precommitEnvelopeTransported,
       fatPointerWireEnvelopeTransported' = fatPointerWireEnvelopeTransported,
       fatPointerWireObserved' = fatPointerWireObserved,
@@ -634,6 +848,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
 
   action Next: bool =
     any {
+      TransportProposalEnvelope,
       ObserveProductionBftBlockCandidate,
       TransportPrecommitEnvelope,
       TransportFatPointerWireEnvelope,
@@ -646,6 +861,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
     progress >= 0 and
     Set(
       "Init",
+      "TransportProposalEnvelope",
       "ObserveProductionBftBlockCandidate",
       "TransportPrecommitEnvelope",
       "TransportFatPointerWireEnvelope",
@@ -656,27 +872,38 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
   val FinalityRequiresProductionInputs =
     if (finalizedProductionBlock) {
       productionBftBlockObserved and
+      proposalEnvelopeTransported and
       ProductionFatPointerWireEvidenceObserved and
       latestFinalizedProductionBlockHash == FixtureBlockHash
     } else {
       latestFinalizedProductionBlockHash == NoFinalizedBlockHash
     }
 
+  val CandidateRequiresProposalEnvelope =
+    if (productionBftBlockObserved) {
+      proposalEnvelopeTransported
+    } else {
+      true
+    }
+
   val Safety =
     ProductionFixtureConstantsCoherent and
     StateWellFormed and
+    CandidateRequiresProposalEnvelope and
     FinalityRequiresProductionInputs
 
   temporal EventuallyProductionFixtureFinalized =
     Next.weakFair(Set(progress)).implies(eventually(
       finalizedProductionBlock and
       latestFinalizedProductionBlockHash == FixtureBlockHash and
+      proposalEnvelopeTransported and
       productionBftBlockObserved and
       ProductionFatPointerWireEvidenceObserved
     ))
 
   run temporalProjectionCompletesProductionFinalityTest = {
     Init
+      .then(TransportProposalEnvelope)
       .then(ObserveProductionBftBlockCandidate)
       .then(TransportPrecommitEnvelope)
       .then(TransportFatPointerWireEnvelope)
@@ -685,6 +912,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
       .then(all {
         assert(finalizedProductionBlock),
         assert(latestFinalizedProductionBlockHash == FixtureBlockHash),
+        assert(proposalEnvelopeTransported),
         assert(Safety),
         Unchanged,
       })

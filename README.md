@@ -351,11 +351,12 @@ the Zebra Crosslink working branch:
   in canonical Crosslink-topic envelopes before the observer accepts the wire;
   wrong topic, wrong sign bytes, wrong kind, and wrong wire length are rejected.
 - `spec/CrosslinkProductionFinalityProjectionContract.qnt` composes the
-  generated production BFT-block fixture, the fixture transport boundary, and
-  authenticated fat-pointer evidence at finality: the composed safety model
-  rejects finality until the checked-in BFT-block candidate and transported
-  fat-pointer wire are both observed, while a scalar TLC projection proves the
-  same gates eventually finalize under fair progress.
+  generated production BFT-block fixture, a production-shaped proposal
+  transport envelope, the fixture transport boundary, and authenticated
+  fat-pointer evidence at finality: the composed safety model rejects finality
+  until the checked-in BFT-block candidate has arrived through transport and
+  the transported fat-pointer wire is observed, while a scalar TLC projection
+  proves the same gates eventually finalize under fair progress.
 
 The current spec surface has three first-class Crosslink variants:
 
