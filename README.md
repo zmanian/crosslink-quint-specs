@@ -65,9 +65,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
-  rejection, exact wire-envelope length, height-scoped signer authorization,
-  canonical signed bytes, quorum voting power over unique signers, and
-  derivation from producer round data.
+  rejection, exact wire-envelope offsets and length, height-scoped signer
+  authorization, canonical signed bytes, quorum voting power over unique
+  signers, and derivation from producer round data.
 
 The round-recovery model has two first-class instantiations:
 

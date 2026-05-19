@@ -153,6 +153,7 @@ rejectsForgedHeightedPrevoteSignatureTest
 acceptsHeightedFatPointerSignatureQuorumTest
 acceptsCurrentRosterFatPointerTest
 acceptsExactWireEnvelopeTest
+wireOffsetsMatchImplementationTest
 rejectsTrailingByteWireEnvelopeTest
 rejectsTruncatedWireEnvelopeTest
 validProducerRoundDataDerivesFatPointerTest
@@ -177,9 +178,9 @@ heighted authentication slice binds BFT height into proposal, vote, and
 fat-pointer sign bytes, including cross-height replay rejection. The
 fat-pointer-format model now also captures the production-shaped signer vector,
 including its counted wire layout, exact wire-envelope length,
-duplicate-pubkey rejection, canonical per-signer vote bytes, and height-scoped
-authorization. It also checks that a fat pointer is derivable from producer
-round data only when the included precommit signatures match the proposal value
+byte offsets, duplicate-pubkey rejection, canonical per-signer vote bytes, and
+height-scoped authorization. It also checks that a fat pointer is derivable
+from producer round data only when the included precommit signatures match the proposal value
 at the same height. This is still abstract: it models the authentication
 boundary and wire shape but does not yet call production signature verification,
 serialization code, or gossip transport.

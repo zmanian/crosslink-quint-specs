@@ -43,6 +43,9 @@ module CrosslinkFatPointerFormat {
   pure val PubKeyByteLen = 32
   pure val VoteSignatureByteLen = 64
   pure val SignatureEntryByteLen = PubKeyByteLen + VoteSignatureByteLen
+  pure val VotePayloadOffset = 0
+  pure val SignatureCountOffset = VotePayloadWithoutSignerByteLen
+  pure val SignatureEntriesOffset = SignatureCountOffset + SignatureCountByteLen
 
   assume max_signatures_positive =
     MaxSignatures >= 1
@@ -103,14 +106,31 @@ module CrosslinkFatPointerFormat {
     SignatureCountByteLen +
     fp.signatureCount * SignatureEntryByteLen
 
+  pure def SignatureEntryOffset(i: SigIndex_t): int =
+    SignatureEntriesOffset + i * SignatureEntryByteLen
+
+  pure def SignatureEntryPubKeyOffset(i: SigIndex_t): int =
+    SignatureEntryOffset(i)
+
+  pure def SignatureEntryVoteSignatureOffset(i: SigIndex_t): int =
+    SignatureEntryOffset(i) + PubKeyByteLen
+
+  pure def SignatureEntryEndOffset(i: SigIndex_t): int =
+    SignatureEntryOffset(i) + SignatureEntryByteLen
+
   def SignatureCountInRange(fp: FatPointer_t): bool =
     fp.signatureCount >= 0 and
     fp.signatureCount <= MaxSignatures and
     fp.signatureCount <= MaxU16
 
   def ProductionByteLayoutMatchesImplementation: bool =
+    VotePayloadOffset == 0 and
     VotePayloadWithoutSignerByteLen == 44 and
     SignatureCountByteLen == 2 and
+    SignatureCountOffset == 44 and
+    SignatureEntriesOffset == 46 and
+    PubKeyByteLen == 32 and
+    VoteSignatureByteLen == 64 and
     SignatureEntryByteLen == 96
 
   def FatPointerWireEnvelopeValid(wire: FatPointerWire_t): bool =
@@ -497,6 +517,20 @@ module CrosslinkFatPointerFormatTest {
       assert(FatPointerWireByteLen(validHeight2FatPointer) == 334),
       assert(MaxSignatures <= MaxU16),
       assert(ProductionByteLayoutMatchesImplementation),
+      unchangedAll,
+    })
+  }
+
+  run wireOffsetsMatchImplementationTest = {
+    Init.then(all {
+      assert(VotePayloadOffset == 0),
+      assert(SignatureCountOffset == 44),
+      assert(SignatureEntriesOffset == 46),
+      assert(SignatureEntryPubKeyOffset(0) == 46),
+      assert(SignatureEntryVoteSignatureOffset(0) == 78),
+      assert(SignatureEntryPubKeyOffset(1) == 142),
+      assert(SignatureEntryVoteSignatureOffset(1) == 174),
+      assert(SignatureEntryEndOffset(2) == FatPointerWireByteLen(validHeight2FatPointer)),
       unchangedAll,
     })
   }
