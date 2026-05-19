@@ -39,7 +39,7 @@ finality semantics.
 | Static proposal validity | `StaticProposalValidity` | Splits validity into structural validity, PoW-chain validity, and finality-candidate validity. |
 | Stream freshness | `IsFreshForRound`, `ValidProposalForRound`, and `UponStreamChangePrecommitNil` | A stream change between prevote and precommit causes nil precommit. |
 | PoW stochastic assumptions | `CrosslinkPowStochasticAssumptions.qnt`, `CrosslinkStreamChurnRisk.qnt`, `CrosslinkPowReorgStress.qnt` | Separates normal PoW-arrival exposure from long-reorg-tail exposure: the 75-second post-Blossom block target is the denominator, validator-set size and GST shape the vulnerable-window numerator, sigma reduces only the assumed long-reorg-tail numerator, and finite churn burns rounds under nil-precommit resampling. |
-| Dynamic sigma | `CrosslinkDynamicSigma.qnt`, `CrosslinkDynamicSigmaHeadSampling.qnt`, `CrosslinkDynamicSigmaHeightedRound.qnt`, `CrosslinkDynamicSigmaHeightedFinality.qnt`, `CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt`, `CrosslinkDynamicSigmaAuthenticatedFinality.qnt` | A third Crosslink variant: nil-precommit resampling with a consensus-visible per-height sigma schedule. Sigma changes only at BFT-height boundaries from committed failure telemetry, validator/network coverage, and Crosslink-participating PoW hash-power percentage; participation below the target blocks relaxation, while participation below the floor raises sigma. Same-height nil-round burns do not change sigma. The bridges check that proposals, value precommits, authenticated evidence, and finality validation use `head - sigma(h)` for the active BFT height and that the next BFT height uses telemetry-updated sigma. |
+| Dynamic sigma | `CrosslinkDynamicSigma.qnt`, `CrosslinkDynamicSigmaConsensusParams.qnt`, `CrosslinkDynamicSigmaHeadSampling.qnt`, `CrosslinkDynamicSigmaHeightedRound.qnt`, `CrosslinkDynamicSigmaHeightedFinality.qnt`, `CrosslinkDynamicSigmaHeightedAuthenticatedEvidence.qnt`, `CrosslinkDynamicSigmaAuthenticatedFinality.qnt` | A third Crosslink variant: nil-precommit resampling with a consensus-visible per-height sigma schedule. Sigma changes only at BFT-height boundaries from committed failure telemetry, validator/network coverage, and Crosslink-participating PoW hash-power percentage; participation below the target blocks relaxation, while participation below the floor raises sigma. Same-height nil-round burns do not change sigma or committed params. The consensus-param bridge checks that next-height `bc_confirmation_depth_sigma` bytes decode to the controller-selected sigma, including low-participation raises. The other bridges check that proposals, value precommits, authenticated evidence, and finality validation use `head - sigma(h)` for the active BFT height and that the next BFT height uses telemetry-updated sigma. |
 | Baseline sticky carry | `BaselineCrosslink` | The baseline carries stale cached proposal/lock state into the next round. |
 | Nil-precommit resampling | `NilPrecommitResamplingCrosslink`, `CrosslinkHeightedRound.qnt` | A `2f + 1 PRECOMMIT nil` cert clears only same-height/same-round cached/lock/valid state. Mixed precommit quorums can advance waiting, but do not unlock. |
 | Fork finality | `CrosslinkForkFinality.qnt`, `CrosslinkMultiHeight.qnt`, `CrosslinkHeightedFinality.qnt`, `CrosslinkFinalityProgressContract.qnt` | Models finalized-prefix linearity over a finite PoW fork tree and across sequential BFT heights; the progress contract adds a TLC-checked decision-to-finality handoff. |
@@ -174,10 +174,17 @@ dynamic-sigma composition: precommit/fat-pointer evidence and finality cursor
 advancement must be backed by authenticated evidence for the same active
 height/round dynamic candidate.
 
+`CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
+boundary for that dynamic schedule: height transitions install canonical
+next-height params matching the deterministic sigma update, while same-height
+nil-precommit round burns leave params untouched.
+
 ## Remaining Work To Match Upstream Quality
 
 - Connect the heighted authentication and evidence-gossip models to production
   serialization, signatures, and full production gossip transport.
+- Connect the dynamic-sigma consensus-param model to the concrete production
+  serialization format for those params.
 - Connect the abstract message-authentication model to production signature
   verification and serialization code.
 - Connect the abstract `StructurallyValid`, `PowChainValid`, and

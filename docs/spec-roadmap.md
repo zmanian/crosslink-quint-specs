@@ -62,6 +62,9 @@ sigma(h + 1) is computed deterministically from committed telemetry for h.
 Required pieces:
 
 - A per-height sigma schedule included in consensus-visible state.
+- A consensus-parameter envelope for the next height's
+  `bc_confirmation_depth_sigma`, so the committed parameter bytes activate the
+  deterministic controller output rather than a local node preference.
 - No same-height or same-lock sigma changes.
 - Deterministic updates from committed nil-round failure telemetry and a
   quorum-backed network coverage model.
@@ -214,6 +217,12 @@ For Crosslink, matching that quality means adding:
   long-reorg/low-coverage/low-hash participation failures can raise sigma,
   critically low participation can raise sigma directly, and stable covered
   high-participation windows lower it slowly.
+- `CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
+  boundary for the dynamic controller. It checks that committed per-height
+  `bc_confirmation_depth_sigma` wires decode to the deterministic active sigma,
+  activation height, and telemetry source height, that nil-precommit round
+  burns cannot rewrite params, and that malformed, stale, or out-of-range
+  next-height sigma wires are rejected.
 - `CrosslinkDynamicSigmaHeadSampling.qnt` connects that controller to concrete
   proposal-stream sampling. It imports the dynamic-sigma schedule, samples
   `head - sigma(h)` for the active BFT height, checks that nil-precommit round
@@ -362,8 +371,9 @@ For Crosslink, matching that quality means adding:
 - `npm run verify:extended` adds a non-default deeper bounded-check gate for
   the newest finality-progress, composed-progress, stream-churn-risk,
   PoW stochastic-assumption, PoW-reorg-stress, dynamic-sigma,
-  dynamic-sigma head-sampling, dynamic-sigma heighted-round, dynamic-sigma
-  heighted-finality, dynamic-sigma heighted-authenticated-evidence,
+  dynamic-sigma consensus-params, dynamic-sigma head-sampling,
+  dynamic-sigma heighted-round, dynamic-sigma heighted-finality,
+  dynamic-sigma heighted-authenticated-evidence,
   dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
   BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
   fat-pointer production-vector, heighted validator-evidence, and heighted
@@ -440,6 +450,11 @@ For Crosslink, matching that quality means adding:
   finality, a telemetry-raised height-2 finality candidate with sigma 2, and
   rejection of a height-2 finality witness that would only satisfy the older
   fixed-sigma depth.
+- `CrosslinkDynamicSigmaConsensusParamsModel` wraps the dynamic-sigma
+  controller with consensus-parameter bytes. It verifies canonical initial
+  params, nil-round param stability, raised and lowered sigma param commits,
+  a low-participation sigma raise, and rejection of malformed keys, stale
+  activation heights, or out-of-range sigma values.
 - `CrosslinkDynamicSigmaHeightedAuthenticatedEvidenceModel` composes the
   dynamic-sigma candidate boundary with the heighted authenticated-evidence
   pipeline. It verifies accepted height-1 and telemetry-raised height-2
@@ -474,10 +489,11 @@ For Crosslink, matching that quality means adding:
   fat-pointer observer models to more concrete serialization vectors, real
   signatures, header validity checks, and full production gossip transport.
   The fixture-gossip bridge now covers the checked-in fixture transport boundary,
-  and the dynamic-sigma heighted-round/finality/authenticated-evidence bridges
-  cover proposals/precommits/fat-pointer evidence/finality over
-  `head - sigma(h)`, but not the broader production message transport or
-  production consensus-parameter encoding for dynamic sigma.
+  and the dynamic-sigma consensus-param/heighted-round/finality/authenticated
+  evidence bridges cover parameter commits, proposals, precommits,
+  fat-pointer evidence, and finality over `head - sigma(h)`, but not the
+  broader production message transport or concrete production byte format for
+  dynamic-sigma consensus params.
   The remaining work is also to lift the current TLC-friendly progress contracts
   into a full imported-protocol
   temporal proof. A direct TLC run over the current imported composed model is

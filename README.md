@@ -81,6 +81,12 @@ the Zebra Crosslink working branch:
   Crosslink. Participation has two thresholds: the target required before sigma
   may relax, and a lower floor where participation is itself enough to raise
   sigma.
+- `spec/CrosslinkDynamicSigmaConsensusParams.qnt` adds the consensus-parameter
+  boundary for that controller: committed per-height
+  `bc_confirmation_depth_sigma` params must decode to the active sigma,
+  activation height, and telemetry source height; nil-precommit round burns
+  cannot rewrite params; malformed, stale, or out-of-range param wires are
+  rejected.
 - `spec/CrosslinkDynamicSigmaHeadSampling.qnt` composes that third variant with
   concrete `head - sigma(h)` sampling: already-sampled same-height candidates
   survive nil-precommit round burns, while committed telemetry changes the
@@ -178,6 +184,10 @@ The current spec surface has three first-class Crosslink variants:
   validator/network coverage: it contributes to sigma-relevant pressure for
   long-reorg or ambiguous low-coverage failures, prevents sigma relaxation below
   the target, and raises sigma directly below the critical participation floor.
+  `CrosslinkDynamicSigmaConsensusParamsModel` checks that the schedule is
+  installed through canonical `bc_confirmation_depth_sigma` consensus-param
+  wires at height boundaries and rejects malformed keys, stale activation
+  heights, and out-of-range sigma values.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
@@ -228,8 +238,9 @@ npm run verify:temporal
 `npm run verify:extended` is intentionally separate from the default CI gate.
 It runs deeper bounded Apalache checks for the newer finality-progress,
 composed-progress, stream-churn risk, PoW stochastic-assumption,
-PoW-reorg stress, dynamic-sigma, dynamic-sigma head-sampling,
-dynamic-sigma heighted-round, dynamic-sigma heighted-finality,
+PoW-reorg stress, dynamic-sigma, dynamic-sigma consensus-params,
+dynamic-sigma head-sampling, dynamic-sigma heighted-round,
+dynamic-sigma heighted-finality,
 dynamic-sigma heighted-authenticated-evidence,
 dynamic-sigma authenticated-finality, head-sigma, BFT-block-shape,
 BFT-block validation-gap, BFT-block production-vector, fat-pointer-format,
@@ -267,6 +278,7 @@ quint typecheck spec/CrosslinkStreamChurnRisk.qnt
 quint typecheck spec/CrosslinkPowStochasticAssumptions.qnt
 quint typecheck spec/CrosslinkPowReorgStress.qnt
 quint typecheck spec/CrosslinkDynamicSigma.qnt
+quint typecheck spec/CrosslinkDynamicSigmaConsensusParams.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeadSampling.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeightedRound.qnt
 quint typecheck spec/CrosslinkDynamicSigmaHeightedFinality.qnt
@@ -300,6 +312,7 @@ quint test spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskMode
 quint test spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --max-samples=100 --backend=rust
@@ -355,6 +368,7 @@ quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskMo
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=5
+quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=3
 quint verify spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=DynamicHeightedFinalitySafety --max-steps=3
@@ -377,6 +391,7 @@ quint verify spec/CrosslinkStreamChurnRisk.qnt --main=CrosslinkStreamChurnRiskMo
 quint verify spec/CrosslinkPowStochasticAssumptions.qnt --main=CrosslinkPowStochasticAssumptionsModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkPowReorgStress.qnt --main=CrosslinkPowReorgStressModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkDynamicSigma.qnt --main=CrosslinkDynamicSigmaModel --init=Init --step=Next --invariants=Safety --max-steps=8
+quint verify spec/CrosslinkDynamicSigmaConsensusParams.qnt --main=CrosslinkDynamicSigmaConsensusParamsModel --init=ConsensusParamInit --step=ConsensusParamNext --invariants=ConsensusParamSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaHeadSampling.qnt --main=CrosslinkDynamicSigmaHeadSamplingModel --init=CombinedInit --step=CombinedNext --invariants=DynamicHeadSigmaSafety --max-steps=8
 quint verify spec/CrosslinkDynamicSigmaHeightedRound.qnt --main=CrosslinkDynamicSigmaHeightedRoundModel --init=Init --step=Next --invariants=DynamicHeightedHeadSigmaSafety --max-steps=5
 quint verify spec/CrosslinkDynamicSigmaHeightedFinality.qnt --main=CrosslinkDynamicSigmaHeightedFinalityModel --init=ComposedInit --step=ComposedNext --invariants=DynamicHeightedFinalitySafety --max-steps=5
