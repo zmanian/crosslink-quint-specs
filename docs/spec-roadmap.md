@@ -149,8 +149,8 @@ For Crosslink, matching that quality means adding:
   The header witness covers chunk index, proposal size, round, valid round,
   BFT height, proposal id, `valid_round = -1` as `u32::MAX`, and rejection of
   future valid rounds, trailing bytes, cross-height replay bytes, and chunk
-  ranges past the declared proposal size. Malachite protobuf proposal vectors
-  remain a separate fixture-generation task.
+  ranges past the declared proposal size. The Malachite protobuf proposal
+  vectors are tracked separately in the dedicated proposal protobuf slice.
 - `CrosslinkTenderlinkVotePacketFormat.qnt` pins the legacy `PacketVotes`
   batch format: nil/yes counts, round, height, value id, and
   roster-index/signature entries. It records the struct padding gap separately
@@ -204,6 +204,12 @@ For Crosslink, matching that quality means adding:
   raw bytes accepted in request versus response context, and rejection of bad
   heights, wrong oneof tags, missing value ids/certificates, and short signer
   addresses.
+- `CrosslinkMalachiteSyncGossipTransport.qnt` adds a transport-envelope bridge
+  for those exact sync protobuf bytes. It requires a Crosslink sync topic,
+  request/response envelope kinds, and byte equality with the canonical
+  protobuf payload before accepting a sync message; witnesses reject raw
+  decoder acceptance, wrong topics/kinds, wrong bytes, missing certificates,
+  and preserve request/response kind separation for the shared no-value bytes.
 
 ### 2026-05-18
 
