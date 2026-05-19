@@ -165,6 +165,16 @@ For Crosslink, matching that quality means adding:
   prevote/precommit vote batch packet bytes. The witnesses also reject
   status-flag compact consensus packets, wrong packet types, malformed ack/tag
   fields, missing proposal signatures, and trailing vote bytes.
+- `CrosslinkTenderlinkNonceAckTransport.qnt` adds the known-peer transport
+  replay boundary around compact consensus packets. It pins little-endian outer
+  nonce prefixes, requires successful abstract Noise decryption before the
+  decrypted bytes can be treated as a canonical consensus packet, mirrors
+  `nonce_is_ok`'s current/latest, 64-packet ack-window, and 512-packet
+  forward-jump checks, and models `nonce_update`-style ack tracking. The
+  witnesses include the existing implementation nonce examples, replay
+  rejection, current-ack rejection, tolerance-boundary acceptance,
+  beyond-tolerance rejection, failed-decrypt rejection, bad nonce-prefix
+  rejection, and bad decrypted consensus-packet rejection.
 
 ### 2026-05-18
 
