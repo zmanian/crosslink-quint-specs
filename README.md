@@ -155,6 +155,14 @@ the Zebra Crosslink working branch:
   its matching downstream Tenderlink, Malachite, dynamic-sigma, or
   production-finality lane, and raw wrong-lane or cross-protocol injections
   violate ingress safety.
+- `spec/CrosslinkProductionTenderlinkIngressRouterBridge.qnt` connects the
+  production Tenderlink ingress lane to the Tenderlink router safety model:
+  routed proposal/POL, precommit certificate, evidence, known-peer, and status
+  records require matching production ingress first, while dynamic-sigma and
+  production-finality ingress records cannot satisfy Tenderlink routing.
+- `spec/CrosslinkProductionTenderlinkIngressRouterBridgeSafety.qnt` keeps that
+  same ingress-before-router contract as a verifier-friendly scalar projection
+  for Apalache.
 - `spec/CrosslinkProductionDynamicSigmaConsensusParamIngressBridge.qnt`
   connects the production dynamic-sigma consensus-param lane to the signed
   param transport/config path: quorum gossip and node config installation
@@ -535,6 +543,13 @@ The current spec surface has three first-class Crosslink variants:
   by the transport/decode bridge, and the finality lanes use compact byte labels
   whose route validity directly checks the generated fixture metadata also
   validated by `CrosslinkProductionFinalityProjectionContractModel`.
+  `CrosslinkProductionTenderlinkIngressRouterBridgeModel` then checks that
+  accepted production Tenderlink ingress records are prerequisites for routed
+  Tenderlink proposal/POL, precommit-certificate, evidence, known-peer, and
+  status records. `CrosslinkProductionTenderlinkIngressRouterBridgeSafetyModel`
+  carries the direct Apalache-friendly projection and records that
+  dynamic-sigma or production-finality ingress cannot satisfy the Tenderlink
+  router prerequisite.
   `CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeModel` then checks
   that production ingress is a prerequisite before the signed param gossip
   quorum can install raised or recovered node config, with
@@ -619,7 +634,7 @@ dynamic-sigma calibration, dynamic-sigma telemetry, dynamic-sigma
 proposal-evidence-format, dynamic-sigma BFT-payload transport,
 dynamic-sigma prototype decode gate,
 production dynamic-sigma consensus-param ingress bridge, production
-dynamic-sigma payload ingress bridge,
+Tenderlink ingress router bridge, production dynamic-sigma payload ingress bridge,
 dynamic-sigma fork-schedule,
 dynamic-sigma branch-competition, dynamic-sigma resampling,
 dynamic-sigma finality, dynamic-sigma consensus-params,
@@ -634,7 +649,7 @@ fat-pointer production-vector, fat-pointer authenticated-evidence,
 fixture-authenticated evidence, fixture-gossip transport,
 production-finality projection, production gossip registry/ingress,
 production dynamic-sigma consensus-param ingress bridge, production
-dynamic-sigma payload ingress bridge, production-finality ingress
+Tenderlink ingress router bridge, production dynamic-sigma payload ingress bridge, production-finality ingress
 bridges, heighted message gossip transport,
 Tenderlink vote/proposal bytes, vote packets,
 proposal/POL evidence, consensus packets, precommit transport,
@@ -701,6 +716,8 @@ quint typecheck spec/CrosslinkMalachiteGossipRouter.qnt
 quint typecheck spec/CrosslinkMalachiteGossipRouterSafety.qnt
 quint typecheck spec/CrosslinkProductionGossipRegistry.qnt
 quint typecheck spec/CrosslinkProductionGossipIngress.qnt
+quint typecheck spec/CrosslinkProductionTenderlinkIngressRouterBridge.qnt
+quint typecheck spec/CrosslinkProductionTenderlinkIngressRouterBridgeSafety.qnt
 quint typecheck spec/CrosslinkProductionDynamicSigmaConsensusParamIngressBridge.qnt
 quint typecheck spec/CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafety.qnt
 quint typecheck spec/CrosslinkProductionDynamicSigmaPayloadIngressBridge.qnt
@@ -862,6 +879,8 @@ quint test spec/CrosslinkMalachiteGossipRouter.qnt --main=CrosslinkMalachiteGoss
 quint test spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkProductionTenderlinkIngressRouterBridge.qnt --main=CrosslinkProductionTenderlinkIngressRouterBridgeModel --max-samples=100 --backend=rust
+quint test spec/CrosslinkProductionTenderlinkIngressRouterBridgeSafety.qnt --main=CrosslinkProductionTenderlinkIngressRouterBridgeSafetyModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionDynamicSigmaConsensusParamIngressBridge.qnt --main=CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafety.qnt --main=CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafetyModel --max-samples=100 --backend=rust
 quint test spec/CrosslinkProductionDynamicSigmaPayloadIngressBridge.qnt --main=CrosslinkProductionDynamicSigmaPayloadIngressBridgeModel --max-samples=100 --backend=rust
@@ -910,6 +929,7 @@ quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMala
 quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --init=RegistryInit --step=RegistryNext --invariants=RegistrySafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --init=IngressInit --step=IngressNext --invariants=IngressSafety --max-steps=5
+quint verify spec/CrosslinkProductionTenderlinkIngressRouterBridgeSafety.qnt --main=CrosslinkProductionTenderlinkIngressRouterBridgeSafetyModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafety.qnt --main=CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafetyModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafety.qnt --main=CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafetyModel --init=Init --step=Next --invariants=Safety --max-steps=5
 quint verify spec/CrosslinkProductionFinalityIngressBridge.qnt --main=CrosslinkProductionFinalityIngressBridgeModel --init=BridgeInit --step=BridgeNext --invariants=FinalityIngressBridgeSafety --max-steps=5
@@ -1040,6 +1060,7 @@ quint verify spec/CrosslinkMalachiteSyncGossipTransport.qnt --main=CrosslinkMala
 quint verify spec/CrosslinkMalachiteGossipRouterSafety.qnt --main=CrosslinkMalachiteGossipRouterSafetyModel --init=RouterInit --step=RouterNext --invariants=RouterSafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipRegistry.qnt --main=CrosslinkProductionGossipRegistryModel --init=RegistryInit --step=RegistryNext --invariants=RegistrySafety --max-steps=5
 quint verify spec/CrosslinkProductionGossipIngress.qnt --main=CrosslinkProductionGossipIngressModel --init=IngressInit --step=IngressNext --invariants=IngressSafety --max-steps=5
+quint verify spec/CrosslinkProductionTenderlinkIngressRouterBridgeSafety.qnt --main=CrosslinkProductionTenderlinkIngressRouterBridgeSafetyModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafety.qnt --main=CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafetyModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafety.qnt --main=CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafetyModel --init=Init --step=Next --invariants=Safety --max-steps=8
 quint verify spec/CrosslinkProductionFinalityIngressBridge.qnt --main=CrosslinkProductionFinalityIngressBridgeModel --init=BridgeInit --step=BridgeNext --invariants=FinalityIngressBridgeSafety --max-steps=8

@@ -92,7 +92,7 @@ BFT-block fixture-manifest validation and generated-Quint fixture validation,
 fat-pointer signer-vector format checks, fat-pointer production-vector checks,
 fat-pointer authenticated-evidence checks, fixture-authenticated evidence
 checks, fixture-gossip transport checks, production-finality projection checks,
-production dynamic-sigma consensus-param ingress bridge checks, production dynamic-sigma payload ingress bridge checks,
+production dynamic-sigma consensus-param ingress bridge checks, production Tenderlink ingress router bridge checks, production dynamic-sigma payload ingress bridge checks,
 production-finality ingress bridge checks, production-finality
 ingress/projection bridge checks, production-finality ingress/projection
 safety projection checks,
@@ -154,6 +154,8 @@ CrosslinkMalachiteGossipRouterModel
 CrosslinkMalachiteGossipRouterSafetyModel
 CrosslinkProductionGossipRegistryModel
 CrosslinkProductionGossipIngressModel
+CrosslinkProductionTenderlinkIngressRouterBridgeModel
+CrosslinkProductionTenderlinkIngressRouterBridgeSafetyModel
 CrosslinkValidatorSetChangeModel
 CrosslinkHeightedValidatorEvidenceModel
 CrosslinkHeightedAuthenticatedEvidenceModel
@@ -230,7 +232,7 @@ PoW fork-schedule, PoW branch-competition, PoW-reorg stress,
 BFT-height finality, dynamic-sigma controller, dynamic-sigma calibration,
 dynamic-sigma telemetry, dynamic-sigma proposal-evidence-format,
 dynamic-sigma BFT-payload transport, dynamic-sigma prototype decode gate,
-production dynamic-sigma consensus-param ingress bridge, production dynamic-sigma payload ingress bridge,
+production dynamic-sigma consensus-param ingress bridge, production Tenderlink ingress router bridge, production dynamic-sigma payload ingress bridge,
 dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
 dynamic-sigma resampling, dynamic-sigma finality,
 dynamic-sigma consensus-params, dynamic-sigma consensus-param-format, dynamic-sigma consensus-param-transport,
@@ -242,7 +244,7 @@ head-sigma stream, BFT-height finality, BFT-block-shape, BFT-block
 validation-gap, BFT-block production-vector, fat-pointer-format, fat-pointer
 production-vector, evidence-composition, fixture-authenticated evidence,
 fixture-gossip transport, production-finality projection,
-production dynamic-sigma consensus-param ingress bridge, production dynamic-sigma payload ingress bridge,
+production dynamic-sigma consensus-param ingress bridge, production Tenderlink ingress router bridge, production dynamic-sigma payload ingress bridge,
 production-finality ingress bridge, production-finality ingress/projection
 bridge, production-finality ingress/projection safety projection,
 heighted message gossip transport,
@@ -332,6 +334,8 @@ CrosslinkMalachiteGossipRouterModel
 CrosslinkMalachiteGossipRouterSafetyModel
 CrosslinkProductionGossipRegistryModel
 CrosslinkProductionGossipIngressModel
+CrosslinkProductionTenderlinkIngressRouterBridgeModel
+CrosslinkProductionTenderlinkIngressRouterBridgeSafetyModel
 CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeModel
 CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafetyModel
 CrosslinkProductionDynamicSigmaPayloadIngressBridgeModel
@@ -418,9 +422,11 @@ The goal is not complete yet. The strongest remaining gaps are:
   Malachite proposal, liveness, and sync protobuf vectors are pinned, first
   proposal/liveness/sync gossip-envelope bridges exist, and a shared Malachite
   gossip router plus verifier-friendly router safety slice compose those
-  channel namespaces. A production-level registry now checks that Tenderlink,
-  Malachite, dynamic-sigma, and production-finality lanes cannot be
-  cross-routed, but broader concrete node gossip integration remains open;
+  channel namespaces. A production-level registry and Tenderlink ingress/router
+  bridge now check that Tenderlink, Malachite, dynamic-sigma, and
+  production-finality lanes cannot be cross-routed or routed before matching
+  node-local ingress, but broader concrete node gossip integration remains
+  open;
 - link the dynamic-sigma consensus-param format/transport models to real
   implementation serialization vectors, signatures, gossip, and node
   configuration update paths;

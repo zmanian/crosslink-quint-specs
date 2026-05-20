@@ -332,6 +332,17 @@ For Crosslink, matching that quality means adding:
   ingress, dynamic-sigma consensus params or BFT payloads handed to Tenderlink
   ingress, production-finality records handed to unrelated ingress lanes, and
   cross-protocol raw injections.
+- `CrosslinkProductionTenderlinkIngressRouterBridge.qnt` connects the
+  production Tenderlink ingress lanes to the shared Tenderlink router safety
+  contract. It checks that proposal chunks, POL prevotes, mixed precommit
+  messages, nil/value precommit certificates, accountability evidence,
+  known-peer records, and status records route only after matching production
+  ingress, while dynamic-sigma and production-finality ingress records cannot
+  satisfy the Tenderlink router prerequisite.
+- `CrosslinkProductionTenderlinkIngressRouterBridgeSafety.qnt` keeps that same
+  ingress-before-router ordering in a direct scalar state machine so Apalache
+  can verify the bridge while the imported ingress/router composition stays in
+  the Rust test lane.
 - `CrosslinkProductionDynamicSigmaConsensusParamIngressBridge.qnt` connects
   the production dynamic-sigma consensus-param ingress lane to the signed param
   gossip/config-application model. It checks that H1/H2 quorum-signed param
@@ -959,6 +970,13 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafetyModel` keeps the
   same prerequisite as an Apalache-friendly direct graph for the package
   verification gate.
+- `CrosslinkProductionTenderlinkIngressRouterBridgeModel` checks that
+  production Tenderlink ingress is the prerequisite before the Tenderlink router
+  records consensus, evidence, known-peer, and status traffic.
+- `CrosslinkProductionTenderlinkIngressRouterBridgeSafetyModel` keeps the same
+  prerequisite as an Apalache-friendly direct graph and records that
+  dynamic-sigma or production-finality ingress does not satisfy Tenderlink
+  routing.
 - `CrosslinkDynamicSigmaCalibrationModel` checks the simpler measured-window
   calibration harness that feeds that production-shaped telemetry contract.
 - `CrosslinkDynamicSigmaForkScheduleModel` composes the controller with a
