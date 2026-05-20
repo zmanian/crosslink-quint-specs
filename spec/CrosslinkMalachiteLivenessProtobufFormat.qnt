@@ -131,6 +131,11 @@ module CrosslinkMalachiteLivenessProtobufFormat {
   pure val RoundCertificatePrecommitValueByteLen = 147
   pure val LivenessRoundPrecommitMessageByteLen = 150
 
+  pure val LivenessPolkaMessageHex =
+    "129001080110021a220a20808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f22660a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f12420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+  pure val LivenessRoundSkipMessageHex =
+    "1a70080110021801226808011220000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+
   pure val UnmodeledSignatureHex = "unmodeled-mal-liveness-signature"
   pure val UnmodeledValueIdHex = "unmodeled-mal-liveness-value-id"
   pure val UnmodeledPolkaSignatureHex =
@@ -287,7 +292,7 @@ module CrosslinkMalachiteLivenessProtobufFormat {
     if (message.byteLen == LivenessPolkaMessageByteLen and
       message.messageTag == LivenessMessagePolkaCertificateTag and
       PolkaCertificateProtoCanonical(message.certificate)) {
-      "129001080110021a220a20808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f22660a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f12420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+      LivenessPolkaMessageHex
     } else {
       UnmodeledLivenessPolkaHex
     }
@@ -316,7 +321,7 @@ module CrosslinkMalachiteLivenessProtobufFormat {
       message.messageTag == LivenessMessageRoundCertificateTag and
       RoundCertificateProtoCanonical(message.certificate) and
       message.certificate.certType == RoundCertSkip) {
-      "1a70080110021801226808011220000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+      LivenessRoundSkipMessageHex
     } else if (message.byteLen == LivenessRoundMessageExpectedLen(message) and
       message.messageTag == LivenessMessageRoundCertificateTag and
       RoundCertificateProtoCanonical(message.certificate) and
@@ -598,7 +603,7 @@ module CrosslinkMalachiteLivenessProtobufFormatTest {
       147,
       LivenessMessagePolkaCertificateTag,
       PolkaCertificate,
-      "129001080110021a220a20808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f22660a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f12420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+      LivenessPolkaMessageHex,
     )
 
   pure val LivenessPolkaWithVoteTag =
@@ -691,7 +696,7 @@ module CrosslinkMalachiteLivenessProtobufFormatTest {
       114,
       LivenessMessageRoundCertificateTag,
       RoundCertificateSkipNil,
-      "1a70080110021801226808011220000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+      LivenessRoundSkipMessageHex,
     )
 
   pure val LivenessRoundPrecommitMessage =

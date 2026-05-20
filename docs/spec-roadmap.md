@@ -319,7 +319,10 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkMalachiteGossipRouterSafety.qnt` keeps the same router namespace
   contract in a verifier-friendly direct state machine, so Apalache can check
   the channel/topic/kind invariant without flattening alias-imported transport
-  modules.
+  modules. It now imports the proposal, liveness, and sync protobuf fixture
+  vectors so the raw proposal, signed proposal, streamed proposal, polka,
+  round, sync-request, and sync-response routes use the same exact bytes as the
+  format models.
 - `CrosslinkProductionGossipRegistry.qnt` adds a production-level registry
   safety slice above the Tenderlink, Malachite, dynamic-sigma, and
   production-finality routers. It records the combined
@@ -334,12 +337,13 @@ For Crosslink, matching that quality means adding:
   finality lane, or finality proposal bytes on unrelated lanes. The
   Tenderlink proposal/POL lanes now import the exact compact packet hex from
   the consensus packet format model, the precommit lanes import the exact
-  compact packet hex from the precommit transport safety model, the
-  dynamic-sigma param lane pins the exact raised/recovered consensus-param hex
-  vectors from the production-shaped format model, the dynamic-sigma payload
-  lane pins the tagged BFT-payload fixture metadata, and the finality lanes use
-  compact byte labels whose route validity directly checks the generated
-  fixture metadata also validated by the production-finality projection.
+  compact packet hex from the precommit transport safety model, the Malachite
+  lanes import exact proposal/liveness/sync protobuf vectors, the dynamic-sigma
+  param lane pins the exact raised/recovered consensus-param hex vectors from
+  the production-shaped format model, the dynamic-sigma payload lane pins the
+  tagged BFT-payload fixture metadata, and the finality lanes use compact byte
+  labels whose route validity directly checks the generated fixture metadata
+  also validated by the production-finality projection.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to

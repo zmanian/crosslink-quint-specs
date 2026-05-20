@@ -20,6 +20,12 @@ module CrosslinkProductionGossipRegistry {
     "./CrosslinkTenderlinkPrecommitTransportSafety"
   import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
     "./CrosslinkTenderlinkConsensusPacketFormat"
+  import CrosslinkMalachiteProposalProtobufFormat as MalachiteProposalFormat from
+    "./CrosslinkMalachiteProposalProtobufFormat"
+  import CrosslinkMalachiteLivenessProtobufFormat as MalachiteLivenessFormat from
+    "./CrosslinkMalachiteLivenessProtobufFormat"
+  import CrosslinkMalachiteSyncProtobufFormat as MalachiteSyncFormat from
+    "./CrosslinkMalachiteSyncProtobufFormat"
 
   type Protocol_t = str
   type Channel_t = str
@@ -112,17 +118,20 @@ module CrosslinkProductionGossipRegistry {
     "tenderlink-known-peer-packet-bytes"
   pure val TenderlinkStatusPacketBytes = "tenderlink-status-packet-bytes"
 
-  pure val MalachiteProposalBytes = "malachite-proposal-proto-bytes"
+  pure val MalachiteProposalBytes =
+    MalachiteProposalFormat::ProposalWithPolHex
   pure val MalachiteSignedProposalBytes =
-    "malachite-signed-proposal-proto-bytes"
+    MalachiteProposalFormat::SignedProposalHex
   pure val MalachiteStreamedProposalBytes =
-    "malachite-streamed-proposal-proto-bytes"
-  pure val MalachitePolkaBytes = "malachite-polka-proto-bytes"
-  pure val MalachiteRoundBytes = "malachite-round-proto-bytes"
+    MalachiteProposalFormat::StreamedProposalHex
+  pure val MalachitePolkaBytes =
+    MalachiteLivenessFormat::LivenessPolkaMessageHex
+  pure val MalachiteRoundBytes =
+    MalachiteLivenessFormat::LivenessRoundSkipMessageHex
   pure val MalachiteSyncRequestBytes =
-    "malachite-sync-request-proto-bytes"
+    MalachiteSyncFormat::SyncRequestHex
   pure val MalachiteSyncResponseBytes =
-    "malachite-sync-response-proto-bytes"
+    MalachiteSyncFormat::SyncResponseWithValueHex
 
   // Exact production-shaped consensus-param bytes pinned in
   // CrosslinkDynamicSigmaConsensusParamFormat.qnt.
@@ -461,6 +470,14 @@ module CrosslinkProductionGossipRegistry {
       TenderlinkStatusPacketBytes,
     )
 
+  pure val MalachiteProposalEnvelope =
+    Envelope(
+      MalachiteProtocol,
+      MalachiteProposalChannel,
+      MalachiteProposalTopic,
+      MalachiteProposalKind,
+      MalachiteProposalBytes,
+    )
   pure val MalachiteSignedProposalEnvelope =
     Envelope(
       MalachiteProtocol,
@@ -469,6 +486,22 @@ module CrosslinkProductionGossipRegistry {
       MalachiteSignedProposalKind,
       MalachiteSignedProposalBytes,
     )
+  pure val MalachiteStreamedProposalEnvelope =
+    Envelope(
+      MalachiteProtocol,
+      MalachiteProposalChannel,
+      MalachiteProposalTopic,
+      MalachiteStreamedProposalKind,
+      MalachiteStreamedProposalBytes,
+    )
+  pure val MalachitePolkaEnvelope =
+    Envelope(
+      MalachiteProtocol,
+      MalachiteLivenessChannel,
+      MalachiteLivenessTopic,
+      MalachitePolkaKind,
+      MalachitePolkaBytes,
+    )
   pure val MalachiteRoundEnvelope =
     Envelope(
       MalachiteProtocol,
@@ -476,6 +509,14 @@ module CrosslinkProductionGossipRegistry {
       MalachiteLivenessTopic,
       MalachiteRoundKind,
       MalachiteRoundBytes,
+    )
+  pure val MalachiteSyncRequestEnvelope =
+    Envelope(
+      MalachiteProtocol,
+      MalachiteSyncChannel,
+      MalachiteSyncTopic,
+      MalachiteSyncRequestKind,
+      MalachiteSyncRequestBytes,
     )
   pure val MalachiteSyncResponseEnvelope =
     Envelope(
@@ -681,8 +722,12 @@ module CrosslinkProductionGossipRegistry {
       TenderlinkEvidenceEnvelope,
       TenderlinkKnownPeerEnvelope,
       TenderlinkStatusEnvelope,
+      MalachiteProposalEnvelope,
       MalachiteSignedProposalEnvelope,
+      MalachiteStreamedProposalEnvelope,
+      MalachitePolkaEnvelope,
       MalachiteRoundEnvelope,
+      MalachiteSyncRequestEnvelope,
       MalachiteSyncResponseEnvelope,
       DynamicSigmaConsensusParamEnvelope,
       DynamicSigmaConsensusParamRecoveredEnvelope,
@@ -737,6 +782,12 @@ module CrosslinkProductionGossipRegistryTest {
     "./CrosslinkTenderlinkPrecommitTransportSafety"
   import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
     "./CrosslinkTenderlinkConsensusPacketFormat"
+  import CrosslinkMalachiteProposalProtobufFormat as MalachiteProposalFormat from
+    "./CrosslinkMalachiteProposalProtobufFormat"
+  import CrosslinkMalachiteLivenessProtobufFormat as MalachiteLivenessFormat from
+    "./CrosslinkMalachiteLivenessProtobufFormat"
+  import CrosslinkMalachiteSyncProtobufFormat as MalachiteSyncFormat from
+    "./CrosslinkMalachiteSyncProtobufFormat"
 
   action RegistryNext: bool =
     any {
@@ -873,6 +924,35 @@ module CrosslinkProductionGossipRegistryTest {
           ConsensusPacketFormat::TestPolProposalConsensusPacketHex),
         assert(TenderlinkPolPrevoteBytes ==
           ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex),
+        assert(RegistrySafety),
+        registryUnchangedAll,
+      })
+  }
+
+  run malachiteProductionBytesMatchProtobufFormatBridgeTest = {
+    RegistryInit
+      .then(RouteProduction(MalachiteProposalEnvelope))
+      .then(RouteProduction(MalachiteSignedProposalEnvelope))
+      .then(RouteProduction(MalachiteStreamedProposalEnvelope))
+      .then(RouteProduction(MalachitePolkaEnvelope))
+      .then(RouteProduction(MalachiteRoundEnvelope))
+      .then(RouteProduction(MalachiteSyncRequestEnvelope))
+      .then(RouteProduction(MalachiteSyncResponseEnvelope))
+      .then(all {
+        assert(MalachiteProposalBytes ==
+          MalachiteProposalFormat::ProposalWithPolHex),
+        assert(MalachiteSignedProposalBytes ==
+          MalachiteProposalFormat::SignedProposalHex),
+        assert(MalachiteStreamedProposalBytes ==
+          MalachiteProposalFormat::StreamedProposalHex),
+        assert(MalachitePolkaBytes ==
+          MalachiteLivenessFormat::LivenessPolkaMessageHex),
+        assert(MalachiteRoundBytes ==
+          MalachiteLivenessFormat::LivenessRoundSkipMessageHex),
+        assert(MalachiteSyncRequestBytes ==
+          MalachiteSyncFormat::SyncRequestHex),
+        assert(MalachiteSyncResponseBytes ==
+          MalachiteSyncFormat::SyncResponseWithValueHex),
         assert(RegistrySafety),
         registryUnchangedAll,
       })

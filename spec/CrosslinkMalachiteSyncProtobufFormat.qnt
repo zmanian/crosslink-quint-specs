@@ -117,6 +117,10 @@ module CrosslinkMalachiteSyncProtobufFormat {
   pure val ValueResponseNoValueByteLen = 2
   pure val SyncResponseNoValueByteLen = 4
 
+  pure val SyncRequestHex = "0a020801"
+  pure val SyncResponseWithValueHex =
+    "0a9d0108011298010a03aabbcc129001080110021a220a20808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f22660a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f12420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+
   pure val UnmodeledSignatureHex = "unmodeled-mal-sync-signature"
   pure val UnmodeledValueIdHex = "unmodeled-mal-sync-value-id"
   pure val UnmodeledValueRequestHex = "unmodeled-mal-sync-value-request"
@@ -175,7 +179,7 @@ module CrosslinkMalachiteSyncProtobufFormat {
     if (request.byteLen == SyncRequestByteLen and
       request.requestTag == SyncRequestValueRequestTag and
       ValueRequestProtoCanonical(request.valueRequest)) {
-      "0a020801"
+      SyncRequestHex
     } else {
       UnmodeledSyncRequestHex
     }
@@ -280,7 +284,7 @@ module CrosslinkMalachiteSyncProtobufFormat {
       response.responseTag == SyncResponseValueResponseTag and
       ValueResponseProtoCanonical(response.valueResponse) and
       response.valueResponse.valuePresent) {
-      "0a9d0108011298010a03aabbcc129001080110021a220a20808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f22660a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f12420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+      SyncResponseWithValueHex
     } else if (response.byteLen == SyncResponseExpectedLen(response) and
       response.responseTag == SyncResponseValueResponseTag and
       ValueResponseProtoCanonical(response.valueResponse) and
@@ -510,7 +514,7 @@ module CrosslinkMalachiteSyncProtobufFormatTest {
     ValueRequestProto(2, -1, "0801")
 
   pure val SyncRequest =
-    SyncRequestProto(4, SyncRequestValueRequestTag, ValueRequest, "0a020801")
+    SyncRequestProto(4, SyncRequestValueRequestTag, ValueRequest, SyncRequestHex)
 
   pure val SyncRequestWrongTag =
     SyncRequestProto(4, 99, ValueRequest, "63020801")
@@ -604,7 +608,7 @@ module CrosslinkMalachiteSyncProtobufFormatTest {
       160,
       SyncResponseValueResponseTag,
       ValueResponseWithValue,
-      "0a9d0108011298010a03aabbcc129001080110021a220a20808182838485868788898a8b8c8d8e8f909192939495969798999a9b9c9d9e9f22660a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f12420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+      SyncResponseWithValueHex,
     )
 
   pure val SyncResponseNoValue =

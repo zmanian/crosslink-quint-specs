@@ -108,6 +108,13 @@ module CrosslinkMalachiteProposalProtobufFormat {
   pure val SignedProposalByteLen = 117
   pure val StreamedProposalByteLen = 113
 
+  pure val ProposalWithPolHex =
+    "080110021a050a03aabbcc20072a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+  pure val SignedProposalHex =
+    "0a2f080110021a050a03aabbcc20072a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+  pure val StreamedProposalHex =
+    "080110022220202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f28073203aabbcc3a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+
   pure val UnmodeledValueHex = "unmodeled-mal-value-proto"
   pure val UnmodeledSignatureHex = "unmodeled-mal-signature-proto"
   pure val UnmodeledProposalHex = "unmodeled-mal-proposal-proto"
@@ -174,7 +181,7 @@ module CrosslinkMalachiteProposalProtobufFormat {
     } else if (ProposalProtoFieldsValid(proposal) and
       proposal.height == SampleHeight and proposal.round == SampleRound and
       proposal.polRound == SamplePolRound) {
-      "080110021a050a03aabbcc20072a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f"
+      ProposalWithPolHex
     } else {
       UnmodeledProposalHex
     }
@@ -192,7 +199,7 @@ module CrosslinkMalachiteProposalProtobufFormat {
       ProposalProtoCanonical(signed.proposal) and
       signed.proposal.polRound == SamplePolRound and
       SignatureProtoCanonical(signed.signature)) {
-      "0a2f080110021a050a03aabbcc20072a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+      SignedProposalHex
     } else {
       UnmodeledSignedProposalHex
     }
@@ -225,7 +232,7 @@ module CrosslinkMalachiteProposalProtobufFormat {
     if (StreamedProposalProtoFieldsValid(streamed) and
       streamed.height == SampleHeight and streamed.round == SampleRound and
       streamed.polRound == SamplePolRound) {
-      "080110022220202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f28073203aabbcc3a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f"
+      StreamedProposalHex
     } else {
       UnmodeledStreamedProposalHex
     }
@@ -447,7 +454,7 @@ module CrosslinkMalachiteProposalProtobufFormatTest {
       7,
       32,
       SampleValidatorAddressHex,
-      "080110021a050a03aabbcc20072a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f",
+      ProposalWithPolHex,
     )
 
   pure val ProposalMissingValue =
@@ -492,7 +499,7 @@ module CrosslinkMalachiteProposalProtobufFormatTest {
       SignedMessageProposalTag,
       ProposalWithPol,
       SampleSignature,
-      "0a2f080110021a050a03aabbcc20072a20000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f1a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+      SignedProposalHex,
     )
 
   pure val SignedProposalWithVoteOneofTag =
@@ -524,7 +531,7 @@ module CrosslinkMalachiteProposalProtobufFormatTest {
       3,
       "aabbcc",
       SampleSignature,
-      "080110022220202122232425262728292a2b2c2d2e2f303132333435363738393a3b3c3d3e3f28073203aabbcc3a420a40404142434445464748494a4b4c4d4e4f505152535455565758595a5b5c5d5e5f606162636465666768696a6b6c6d6e6f707172737475767778797a7b7c7d7e7f",
+      StreamedProposalHex,
     )
 
   pure val StreamedProposalShortProposer =

@@ -9,6 +9,13 @@ module CrosslinkMalachiteGossipRouterSafety {
    verification.
    */
 
+  import CrosslinkMalachiteProposalProtobufFormat as ProposalFormat from
+    "./CrosslinkMalachiteProposalProtobufFormat"
+  import CrosslinkMalachiteLivenessProtobufFormat as LivenessFormat from
+    "./CrosslinkMalachiteLivenessProtobufFormat"
+  import CrosslinkMalachiteSyncProtobufFormat as SyncFormat from
+    "./CrosslinkMalachiteSyncProtobufFormat"
+
   type RouterChannel_t = str
   type RouterTopic_t = str
   type RouterKind_t = str
@@ -39,13 +46,13 @@ module CrosslinkMalachiteGossipRouterSafety {
   pure val SyncResponseKind = "sync-response"
   pure val WrongKind = "headers"
 
-  pure val ProposalBytes = "malachite-proposal-proto-bytes"
-  pure val SignedProposalBytes = "malachite-signed-proposal-proto-bytes"
-  pure val StreamedProposalBytes = "malachite-streamed-proposal-proto-bytes"
-  pure val PolkaBytes = "malachite-polka-proto-bytes"
-  pure val RoundBytes = "malachite-round-proto-bytes"
-  pure val SyncRequestBytes = "malachite-sync-request-proto-bytes"
-  pure val SyncResponseBytes = "malachite-sync-response-proto-bytes"
+  pure val ProposalBytes = ProposalFormat::ProposalWithPolHex
+  pure val SignedProposalBytes = ProposalFormat::SignedProposalHex
+  pure val StreamedProposalBytes = ProposalFormat::StreamedProposalHex
+  pure val PolkaBytes = LivenessFormat::LivenessPolkaMessageHex
+  pure val RoundBytes = LivenessFormat::LivenessRoundSkipMessageHex
+  pure val SyncRequestBytes = SyncFormat::SyncRequestHex
+  pure val SyncResponseBytes = SyncFormat::SyncResponseWithValueHex
   pure val WrongBytes = "wrong-malachite-router-bytes"
 
   def Routed(
@@ -231,6 +238,12 @@ module CrosslinkMalachiteGossipRouterSafetyTest {
   import CrosslinkMalachiteGossipRouterSafety.* from
     "./CrosslinkMalachiteGossipRouterSafety"
   export CrosslinkMalachiteGossipRouterSafety.*
+  import CrosslinkMalachiteProposalProtobufFormat as ProposalFormat from
+    "./CrosslinkMalachiteProposalProtobufFormat"
+  import CrosslinkMalachiteLivenessProtobufFormat as LivenessFormat from
+    "./CrosslinkMalachiteLivenessProtobufFormat"
+  import CrosslinkMalachiteSyncProtobufFormat as SyncFormat from
+    "./CrosslinkMalachiteSyncProtobufFormat"
 
   action RouterNext: bool =
     any {
@@ -261,6 +274,28 @@ module CrosslinkMalachiteGossipRouterSafetyTest {
         assert(routedProposalEnvelopes.contains(SignedProposalEnvelope)),
         assert(routedLivenessEnvelopes.contains(RoundEnvelope)),
         assert(routedSyncEnvelopes.contains(SyncResponseEnvelope)),
+        routerUnchangedAll,
+      })
+  }
+
+  run malachiteRouterBytesMatchProtobufVectorsTest = {
+    RouterInit
+      .then(RouteProposal(ProposalEnvelope))
+      .then(RouteProposal(SignedProposalEnvelope))
+      .then(RouteProposal(StreamedProposalEnvelope))
+      .then(RouteLiveness(PolkaEnvelope))
+      .then(RouteLiveness(RoundEnvelope))
+      .then(RouteSync(SyncRequestEnvelope))
+      .then(RouteSync(SyncResponseEnvelope))
+      .then(all {
+        assert(ProposalBytes == ProposalFormat::ProposalWithPolHex),
+        assert(SignedProposalBytes == ProposalFormat::SignedProposalHex),
+        assert(StreamedProposalBytes == ProposalFormat::StreamedProposalHex),
+        assert(PolkaBytes == LivenessFormat::LivenessPolkaMessageHex),
+        assert(RoundBytes == LivenessFormat::LivenessRoundSkipMessageHex),
+        assert(SyncRequestBytes == SyncFormat::SyncRequestHex),
+        assert(SyncResponseBytes == SyncFormat::SyncResponseWithValueHex),
+        assert(RouterSafety),
         routerUnchangedAll,
       })
   }
