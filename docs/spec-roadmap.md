@@ -343,6 +343,17 @@ For Crosslink, matching that quality means adding:
   ingress-before-router ordering in a direct scalar state machine so Apalache
   can verify the bridge while the imported ingress/router composition stays in
   the Rust test lane.
+- `CrosslinkProductionMalachiteIngressRouterBridge.qnt` connects the
+  production Malachite proposal, liveness, and sync ingress lanes to the shared
+  Malachite router safety contract. It checks that proposal, signed proposal,
+  streamed proposal, polka, round, sync-request, and sync-response records
+  route only after matching production ingress, while Tenderlink,
+  dynamic-sigma, and production-finality ingress records cannot satisfy the
+  Malachite router prerequisite.
+- `CrosslinkProductionMalachiteIngressRouterBridgeSafety.qnt` keeps that same
+  ingress-before-router ordering in a direct scalar state machine so Apalache
+  can verify the bridge while the imported ingress/router composition stays in
+  the Rust test lane.
 - `CrosslinkProductionDynamicSigmaConsensusParamIngressBridge.qnt` connects
   the production dynamic-sigma consensus-param ingress lane to the signed param
   gossip/config-application model. It checks that H1/H2 quorum-signed param
@@ -977,6 +988,13 @@ For Crosslink, matching that quality means adding:
   prerequisite as an Apalache-friendly direct graph and records that
   dynamic-sigma or production-finality ingress does not satisfy Tenderlink
   routing.
+- `CrosslinkProductionMalachiteIngressRouterBridgeModel` checks that
+  production Malachite ingress is the prerequisite before the Malachite router
+  records proposal, liveness, and sync traffic.
+- `CrosslinkProductionMalachiteIngressRouterBridgeSafetyModel` keeps the same
+  prerequisite as an Apalache-friendly direct graph and records that
+  Tenderlink, dynamic-sigma, or production-finality ingress does not satisfy
+  Malachite routing.
 - `CrosslinkDynamicSigmaCalibrationModel` checks the simpler measured-window
   calibration harness that feeds that production-shaped telemetry contract.
 - `CrosslinkDynamicSigmaForkScheduleModel` composes the controller with a
