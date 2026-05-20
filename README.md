@@ -54,6 +54,12 @@ Gate status:
   — links between the spec and Zebra Crosslink/Tenderlink.
 - [`docs/dynamic-sigma-telemetry-integration.md`](docs/dynamic-sigma-telemetry-integration.md)
   — production telemetry mapping for the dynamic-sigma controller.
+- [`docs/inductive-finality.md`](docs/inductive-finality.md) — the
+  inductive argument shape behind the seven-lemma `Safety` decomposition
+  in `CrosslinkMultiHeight.qnt` and how it extends through dynamic-sigma
+  and authenticated variants. The induction itself is not closed by
+  Apalache; this doc records the structure for a future port into a tool
+  with native inductive support.
 
 ## Contents
 
