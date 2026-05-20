@@ -205,6 +205,7 @@ function parseFixture(filePath, rawPowHeaderHeightsByHex) {
   return {
     file,
     totalByteLen,
+    bftBlockWireHex: buffer.subarray(0, bftBlockByteLen).toString('hex'),
     bftBlockVersion,
     bftHeight,
     previousFatPointerSignatureCount: previousFatPointer.signatureCount,
@@ -519,6 +520,29 @@ function validateManifest(manifest) {
 
     const trailingFatPointerByteLen = fatPointerByteLen(fixture.trailingFatPointerSignatureCount)
     assert(fixture.bftBlockByteLen === offset, `${prefix}BFT block length mismatch`)
+    assert(
+      typeof fixture.bftBlockWireHex === 'string' &&
+        fixture.bftBlockWireHex.length === fixture.bftBlockByteLen * 2,
+      `${prefix}BFT block wire hex length mismatch`,
+    )
+    const bftBlockWire = Buffer.from(fixture.bftBlockWireHex, 'hex')
+    assert(bftBlockWire.readUInt32LE(0) === fixture.bftBlockVersion, `${prefix}BFT block wire version mismatch`)
+    assert(bftBlockWire.readUInt32LE(4) === fixture.bftHeight, `${prefix}BFT block wire height mismatch`)
+    assert(
+      bftBlockWire
+        .subarray(8, 8 + fixture.previousFatPointerByteLen)
+        .toString('hex') === fixture.previousFatPointerProbe.wireHex,
+      `${prefix}BFT block wire previous fat-pointer mismatch`,
+    )
+    assert(
+      bftBlockWire.readUInt32LE(fixture.finalizationCandidateHeightOffset) ===
+        fixture.finalizationCandidateHeight,
+      `${prefix}BFT block wire finalization candidate mismatch`,
+    )
+    assert(
+      bftBlockWire.readUInt32LE(fixture.headerCountOffset) === fixture.headerCount,
+      `${prefix}BFT block wire header count mismatch`,
+    )
     assert(fixture.trailingFatPointerOffset === offset, `${prefix}trailing fat-pointer offset mismatch`)
     assert(
       fixture.trailingFatPointerByteLen === trailingFatPointerByteLen,
@@ -852,6 +876,7 @@ function renderGeneratedQuintModule(manifest) {
     ['CheckedInFixtureTrailingSignatureFirstByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureFirstByte],
     ['CheckedInFixtureTrailingSignatureLastByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureLastByte],
     ['CheckedInFixturePreviousPayloadHex', later.previousFatPointerProbe.payloadHex],
+    ['CheckedInFixtureBftBlockWireHex', later.bftBlockWireHex],
     ['CheckedInFixturePreviousFatPointerWireHex', later.previousFatPointerProbe.wireHex],
     ['CheckedInFixturePreviousBlockHashHex', later.previousFatPointerProbe.blockHashHex],
     ['CheckedInFixturePreviousPubKeyHex', later.previousFatPointerProbe.firstSignatureEntry.pubKeyHex],

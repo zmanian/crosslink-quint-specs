@@ -168,7 +168,7 @@ module CrosslinkProductionGossipRegistry {
   pure val DynamicSigmaBftPayloadFixtureSelectedSigma = 3
 
   pure val ProductionBftBlockProposalFixtureBytes =
-    "bft-block-v0-h2-finality0-len4619-total4761-headers3-offset150-154-158"
+    CheckedInFixtureBftBlockWireHex
   pure val ProductionFatPointerWireFixtureBytes =
     CheckedInFixtureTrailingFatPointerWireHex
 
@@ -879,7 +879,7 @@ module CrosslinkProductionGossipRegistryTest {
       .then(RouteProduction(ProductionFatPointerWireEnvelope))
       .then(all {
         assert(ProductionBftBlockProposalFixtureBytes ==
-          "bft-block-v0-h2-finality0-len4619-total4761-headers3-offset150-154-158"),
+          CheckedInFixtureBftBlockWireHex),
         assert(ProductionFatPointerWireFixtureBytes ==
           CheckedInFixtureTrailingFatPointerWireHex),
         assert(ProductionBftBlockProposalFixtureMetadataCoherent),

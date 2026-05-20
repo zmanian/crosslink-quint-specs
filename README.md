@@ -559,10 +559,10 @@ The current spec surface has three first-class Crosslink variants:
   dynamic-sigma param lane uses the same exact production-shaped hex vectors
   pinned by the consensus-param format model for raised and recovered sigma
   updates, the dynamic-sigma payload lane pins the tagged payload metadata used
-  by the transport/decode bridge, the production-finality fat-pointer lane uses
-  the generated trailing one-signature fat-pointer wire hex, and the BFT-block
-  proposal lane still uses a compact metadata label whose route validity
-  directly checks the generated fixture metadata also validated by
+  by the transport/decode bridge, and the production-finality proposal and
+  fat-pointer lanes use the generated BFT-block and trailing one-signature
+  fat-pointer wire hex while still checking the generated fixture metadata
+  also validated by
   `CrosslinkProductionFinalityProjectionContractModel`.
   `CrosslinkProductionTenderlinkIngressRouterBridgeModel` then checks that
   accepted production Tenderlink ingress records are prerequisites for routed

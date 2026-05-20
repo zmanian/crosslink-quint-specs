@@ -345,11 +345,11 @@ For Crosslink, matching that quality means adding:
   proposal/liveness/sync protobuf vectors, the dynamic-sigma param lane pins
   the exact raised/recovered consensus-param hex vectors from the
   production-shaped format model, the dynamic-sigma payload lane pins the
-  tagged BFT-payload fixture metadata, the production-finality fat-pointer lane
-  uses the generated trailing one-signature fat-pointer wire hex, and the
-  BFT-block proposal lane still uses a compact metadata label whose route
-  validity directly checks the generated fixture metadata also validated by the
-  production-finality projection.
+  tagged BFT-payload fixture metadata, and the production-finality proposal and
+  fat-pointer lanes use the generated BFT-block wire hex and trailing
+  one-signature fat-pointer wire hex while route validity still checks the
+  generated fixture metadata also validated by the production-finality
+  projection.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to
