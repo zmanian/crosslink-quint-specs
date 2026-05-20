@@ -349,6 +349,12 @@ For Crosslink, matching that quality means adding:
   ingress-before-router ordering in a direct scalar state machine so Apalache
   can verify the bridge while the imported ingress/router composition stays in
   the Rust test lane.
+- `CrosslinkProductionFinalityTenderlinkEvidenceBridge.qnt` adds the next
+  scalar handoff from the production Tenderlink router's value-precommit
+  certificate record into production-finality precommit evidence. It proves
+  that the certificate must first be accepted at Tenderlink production ingress
+  and routed by the Tenderlink router before finality evidence can project,
+  while production-finality ingress alone remains a wrong-lane substitute.
 - `CrosslinkProductionMalachiteIngressRouterBridge.qnt` connects the
   production Malachite proposal, liveness, and sync ingress lanes to the shared
   Malachite router safety contract. It checks that proposal, signed proposal,
@@ -383,9 +389,10 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkProductionFinalityIngressBridge.qnt` connects those
   production-finality ingress lanes to projection and finality readiness. It
   checks that the BFT-block proposal and fat-pointer wire cannot be projected
-  before their matching ingress records, that finality waits for both projected
-  records, and that Tenderlink precommit traffic cannot stand in for a
-  production-finality proposal envelope.
+  before their matching ingress records, that precommit evidence waits for
+  Tenderlink value-precommit-certificate ingress, that finality waits for all
+  projected records, and that Tenderlink precommit traffic cannot stand in for
+  a production-finality proposal envelope.
 - `CrosslinkProductionFinalityIngressProjectionBridge.qnt` composes the actual
   production ingress actions with the production finality projection actions.
   It exercises the integrated imported-action graph under the Rust backend,
@@ -761,6 +768,11 @@ For Crosslink, matching that quality means adding:
   projection contract. Rust tests cover both the happy path and raw projection
   skips; Apalache/TLC coverage stays on `CrosslinkProductionFinalityIngressBridge.qnt`
   until the direct imported graph is flattened cleanly.
+- `CrosslinkProductionFinalityTenderlinkEvidenceBridge.qnt` adds a smaller
+  scalar bridge from the production Tenderlink router record to finality
+  precommit evidence. It proves safety at depths 5 and 8 plus a TLC temporal
+  path where Tenderlink ingress, router recording, and finality-evidence
+  projection happen in order.
 - `CrosslinkProductionFinalityIngressProjectionBridgeSafety.qnt` fills the
   immediate verifier gap for that direct bridge with a scalar graph that keeps
   the same intermediate stages. It proves safety at depths 5 and 8 and a TLC
@@ -994,6 +1006,9 @@ For Crosslink, matching that quality means adding:
   prerequisite as an Apalache-friendly direct graph and records that
   dynamic-sigma or production-finality ingress does not satisfy Tenderlink
   routing.
+- `CrosslinkProductionFinalityTenderlinkEvidenceBridgeModel` checks that the
+  production Tenderlink value-precommit certificate router record is the
+  prerequisite before production-finality precommit evidence is projected.
 - `CrosslinkProductionMalachiteIngressRouterBridgeModel` checks that
   production Malachite ingress is the prerequisite before the Malachite router
   records proposal, liveness, and sync traffic.
