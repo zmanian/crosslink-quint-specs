@@ -480,8 +480,9 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkFixtureAuthenticatedEvidence.qnt` bridges the generated
   production fixture constants into that authenticated observer pipeline: the
   one-signature checked-in fixture wire is accepted only after its matching
-  abstract precommit is gossiped. The executable model keeps signature tokens
-  compact while the generated fixture artifacts pin the real byte strings.
+  fixture precommit is gossiped. The executable model now uses the generated
+  fixture block hash, pubkey, vote sign-data, and vote signature hex strings
+  while the generated fixture manifest verifies the real Ed25519 signature.
 - `spec/CrosslinkFixtureGossipTransport.qnt` adds a fixture transport boundary:
   the generated fixture precommit and fat-pointer wire must first be gossiped
   in canonical Crosslink-topic envelopes before the observer accepts the wire;

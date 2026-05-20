@@ -5,9 +5,9 @@ module CrosslinkFixtureAuthenticatedEvidence {
    This model takes the one-signature checked-in production fixture constants
    generated from crosslink-test-data/test_pos_block_*.bin and routes the
    corresponding fat-pointer wire through the authenticated observer rules.
-   Signatures remain abstract, but the manifest also records the real fixture
-   pubkey, vote payload, vote signature, and sign-data byte strings for
-   implementation-level verification.
+   The model uses the generated fixture block hash, pubkey, signed bytes, and
+   vote signature hex strings while leaving Ed25519 verification to the
+   manifest gate.
    */
 
   import CrosslinkFatPointerAuthenticatedEvidence.* from "./CrosslinkFatPointerAuthenticatedEvidence"
@@ -18,10 +18,10 @@ module CrosslinkFixtureAuthenticatedEvidence {
 
   pure val FixtureBftHeight = 1
   pure val FixtureRound = 0
-  pure val FixtureBlockHash = "fixture-bft-block"
-  pure val FixturePubKey = "fixture-pubkey"
-  pure val FixtureSignBytes = "fixture-sign-bytes"
-  pure val FixtureVoteSignature = "fixture-vote-signature"
+  pure val FixtureBlockHash = CheckedInFixtureTrailingBlockHashHex
+  pure val FixturePubKey = CheckedInFixtureTrailingPubKeyHex
+  pure val FixtureSignBytes = CheckedInFixtureTrailingVoteSignDataHex
+  pure val FixtureVoteSignature = CheckedInFixtureTrailingVoteSignatureHex
 
   pure val FixtureTrailingFatPointerWireByteLen =
     FixtureLaterBftBlockAndFatPointerByteLen -
@@ -55,6 +55,11 @@ module CrosslinkFixtureAuthenticatedEvidence {
 
   val GeneratedFixtureWireConstantsCoherent =
     CheckedInFixtureSignatureCount == 1 and
+    FixtureBlockHash == CheckedInFixtureTrailingBlockHashHex and
+    FixturePubKey == CheckedInFixtureTrailingPubKeyHex and
+    FixturePubKey == CheckedInFixturePreviousPubKeyHex and
+    FixtureSignBytes == CheckedInFixtureTrailingVoteSignDataHex and
+    FixtureVoteSignature == CheckedInFixtureTrailingVoteSignatureHex and
     CheckedInFixtureTrailingSignatureCountByte0 == 1 and
     CheckedInFixtureTrailingSignatureCountByte1 == 0 and
     CheckedInFixtureTrailingPayloadFirstByte == 253 and
@@ -122,9 +127,11 @@ module CrosslinkFixtureAuthenticatedEvidenceTest {
 }
 
 module CrosslinkFixtureAuthenticatedEvidenceModel {
+  import CrosslinkProductionFixtureVectorsGenerated as FixtureConstants from
+    "./CrosslinkProductionFixtureVectorsGenerated"
   import CrosslinkFixtureAuthenticatedEvidenceTest(
     Validators = Set("fixture-validator"),
-    PubKeys = Set("fixture-pubkey"),
+    PubKeys = Set(FixtureConstants::CheckedInFixtureTrailingPubKeyHex),
     VotingPower = Map("fixture-validator" -> 3),
     QuorumVotingPower = 3,
     MaxBftHeight = 1,
@@ -132,19 +139,23 @@ module CrosslinkFixtureAuthenticatedEvidenceModel {
     MaxSignatures = 1,
     NilBlockHash = "nil",
     AuthorizedAt = Map(1 -> Set("fixture-validator")),
-    PubKeyOwner = Map("fixture-pubkey" -> "fixture-validator"),
+    PubKeyOwner = Map(
+      FixtureConstants::CheckedInFixtureTrailingPubKeyHex -> "fixture-validator"
+    ),
     FatPointerSignBytes = Map(
       1 -> Map(
         0 -> Map(
-          "fixture-bft-block" -> Map(
-            "fixture-pubkey" -> "fixture-sign-bytes",
+          FixtureConstants::CheckedInFixtureTrailingBlockHashHex -> Map(
+            FixtureConstants::CheckedInFixtureTrailingPubKeyHex ->
+              FixtureConstants::CheckedInFixtureTrailingVoteSignDataHex,
           ),
         ),
       ),
     ),
     SignatureVerifier = Map(
-      "fixture-pubkey" -> Map(
-        "fixture-sign-bytes" -> "fixture-vote-signature",
+      FixtureConstants::CheckedInFixtureTrailingPubKeyHex -> Map(
+        FixtureConstants::CheckedInFixtureTrailingVoteSignDataHex ->
+          FixtureConstants::CheckedInFixtureTrailingVoteSignatureHex,
       ),
     ),
   ).*

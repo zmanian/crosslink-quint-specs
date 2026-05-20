@@ -14,7 +14,10 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
    both observed -> finality
    */
 
-  pure val FixtureBlockHash = "fixture-bft-block"
+  import CrosslinkProductionFixtureVectorsGenerated.* from
+    "./CrosslinkProductionFixtureVectorsGenerated"
+
+  pure val FixtureBlockHash = CheckedInFixtureTrailingBlockHashHex
   pure val NoFinalizedBlockHash = "none"
 
   var productionBftBlockProposalIngressAccepted: bool

@@ -767,9 +767,10 @@ For Crosslink, matching that quality means adding:
   duplicate signer entries, and removed-validator next-height precommits.
 - `CrosslinkFixtureAuthenticatedEvidence.qnt` bridges generated checked-in
   fixture constants into that authenticated observer pipeline. The
-  one-signature fixture wire is accepted only after its matching abstract
-  precommit is gossiped, and is rejected before gossip. The generated artifacts
-  also carry the real fixture byte strings for later crypto verification.
+  one-signature fixture wire is accepted only after its matching fixture
+  precommit is gossiped, and is rejected before gossip. The model uses the
+  generated fixture block-hash, pubkey, sign-data, and signature hex strings,
+  with real Ed25519 verification pinned by the fixture-manifest gate.
 - `CrosslinkFixtureGossipTransport.qnt` inserts a fixture-level transport
   boundary before that observer path. The generated fixture precommit and
   fat-pointer wire must be gossiped in canonical Crosslink-topic envelopes

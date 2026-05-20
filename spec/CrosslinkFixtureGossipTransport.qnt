@@ -9,9 +9,8 @@ module CrosslinkFixtureGossipTransport {
    first appear in canonical Crosslink gossip envelopes, on the Crosslink topic,
    before the observer can accept the fat-pointer wire.
 
-   The bytes remain compact Quint tokens here. The generated fixture manifest
-   and fixture-manifest script pin and verify the real payload/pubkey/signature
-   bytes outside the model.
+   The fixture identity bytes are generated fixture hex strings. The manifest
+   and fixture-manifest script still own the real Ed25519 verification check.
    */
 
   import CrosslinkFixtureAuthenticatedEvidence.* from "./CrosslinkFixtureAuthenticatedEvidence"
@@ -390,9 +389,11 @@ module CrosslinkFixtureGossipTransportTest {
 }
 
 module CrosslinkFixtureGossipTransportModel {
+  import CrosslinkProductionFixtureVectorsGenerated as FixtureConstants from
+    "./CrosslinkProductionFixtureVectorsGenerated"
   import CrosslinkFixtureGossipTransportTest(
     Validators = Set("fixture-validator"),
-    PubKeys = Set("fixture-pubkey"),
+    PubKeys = Set(FixtureConstants::CheckedInFixtureTrailingPubKeyHex),
     VotingPower = Map("fixture-validator" -> 3),
     QuorumVotingPower = 3,
     MaxBftHeight = 1,
@@ -400,19 +401,23 @@ module CrosslinkFixtureGossipTransportModel {
     MaxSignatures = 1,
     NilBlockHash = "nil",
     AuthorizedAt = Map(1 -> Set("fixture-validator")),
-    PubKeyOwner = Map("fixture-pubkey" -> "fixture-validator"),
+    PubKeyOwner = Map(
+      FixtureConstants::CheckedInFixtureTrailingPubKeyHex -> "fixture-validator"
+    ),
     FatPointerSignBytes = Map(
       1 -> Map(
         0 -> Map(
-          "fixture-bft-block" -> Map(
-            "fixture-pubkey" -> "fixture-sign-bytes",
+          FixtureConstants::CheckedInFixtureTrailingBlockHashHex -> Map(
+            FixtureConstants::CheckedInFixtureTrailingPubKeyHex ->
+              FixtureConstants::CheckedInFixtureTrailingVoteSignDataHex,
           ),
         ),
       ),
     ),
     SignatureVerifier = Map(
-      "fixture-pubkey" -> Map(
-        "fixture-sign-bytes" -> "fixture-vote-signature",
+      FixtureConstants::CheckedInFixtureTrailingPubKeyHex -> Map(
+        FixtureConstants::CheckedInFixtureTrailingVoteSignDataHex ->
+          FixtureConstants::CheckedInFixtureTrailingVoteSignatureHex,
       ),
     ),
   ).*

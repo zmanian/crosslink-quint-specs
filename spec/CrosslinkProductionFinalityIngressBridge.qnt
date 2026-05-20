@@ -17,7 +17,7 @@ module CrosslinkProductionFinalityIngressBridge {
     "./CrosslinkProductionGossipIngress"
   export CrosslinkProductionGossipIngress.*
 
-  pure val FixtureBlockHash = "fixture-bft-block"
+  pure val FixtureBlockHash = CheckedInFixtureTrailingBlockHashHex
   pure val NoFinalizedBlockHash = "none"
 
   var productionBftBlockProjectionReady: bool

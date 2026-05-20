@@ -299,8 +299,10 @@ exact counted-envelope length before observer acceptance. The fixture-gossip
 transport model adds the first transport boundary for the checked-in generated
 fixture: the matching precommit and fat-pointer wire must arrive through
 canonical Crosslink-topic envelopes, wrong topic/sign-bytes/kind/length
-envelopes are rejected, and a fixture precommit cannot enter gossip unless its
-matching transport envelope was seen. The production-finality projection then
+envelopes are rejected, a fixture precommit cannot enter gossip unless its
+matching transport envelope was seen, and the fixture identity uses generated
+block-hash, pubkey, sign-data, and signature hex strings. The
+production-finality projection then
 uses a production-shaped BFT-block proposal envelope plus that fixture
 transport bridge at the finality boundary: candidate observation cannot happen
 before proposal transport, proposal transport must match the generated

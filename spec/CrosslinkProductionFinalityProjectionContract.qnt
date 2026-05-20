@@ -16,9 +16,12 @@ module CrosslinkProductionFinalityProjectionContractModel {
    authenticated fat-pointer wire has been observed.
    */
 
+  import CrosslinkProductionFixtureVectorsGenerated as FixtureConstants from
+    "./CrosslinkProductionFixtureVectorsGenerated"
+
   import CrosslinkFixtureGossipTransport(
     Validators = Set("fixture-validator"),
-    PubKeys = Set("fixture-pubkey"),
+    PubKeys = Set(FixtureConstants::CheckedInFixtureTrailingPubKeyHex),
     VotingPower = Map("fixture-validator" -> 3),
     QuorumVotingPower = 3,
     MaxBftHeight = 1,
@@ -26,19 +29,23 @@ module CrosslinkProductionFinalityProjectionContractModel {
     MaxSignatures = 1,
     NilBlockHash = "nil",
     AuthorizedAt = Map(1 -> Set("fixture-validator")),
-    PubKeyOwner = Map("fixture-pubkey" -> "fixture-validator"),
+    PubKeyOwner = Map(
+      FixtureConstants::CheckedInFixtureTrailingPubKeyHex -> "fixture-validator"
+    ),
     FatPointerSignBytes = Map(
       1 -> Map(
         0 -> Map(
-          "fixture-bft-block" -> Map(
-            "fixture-pubkey" -> "fixture-sign-bytes",
+          FixtureConstants::CheckedInFixtureTrailingBlockHashHex -> Map(
+            FixtureConstants::CheckedInFixtureTrailingPubKeyHex ->
+              FixtureConstants::CheckedInFixtureTrailingVoteSignDataHex,
           ),
         ),
       ),
     ),
     SignatureVerifier = Map(
-      "fixture-pubkey" -> Map(
-        "fixture-sign-bytes" -> "fixture-vote-signature",
+      FixtureConstants::CheckedInFixtureTrailingPubKeyHex -> Map(
+        FixtureConstants::CheckedInFixtureTrailingVoteSignDataHex ->
+          FixtureConstants::CheckedInFixtureTrailingVoteSignatureHex,
       ),
     ),
   ) as Transport from "./CrosslinkFixtureGossipTransport"
@@ -769,7 +776,7 @@ module CrosslinkProductionFinalityTemporalProjectionModel {
     "./CrosslinkProductionFixtureVectorsGenerated"
 
   pure val FixtureBftHeight = 1
-  pure val FixtureBlockHash = "fixture-bft-block"
+  pure val FixtureBlockHash = CheckedInFixtureTrailingBlockHashHex
   pure val NoFinalizedBlockHash = "none"
   pure val FixtureTrailingFatPointerWireByteLen =
     FixtureLaterBftBlockAndFatPointerByteLen -
