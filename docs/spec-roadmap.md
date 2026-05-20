@@ -332,6 +332,16 @@ For Crosslink, matching that quality means adding:
   ingress, dynamic-sigma consensus params or BFT payloads handed to Tenderlink
   ingress, production-finality records handed to unrelated ingress lanes, and
   cross-protocol raw injections.
+- `CrosslinkProductionDynamicSigmaConsensusParamIngressBridge.qnt` connects
+  the production dynamic-sigma consensus-param ingress lane to the signed param
+  gossip/config-application model. It checks that H1/H2 quorum-signed param
+  gossip and node config installation cannot happen before the matching
+  production ingress record, while wrong-lane Tenderlink traffic cannot satisfy
+  the dynamic-sigma param gate.
+- `CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafety.qnt` keeps
+  that same ordering in a direct scalar state machine so Apalache can verify
+  the bridge even though the imported ingress/transport action graph is
+  Rust-only for now.
 - `CrosslinkProductionDynamicSigmaPayloadIngressBridge.qnt` connects the
   production dynamic-sigma BFT-payload ingress lane to the tagged payload
   transport and prototype decode gate. It checks that transport acceptance and
@@ -812,6 +822,7 @@ For Crosslink, matching that quality means adding:
   PoW-reorg-stress, dynamic-sigma, dynamic-sigma calibration,
   dynamic-sigma telemetry, dynamic-sigma proposal-evidence-format,
   dynamic-sigma BFT-payload transport, dynamic-sigma prototype decode gate,
+  production dynamic-sigma consensus-param ingress bridge,
   dynamic-sigma fork-schedule, dynamic-sigma branch-competition,
   dynamic-sigma resampling, dynamic-sigma finality,
   dynamic-sigma consensus-params, dynamic-sigma consensus-param-format,
@@ -933,6 +944,13 @@ For Crosslink, matching that quality means adding:
   dynamic-sigma bytes before parsing, enabled config accepts valid dynamic
   payloads with evidence-selected confirmation depth, and tagged malformed or
   invalid dynamic bytes never become fixed-sigma payloads.
+- `CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeModel` checks that
+  the raised H1 and recovered H2 production consensus-param records first pass
+  the production dynamic-sigma param ingress lane before quorum-signed gossip
+  can install node config.
+- `CrosslinkProductionDynamicSigmaConsensusParamIngressBridgeSafetyModel` keeps
+  the same prerequisite as an Apalache-friendly direct graph for the package
+  verification gate.
 - `CrosslinkProductionDynamicSigmaPayloadIngressBridgeModel` checks that the
   same tagged payload first passes the production dynamic-sigma BFT-payload
   ingress lane before transport acceptance or enabled prototype decode, and
@@ -1035,8 +1053,10 @@ For Crosslink, matching that quality means adding:
   verifier-friendly router safety slice compose the proposal/liveness/sync
   channel namespaces, the production gossip registry checks cross-protocol
   Tenderlink/Malachite/dynamic-sigma topic-channel separation, the production
-  dynamic-sigma payload ingress bridge checks the ingress-to-transport/decode
-  prerequisite for tagged dynamic payloads, and the dynamic-sigma
+  dynamic-sigma consensus-param ingress bridge checks the ingress-to-signed-config
+  prerequisite for dynamic param updates, the dynamic-sigma payload ingress
+  bridge checks the ingress-to-transport/decode prerequisite for tagged dynamic
+  payloads, and the dynamic-sigma
   proposal-evidence-format/BFT-payload-transport/prototype-decode-gate/consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
   bytes, Zebra's proposal-carried evidence bytes, the tagged dynamic-sigma
