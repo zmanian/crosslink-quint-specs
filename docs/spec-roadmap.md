@@ -313,22 +313,35 @@ For Crosslink, matching that quality means adding:
   production-finality routers. It records the combined
   protocol/topic/channel/kind contract, routes Tenderlink mixed precommit and
   certificate/evidence/status lanes alongside Malachite proposal/liveness/sync
-  lanes, dynamic-sigma consensus-param lanes, and production-finality
-  proposal/fat-pointer lanes, and rejects cross-protocol routing such as
+  lanes, dynamic-sigma consensus-param and BFT-payload lanes, and
+  production-finality proposal/fat-pointer lanes, and rejects cross-protocol
+  routing such as
   Malachite proposals on the Tenderlink consensus channel, Tenderlink
   precommits on the Malachite liveness channel, consensus-param bytes on a
-  Tenderlink/Malachite lane, or finality proposal bytes on unrelated lanes.
-  The dynamic-sigma lane pins the exact raised/recovered consensus-param hex
-  vectors from the production-shaped format model, while the finality lanes
-  use compact byte labels whose route validity directly checks the generated
+  Tenderlink/Malachite lane, dynamic payload bytes on a Tenderlink or
+  finality lane, or finality proposal bytes on unrelated lanes. The
+  dynamic-sigma param lane pins the exact raised/recovered consensus-param hex
+  vectors from the production-shaped format model, the dynamic-sigma payload
+  lane pins the tagged BFT-payload fixture metadata, and the finality lanes use
+  compact byte labels whose route validity directly checks the generated
   fixture metadata also validated by the production-finality projection.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to
   the Tenderlink consensus lane, Malachite proposal traffic handed to Tenderlink
-  ingress, dynamic-sigma consensus params handed to Tenderlink ingress,
-  production-finality records handed to unrelated ingress lanes, and
+  ingress, dynamic-sigma consensus params or BFT payloads handed to Tenderlink
+  ingress, production-finality records handed to unrelated ingress lanes, and
   cross-protocol raw injections.
+- `CrosslinkProductionDynamicSigmaPayloadIngressBridge.qnt` connects the
+  production dynamic-sigma BFT-payload ingress lane to the tagged payload
+  transport and prototype decode gate. It checks that transport acceptance and
+  enabled decode cannot happen before matching production ingress, while
+  wrong-lane Tenderlink or production-finality records cannot satisfy the
+  dynamic payload gate.
+- `CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafety.qnt` keeps that
+  same ordering in a direct scalar state machine so Apalache can verify the
+  bridge even though the imported ingress/decode action graph is Rust-only for
+  now.
 - `CrosslinkProductionFinalityIngressBridge.qnt` connects those
   production-finality ingress lanes to projection and finality readiness. It
   checks that the BFT-block proposal and fat-pointer wire cannot be projected
@@ -920,6 +933,14 @@ For Crosslink, matching that quality means adding:
   dynamic-sigma bytes before parsing, enabled config accepts valid dynamic
   payloads with evidence-selected confirmation depth, and tagged malformed or
   invalid dynamic bytes never become fixed-sigma payloads.
+- `CrosslinkProductionDynamicSigmaPayloadIngressBridgeModel` checks that the
+  same tagged payload first passes the production dynamic-sigma BFT-payload
+  ingress lane before transport acceptance or enabled prototype decode, and
+  rejects Tenderlink or production-finality traffic as substitutes for that
+  ingress prerequisite.
+- `CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafetyModel` keeps the
+  same prerequisite as an Apalache-friendly direct graph for the package
+  verification gate.
 - `CrosslinkDynamicSigmaCalibrationModel` checks the simpler measured-window
   calibration harness that feeds that production-shaped telemetry contract.
 - `CrosslinkDynamicSigmaForkScheduleModel` composes the controller with a
@@ -1013,7 +1034,9 @@ For Crosslink, matching that quality means adding:
   and fat-pointer-signature envelope boundary, the Malachite gossip router and
   verifier-friendly router safety slice compose the proposal/liveness/sync
   channel namespaces, the production gossip registry checks cross-protocol
-  Tenderlink/Malachite/dynamic-sigma topic-channel separation, and the dynamic-sigma
+  Tenderlink/Malachite/dynamic-sigma topic-channel separation, the production
+  dynamic-sigma payload ingress bridge checks the ingress-to-transport/decode
+  prerequisite for tagged dynamic payloads, and the dynamic-sigma
   proposal-evidence-format/BFT-payload-transport/prototype-decode-gate/consensus-param/format/transport/heighted-round/
   finality/authenticated evidence bridges cover production-shaped parameter
   bytes, Zebra's proposal-carried evidence bytes, the tagged dynamic-sigma

@@ -8,10 +8,10 @@ module CrosslinkProductionGossipRegistry {
    Tenderlink compact-consensus lanes cannot be routed through Malachite
    proposal/liveness/sync lanes, that Malachite protobuf lanes cannot be
    routed through Tenderlink's consensus-topic registry, that dynamic-sigma
-   consensus-param envelopes do not share either protocol's ingress lane, and
-   that production-finality proposal/fat-pointer envelopes stay in their
-   finality lanes before the richer projection contract validates payload
-   semantics.
+   consensus-param and BFT-payload envelopes do not share either protocol's
+   ingress lane, and that production-finality proposal/fat-pointer envelopes
+   stay in their finality lanes before the richer projection contract validates
+   payload semantics.
    */
 
   import CrosslinkProductionFixtureVectorsGenerated.* from
@@ -47,12 +47,16 @@ module CrosslinkProductionGossipRegistry {
 
   pure val DynamicSigmaConsensusParamChannel =
     "dynamic-sigma-consensus-param-channel"
+  pure val DynamicSigmaBftPayloadChannel =
+    "dynamic-sigma-bft-payload-channel"
   pure val ProductionBftBlockProposalChannel =
     "production-bft-block-proposal-channel"
   pure val ProductionFatPointerWireChannel =
     "production-fat-pointer-wire-channel"
 
   pure val CrosslinkConsensusTopic = "crosslink-consensus-v1"
+  pure val DynamicSigmaProposalTopic =
+    "crosslink-dynamic-sigma-proposal-v1"
   pure val MalachiteProposalTopic = "crosslink-proposal-v1"
   pure val MalachiteLivenessTopic = "crosslink-liveness-v1"
   pure val MalachiteSyncTopic = "crosslink-sync-v1"
@@ -80,6 +84,7 @@ module CrosslinkProductionGossipRegistry {
   pure val MalachiteSyncResponseKind = "sync-response"
 
   pure val DynamicSigmaConsensusParamKind = "consensus-param"
+  pure val DynamicSigmaBftPayloadKind = "dynamic-sigma-bft-payload"
   pure val ProductionBftBlockProposalKind = "bft-block-proposal"
   pure val ProductionFatPointerWireKind = "fat-pointer-wire"
 
@@ -131,6 +136,17 @@ module CrosslinkProductionGossipRegistry {
       DynamicSigmaConsensusParamH2RaisedBytes,
     )
 
+  pure val DynamicSigmaBftPayloadFixtureBytes =
+    "dynamic-sigma-bft-payload-magic434c445349473031-evidence123-block4619-headers3-selected3"
+  pure val DynamicSigmaBftPayloadFixtureMagicHex = "434c445349473031"
+  pure val DynamicSigmaBftPayloadFixtureEvidenceByteLen = 123
+  pure val DynamicSigmaBftPayloadFixtureEvidenceOffset = 8
+  pure val DynamicSigmaBftPayloadFixtureBlockOffset = 131
+  pure val DynamicSigmaBftPayloadFixtureBftBlockByteLen = 4619
+  pure val DynamicSigmaBftPayloadFixturePayloadByteLen = 4750
+  pure val DynamicSigmaBftPayloadFixtureHeaderCount = 3
+  pure val DynamicSigmaBftPayloadFixtureSelectedSigma = 3
+
   pure val ProductionBftBlockProposalFixtureBytes =
     "bft-block-v0-h2-finality0-len4619-total4761-headers3-offset150-154-158"
   pure val ProductionFatPointerWireFixtureBytes =
@@ -167,6 +183,10 @@ module CrosslinkProductionGossipRegistry {
     CrosslinkConsensusTopic != MalachiteProposalTopic and
     CrosslinkConsensusTopic != MalachiteLivenessTopic and
     CrosslinkConsensusTopic != MalachiteSyncTopic and
+    CrosslinkConsensusTopic != DynamicSigmaProposalTopic and
+    DynamicSigmaProposalTopic != MalachiteProposalTopic and
+    DynamicSigmaProposalTopic != MalachiteLivenessTopic and
+    DynamicSigmaProposalTopic != MalachiteSyncTopic and
     MalachiteProposalTopic != MalachiteLivenessTopic and
     MalachiteProposalTopic != MalachiteSyncTopic and
     MalachiteLivenessTopic != MalachiteSyncTopic
@@ -181,12 +201,13 @@ module CrosslinkProductionGossipRegistry {
       MalachiteLivenessChannel,
       MalachiteSyncChannel,
       DynamicSigmaConsensusParamChannel,
+      DynamicSigmaBftPayloadChannel,
       ProductionBftBlockProposalChannel,
       ProductionFatPointerWireChannel,
     )
 
   pure def ProductionChannelsDisjoint: bool =
-    ProductionChannels.size() == 10
+    ProductionChannels.size() == 11
 
   def TenderlinkConsensusRouteValid(env: ProductionEnvelope_t): bool =
     env.protocol == TenderlinkProtocol and
@@ -300,6 +321,30 @@ module CrosslinkProductionGossipRegistry {
     env.kind == DynamicSigmaConsensusParamKind and
     DynamicSigmaConsensusParamBytes.contains(env.bytes)
 
+  def DynamicSigmaBftPayloadFixtureMetadataCoherent: bool =
+    DynamicSigmaBftPayloadFixtureMagicHex == "434c445349473031" and
+    DynamicSigmaBftPayloadFixtureEvidenceOffset == 8 and
+    DynamicSigmaBftPayloadFixtureEvidenceByteLen == 123 and
+    DynamicSigmaBftPayloadFixtureBlockOffset ==
+      DynamicSigmaBftPayloadFixtureEvidenceOffset +
+        DynamicSigmaBftPayloadFixtureEvidenceByteLen and
+    DynamicSigmaBftPayloadFixtureBftBlockByteLen ==
+      FixtureLaterBftBlockByteLen and
+    DynamicSigmaBftPayloadFixturePayloadByteLen ==
+      DynamicSigmaBftPayloadFixtureBlockOffset +
+        DynamicSigmaBftPayloadFixtureBftBlockByteLen and
+    DynamicSigmaBftPayloadFixtureHeaderCount == FixtureHeaderCount and
+    DynamicSigmaBftPayloadFixtureSelectedSigma ==
+      DynamicSigmaBftPayloadFixtureHeaderCount
+
+  def DynamicSigmaBftPayloadRouteValid(env: ProductionEnvelope_t): bool =
+    DynamicSigmaBftPayloadFixtureMetadataCoherent and
+    env.protocol == DynamicSigmaProtocol and
+    env.channel == DynamicSigmaBftPayloadChannel and
+    env.topic == DynamicSigmaProposalTopic and
+    env.kind == DynamicSigmaBftPayloadKind and
+    env.bytes == DynamicSigmaBftPayloadFixtureBytes
+
   def ProductionBftBlockProposalFixtureMetadataCoherent: bool =
     GeneratedAllBftBlockVersionsZero and
     GeneratedAllFinalizationCandidateHeightsZero and
@@ -359,6 +404,7 @@ module CrosslinkProductionGossipRegistry {
     MalachiteLivenessRouteValid(env) or
     MalachiteSyncRouteValid(env) or
     DynamicSigmaConsensusParamRouteValid(env) or
+    DynamicSigmaBftPayloadRouteValid(env) or
     ProductionBftBlockProposalRouteValid(env) or
     ProductionFatPointerWireRouteValid(env)
 
@@ -452,6 +498,14 @@ module CrosslinkProductionGossipRegistry {
       DynamicSigmaConsensusParamKind,
       DynamicSigmaConsensusParamH2StableBytes,
     )
+  pure val DynamicSigmaBftPayloadEnvelope =
+    Envelope(
+      DynamicSigmaProtocol,
+      DynamicSigmaBftPayloadChannel,
+      DynamicSigmaProposalTopic,
+      DynamicSigmaBftPayloadKind,
+      DynamicSigmaBftPayloadFixtureBytes,
+    )
 
   pure val ProductionBftBlockProposalEnvelope =
     Envelope(
@@ -518,6 +572,14 @@ module CrosslinkProductionGossipRegistry {
       TenderlinkMixedPrecommitKind,
       TenderlinkMixedPrecommitBytes,
     )
+  pure val TenderlinkPrecommitOnDynamicSigmaBftPayload =
+    Envelope(
+      TenderlinkProtocol,
+      DynamicSigmaBftPayloadChannel,
+      DynamicSigmaProposalTopic,
+      TenderlinkMixedPrecommitKind,
+      TenderlinkMixedPrecommitBytes,
+    )
   pure val MalachiteRoundOnDynamicSigmaParam =
     Envelope(
       MalachiteProtocol,
@@ -526,12 +588,28 @@ module CrosslinkProductionGossipRegistry {
       MalachiteRoundKind,
       MalachiteRoundBytes,
     )
+  pure val DynamicSigmaPayloadOnTenderlinkConsensus =
+    Envelope(
+      DynamicSigmaProtocol,
+      TenderlinkConsensusChannel,
+      CrosslinkConsensusTopic,
+      DynamicSigmaBftPayloadKind,
+      DynamicSigmaBftPayloadFixtureBytes,
+    )
   pure val WrongBytesDynamicSigmaParamEnvelope =
     Envelope(
       DynamicSigmaProtocol,
       DynamicSigmaConsensusParamChannel,
       CrosslinkConsensusTopic,
       DynamicSigmaConsensusParamKind,
+      WrongBytes,
+    )
+  pure val WrongBytesDynamicSigmaBftPayloadEnvelope =
+    Envelope(
+      DynamicSigmaProtocol,
+      DynamicSigmaBftPayloadChannel,
+      DynamicSigmaProposalTopic,
+      DynamicSigmaBftPayloadKind,
       WrongBytes,
     )
   pure val ProductionBftBlockProposalOnTenderlinkConsensus =
@@ -604,6 +682,7 @@ module CrosslinkProductionGossipRegistry {
       MalachiteSyncResponseEnvelope,
       DynamicSigmaConsensusParamEnvelope,
       DynamicSigmaConsensusParamRecoveredEnvelope,
+      DynamicSigmaBftPayloadEnvelope,
       ProductionBftBlockProposalEnvelope,
       ProductionFatPointerWireEnvelope,
     )
@@ -676,6 +755,7 @@ module CrosslinkProductionGossipRegistryTest {
       .then(RouteProduction(MalachiteSyncResponseEnvelope))
       .then(RouteProduction(DynamicSigmaConsensusParamEnvelope))
       .then(RouteProduction(DynamicSigmaConsensusParamRecoveredEnvelope))
+      .then(RouteProduction(DynamicSigmaBftPayloadEnvelope))
       .then(RouteProduction(ProductionBftBlockProposalEnvelope))
       .then(RouteProduction(ProductionFatPointerWireEnvelope))
       .then(all {
@@ -700,6 +780,11 @@ module CrosslinkProductionGossipRegistryTest {
         assert(
           routedProductionEnvelopes.contains(
             DynamicSigmaConsensusParamRecoveredEnvelope
+          )
+        ),
+        assert(
+          routedProductionEnvelopes.contains(
+            DynamicSigmaBftPayloadEnvelope
           )
         ),
         assert(
@@ -743,6 +828,7 @@ module CrosslinkProductionGossipRegistryTest {
     RegistryInit
       .then(RouteProduction(DynamicSigmaConsensusParamEnvelope))
       .then(RouteProduction(DynamicSigmaConsensusParamRecoveredEnvelope))
+      .then(RouteProduction(DynamicSigmaBftPayloadEnvelope))
       .then(all {
         assert(
           DynamicSigmaConsensusParamH1RaisedBytes ==
@@ -756,6 +842,13 @@ module CrosslinkProductionGossipRegistryTest {
           DynamicSigmaConsensusParamH2RaisedBytes ==
             "0102000000010000000300"
         ),
+        assert(
+          DynamicSigmaBftPayloadFixtureBytes ==
+            "dynamic-sigma-bft-payload-magic434c445349473031-evidence123-block4619-headers3-selected3"
+        ),
+        assert(DynamicSigmaBftPayloadFixtureMetadataCoherent),
+        assert(DynamicSigmaBftPayloadFixturePayloadByteLen == 4750),
+        assert(DynamicSigmaBftPayloadFixtureSelectedSigma == 3),
         assert(RegistrySafety),
         registryUnchangedAll,
       })
@@ -782,8 +875,20 @@ module CrosslinkProductionGossipRegistryTest {
     RegistryInit.then(RouteProduction(DynamicSigmaParamOnTenderlinkConsensus)).fail()
   }
 
+  run dynamicSigmaPayloadOnTenderlinkConsensusRejectedTest = {
+    RegistryInit
+      .then(RouteProduction(DynamicSigmaPayloadOnTenderlinkConsensus))
+      .fail()
+  }
+
   run tenderlinkPrecommitOnDynamicSigmaParamRejectedTest = {
     RegistryInit.then(RouteProduction(TenderlinkPrecommitOnDynamicSigmaParam)).fail()
+  }
+
+  run tenderlinkPrecommitOnDynamicSigmaPayloadRejectedTest = {
+    RegistryInit
+      .then(RouteProduction(TenderlinkPrecommitOnDynamicSigmaBftPayload))
+      .fail()
   }
 
   run malachiteRoundOnDynamicSigmaParamRejectedTest = {
@@ -814,6 +919,12 @@ module CrosslinkProductionGossipRegistryTest {
 
   run wrongBytesDynamicSigmaParamRejectedTest = {
     RegistryInit.then(RouteProduction(WrongBytesDynamicSigmaParamEnvelope)).fail()
+  }
+
+  run wrongBytesDynamicSigmaBftPayloadRejectedTest = {
+    RegistryInit
+      .then(RouteProduction(WrongBytesDynamicSigmaBftPayloadEnvelope))
+      .fail()
   }
 
   run wrongBytesProductionFinalityProposalRejectedTest = {
@@ -857,6 +968,15 @@ module CrosslinkProductionGossipRegistryTest {
       })
   }
 
+  run rawDynamicSigmaPayloadOnTenderlinkConsensusViolatesSafetyTest = {
+    RegistryInit
+      .then(RawRouteProduction(DynamicSigmaPayloadOnTenderlinkConsensus))
+      .then(all {
+        assert(not(RegistrySafety)),
+        registryUnchangedAll,
+      })
+  }
+
   run rawProductionFinalityProposalOnTenderlinkConsensusViolatesSafetyTest = {
     RegistryInit
       .then(RawRouteProduction(ProductionBftBlockProposalOnTenderlinkConsensus))
@@ -869,6 +989,15 @@ module CrosslinkProductionGossipRegistryTest {
   run rawTenderlinkPrecommitOnDynamicSigmaParamViolatesSafetyTest = {
     RegistryInit
       .then(RawRouteProduction(TenderlinkPrecommitOnDynamicSigmaParam))
+      .then(all {
+        assert(not(RegistrySafety)),
+        registryUnchangedAll,
+      })
+  }
+
+  run rawTenderlinkPrecommitOnDynamicSigmaPayloadViolatesSafetyTest = {
+    RegistryInit
+      .then(RawRouteProduction(TenderlinkPrecommitOnDynamicSigmaBftPayload))
       .then(all {
         assert(not(RegistrySafety)),
         registryUnchangedAll,

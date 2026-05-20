@@ -4,13 +4,13 @@ module CrosslinkProductionGossipIngress {
 
    CrosslinkProductionGossipRegistry.qnt records the production channel
    registry across Tenderlink compact packets, Malachite protobuf packets,
-   dynamic-sigma consensus-param packets, and production-finality
-   proposal/fat-pointer packets. This slice models the next node-local gate:
-   an accepted ingress record must enter the exact downstream lane selected by
-   the registry. A registry-valid accountability evidence envelope is still
-   unsafe if it is handed to the Tenderlink consensus packet lane, and a
-   dynamic-sigma consensus-param or production-finality envelope is still
-   unsafe if it reaches any unrelated lane.
+   dynamic-sigma consensus-param and BFT-payload packets, and
+   production-finality proposal/fat-pointer packets. This slice models the
+   next node-local gate: an accepted ingress record must enter the exact
+   downstream lane selected by the registry. A registry-valid accountability
+   evidence envelope is still unsafe if it is handed to the Tenderlink
+   consensus packet lane, and a dynamic-sigma or production-finality envelope
+   is still unsafe if it reaches any unrelated lane.
    */
 
   import CrosslinkProductionGossipRegistry.* from
@@ -25,6 +25,7 @@ module CrosslinkProductionGossipIngress {
   var acceptedMalachiteLiveness: Set[ProductionEnvelope_t]
   var acceptedMalachiteSync: Set[ProductionEnvelope_t]
   var acceptedDynamicSigmaConsensusParam: Set[ProductionEnvelope_t]
+  var acceptedProductionDynamicSigmaBftPayload: Set[ProductionEnvelope_t]
   var acceptedProductionBftBlockProposal: Set[ProductionEnvelope_t]
   var acceptedProductionFatPointerWire: Set[ProductionEnvelope_t]
   var ingressFiredAction: str
@@ -46,6 +47,8 @@ module CrosslinkProductionGossipIngress {
       DynamicSigmaConsensusParamEnvelope,
       DynamicSigmaConsensusParamRecoveredEnvelope,
     )
+  pure val DynamicSigmaBftPayloadIngressFixtures =
+    Set(DynamicSigmaBftPayloadEnvelope)
   pure val ProductionBftBlockProposalIngressFixtures =
     Set(ProductionBftBlockProposalEnvelope)
   pure val ProductionFatPointerWireIngressFixtures =
@@ -77,6 +80,9 @@ module CrosslinkProductionGossipIngress {
       DynamicSigmaConsensusParamRouteValid
     )
 
+  val AcceptedDynamicSigmaBftPayloadValid =
+    acceptedProductionDynamicSigmaBftPayload.forall(DynamicSigmaBftPayloadRouteValid)
+
   val AcceptedProductionBftBlockProposalValid =
     acceptedProductionBftBlockProposal.forall(
       ProductionBftBlockProposalRouteValid
@@ -96,6 +102,7 @@ module CrosslinkProductionGossipIngress {
     AcceptedMalachiteLivenessValid and
     AcceptedMalachiteSyncValid and
     AcceptedDynamicSigmaConsensusParamValid and
+    AcceptedDynamicSigmaBftPayloadValid and
     AcceptedProductionBftBlockProposalValid and
     AcceptedProductionFatPointerWireValid
 
@@ -110,6 +117,7 @@ module CrosslinkProductionGossipIngress {
     acceptedMalachiteLiveness' = Set(),
     acceptedMalachiteSync' = Set(),
     acceptedDynamicSigmaConsensusParam' = Set(),
+    acceptedProductionDynamicSigmaBftPayload' = Set(),
     acceptedProductionBftBlockProposal' = Set(),
     acceptedProductionFatPointerWire' = Set(),
     ingressFiredAction' = "IngressInit",
@@ -135,6 +143,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -155,6 +164,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -176,6 +186,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -196,6 +207,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -216,6 +228,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -236,6 +249,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -256,6 +270,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync.union(Set(env)),
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -278,11 +293,36 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam.union(Set(env)),
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
         acceptedProductionFatPointerWire,
       ingressFiredAction' = "AcceptDynamicSigmaConsensusParam",
+    }
+
+  action AcceptDynamicSigmaBftPayload(
+    env: ProductionEnvelope_t,
+  ): bool =
+    all {
+      DynamicSigmaBftPayloadRouteValid(env),
+      KeepRegistryState,
+      acceptedTenderlinkConsensus' = acceptedTenderlinkConsensus,
+      acceptedTenderlinkEvidence' = acceptedTenderlinkEvidence,
+      acceptedTenderlinkKnownPeer' = acceptedTenderlinkKnownPeer,
+      acceptedTenderlinkStatus' = acceptedTenderlinkStatus,
+      acceptedMalachiteProposal' = acceptedMalachiteProposal,
+      acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
+      acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' =
+        acceptedProductionDynamicSigmaBftPayload.union(Set(env)),
+      acceptedProductionBftBlockProposal' =
+        acceptedProductionBftBlockProposal,
+      acceptedProductionFatPointerWire' =
+        acceptedProductionFatPointerWire,
+      ingressFiredAction' = "AcceptDynamicSigmaBftPayload",
     }
 
   action AcceptProductionBftBlockProposal(
@@ -300,6 +340,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal.union(Set(env)),
       acceptedProductionFatPointerWire' =
@@ -322,6 +363,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -342,6 +384,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -361,6 +404,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -382,11 +426,35 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam.union(Set(env)),
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
         acceptedProductionFatPointerWire,
       ingressFiredAction' = "RawAcceptDynamicSigmaConsensusParam",
+    }
+
+  action RawAcceptDynamicSigmaBftPayload(
+    env: ProductionEnvelope_t,
+  ): bool =
+    all {
+      KeepRegistryState,
+      acceptedTenderlinkConsensus' = acceptedTenderlinkConsensus,
+      acceptedTenderlinkEvidence' = acceptedTenderlinkEvidence,
+      acceptedTenderlinkKnownPeer' = acceptedTenderlinkKnownPeer,
+      acceptedTenderlinkStatus' = acceptedTenderlinkStatus,
+      acceptedMalachiteProposal' = acceptedMalachiteProposal,
+      acceptedMalachiteLiveness' = acceptedMalachiteLiveness,
+      acceptedMalachiteSync' = acceptedMalachiteSync,
+      acceptedDynamicSigmaConsensusParam' =
+        acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' =
+        acceptedProductionDynamicSigmaBftPayload.union(Set(env)),
+      acceptedProductionBftBlockProposal' =
+        acceptedProductionBftBlockProposal,
+      acceptedProductionFatPointerWire' =
+        acceptedProductionFatPointerWire,
+      ingressFiredAction' = "RawAcceptDynamicSigmaBftPayload",
     }
 
   action RawAcceptProductionBftBlockProposal(
@@ -403,6 +471,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal.union(Set(env)),
       acceptedProductionFatPointerWire' =
@@ -422,6 +491,7 @@ module CrosslinkProductionGossipIngress {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -453,6 +523,8 @@ module CrosslinkProductionGossipIngressTest {
       AcceptMalachiteSync(env),
       nondet env = oneOf(DynamicSigmaConsensusParamIngressFixtures)
       AcceptDynamicSigmaConsensusParam(env),
+      nondet env = oneOf(DynamicSigmaBftPayloadIngressFixtures)
+      AcceptDynamicSigmaBftPayload(env),
       nondet env = oneOf(ProductionBftBlockProposalIngressFixtures)
       AcceptProductionBftBlockProposal(env),
       nondet env = oneOf(ProductionFatPointerWireIngressFixtures)
@@ -472,6 +544,7 @@ module CrosslinkProductionGossipIngressTest {
       acceptedMalachiteSync' = acceptedMalachiteSync,
       acceptedDynamicSigmaConsensusParam' =
         acceptedDynamicSigmaConsensusParam,
+      acceptedProductionDynamicSigmaBftPayload' = acceptedProductionDynamicSigmaBftPayload,
       acceptedProductionBftBlockProposal' =
         acceptedProductionBftBlockProposal,
       acceptedProductionFatPointerWire' =
@@ -492,6 +565,7 @@ module CrosslinkProductionGossipIngressTest {
       .then(AcceptDynamicSigmaConsensusParam(
         DynamicSigmaConsensusParamRecoveredEnvelope
       ))
+      .then(AcceptDynamicSigmaBftPayload(DynamicSigmaBftPayloadEnvelope))
       .then(AcceptProductionBftBlockProposal(ProductionBftBlockProposalEnvelope))
       .then(AcceptProductionFatPointerWire(ProductionFatPointerWireEnvelope))
       .then(all {
@@ -511,6 +585,11 @@ module CrosslinkProductionGossipIngressTest {
         assert(
           acceptedDynamicSigmaConsensusParam.contains(
             DynamicSigmaConsensusParamRecoveredEnvelope
+          )
+        ),
+        assert(
+          acceptedProductionDynamicSigmaBftPayload.contains(
+            DynamicSigmaBftPayloadEnvelope
           )
         ),
         assert(
@@ -551,9 +630,21 @@ module CrosslinkProductionGossipIngressTest {
       .fail()
   }
 
+  run dynamicSigmaPayloadRejectedByTenderlinkConsensusIngressTest = {
+    IngressInit
+      .then(AcceptTenderlinkConsensus(DynamicSigmaBftPayloadEnvelope))
+      .fail()
+  }
+
   run tenderlinkPrecommitRejectedByDynamicSigmaParamIngressTest = {
     IngressInit
       .then(AcceptDynamicSigmaConsensusParam(TenderlinkMixedPrecommitEnvelope))
+      .fail()
+  }
+
+  run tenderlinkPrecommitRejectedByDynamicSigmaPayloadIngressTest = {
+    IngressInit
+      .then(AcceptDynamicSigmaBftPayload(TenderlinkMixedPrecommitEnvelope))
       .fail()
   }
 
@@ -572,6 +663,12 @@ module CrosslinkProductionGossipIngressTest {
   run productionFinalityFatPointerRejectedByDynamicSigmaParamIngressTest = {
     IngressInit
       .then(AcceptDynamicSigmaConsensusParam(ProductionFatPointerWireEnvelope))
+      .fail()
+  }
+
+  run productionFinalityFatPointerRejectedByDynamicSigmaPayloadIngressTest = {
+    IngressInit
+      .then(AcceptDynamicSigmaBftPayload(ProductionFatPointerWireEnvelope))
       .fail()
   }
 
@@ -601,9 +698,29 @@ module CrosslinkProductionGossipIngressTest {
       })
   }
 
+  run rawDynamicSigmaPayloadOnTenderlinkConsensusViolatesIngressSafetyTest = {
+    IngressInit
+      .then(RawAcceptTenderlinkConsensus(DynamicSigmaBftPayloadEnvelope))
+      .then(all {
+        assert(ProductionRouteValid(DynamicSigmaBftPayloadEnvelope)),
+        assert(not(IngressSafety)),
+        ingressUnchangedAll,
+      })
+  }
+
   run rawTenderlinkPrecommitOnDynamicSigmaParamViolatesIngressSafetyTest = {
     IngressInit
       .then(RawAcceptDynamicSigmaConsensusParam(TenderlinkMixedPrecommitEnvelope))
+      .then(all {
+        assert(ProductionRouteValid(TenderlinkMixedPrecommitEnvelope)),
+        assert(not(IngressSafety)),
+        ingressUnchangedAll,
+      })
+  }
+
+  run rawTenderlinkPrecommitOnDynamicSigmaPayloadViolatesIngressSafetyTest = {
+    IngressInit
+      .then(RawAcceptDynamicSigmaBftPayload(TenderlinkMixedPrecommitEnvelope))
       .then(all {
         assert(ProductionRouteValid(TenderlinkMixedPrecommitEnvelope)),
         assert(not(IngressSafety)),
