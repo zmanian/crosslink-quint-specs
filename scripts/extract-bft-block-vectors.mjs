@@ -356,6 +356,10 @@ function validateFatPointerProbe(prefix, probe, offset, signatureCount, byteLen)
   assert(typeof probe.blockHashHex === 'string', `${prefix}block hash hex missing`)
   assert(probe.blockHashHex.length === 64, `${prefix}block hash hex length mismatch`)
   assert(
+    probe.payloadHex.slice(0, 64) === probe.blockHashHex,
+    `${prefix}block hash should be payload prefix`,
+  )
+  assert(
     probe.signatureCountOffset === offset + layout.fatPointerVotePayloadBytes,
     `${prefix}count offset mismatch`,
   )
@@ -378,6 +382,10 @@ function validateFatPointerProbe(prefix, probe, offset, signatureCount, byteLen)
 
   if (signatureCount === 0) {
     assert(probe.firstSignatureEntry === null, `${prefix}unexpected first signature entry`)
+    assert(
+      probe.wireHex === `${probe.payloadHex}${Buffer.from(expectedCountBytes).toString('hex')}`,
+      `${prefix}zero-signature wire should be payload || count`,
+    )
   } else {
     assert(probe.firstSignatureEntry !== null, `${prefix}first signature entry missing`)
     assert(probe.firstSignatureEntry.pubKeyOffset === probe.entriesOffset, `${prefix}pubkey offset mismatch`)
@@ -399,6 +407,20 @@ function validateFatPointerProbe(prefix, probe, offset, signatureCount, byteLen)
       typeof probe.firstSignatureEntry.voteSignDataHex === 'string' &&
         probe.firstSignatureEntry.voteSignDataHex.length === 152,
       `${prefix}vote sign-data hex mismatch`,
+    )
+    assert(
+      probe.firstSignatureEntry.voteSignDataHex ===
+        `${probe.firstSignatureEntry.pubKeyHex}${probe.payloadHex}`,
+      `${prefix}vote sign-data should be pubkey || payload`,
+    )
+    assert(
+      probe.wireHex.startsWith(
+        `${probe.payloadHex}` +
+          `${Buffer.from(expectedCountBytes).toString('hex')}` +
+          `${probe.firstSignatureEntry.pubKeyHex}` +
+          `${probe.firstSignatureEntry.voteSignatureHex}`,
+      ),
+      `${prefix}wire should start with payload || count || first signer entry`,
     )
     assert(
       verifyEd25519Signature(

@@ -301,8 +301,9 @@ fixture: the matching precommit and fat-pointer wire must arrive through
 canonical Crosslink-topic envelopes, wrong topic/sign-bytes/kind/length
 envelopes are rejected, a fixture precommit cannot enter gossip unless its
 matching transport envelope was seen, and the fixture identity uses generated
-block-hash, pubkey, sign-data, and signature hex strings. The
-production-finality projection then
+block-hash, pubkey, sign-data, and signature hex strings whose
+`pubkey || payload` shape is checked by the manifest. The production-finality
+projection then
 uses a production-shaped BFT-block proposal envelope plus that fixture
 transport bridge at the finality boundary: candidate observation cannot happen
 before proposal transport, proposal transport must match the generated

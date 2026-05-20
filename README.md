@@ -482,7 +482,8 @@ the Zebra Crosslink working branch:
   one-signature checked-in fixture wire is accepted only after its matching
   fixture precommit is gossiped. The executable model now uses the generated
   fixture block hash, pubkey, vote sign-data, and vote signature hex strings
-  while the generated fixture manifest verifies the real Ed25519 signature.
+  while the generated fixture manifest validates `pubkey || payload` sign-data
+  and verifies the real Ed25519 signature.
 - `spec/CrosslinkFixtureGossipTransport.qnt` adds a fixture transport boundary:
   the generated fixture precommit and fat-pointer wire must first be gossiped
   in canonical Crosslink-topic envelopes before the observer accepts the wire;
