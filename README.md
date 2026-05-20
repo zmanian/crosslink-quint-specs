@@ -194,14 +194,16 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkProductionFinalityIngressProjectionBridge.qnt` composes the
   node-local production ingress machine with the richer production finality
   projection contract. It is kept in the Rust test/typecheck lane because
-  Apalache currently trips over this imported-action shape; the scalar ingress
-  bridge carries the verifier-friendly safety and TLC coverage for the same
-  gate.
+  Apalache currently trips over this imported-action shape. The direct graph
+  also gates production precommit evidence on accepted Tenderlink
+  value-precommit-certificate ingress, so finality evidence cannot be gossiped
+  as a standalone fixture. The scalar ingress bridge carries the
+  verifier-friendly safety and TLC coverage for the same gate.
 - `spec/CrosslinkProductionFinalityIngressProjectionBridgeSafety.qnt` is the
   verifier-friendly staged projection for that direct bridge. It proves that
-  proposal transport, candidate observation, precommit evidence, fat-pointer
-  transport, fat-pointer observation, and finality cannot skip their required
-  production ingress/projection prerequisites.
+  proposal transport, candidate observation, Tenderlink-gated precommit
+  evidence, fat-pointer transport, fat-pointer observation, and finality cannot
+  skip their required production ingress/projection prerequisites.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.

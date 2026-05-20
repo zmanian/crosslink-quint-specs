@@ -210,6 +210,11 @@ For Crosslink, matching that quality means adding:
   envelope first carries exact canonical evidence bytes and matching
   height/round/signer metadata; witnesses reject missing transport, wrong
   topic/kind/length/height/signer/bytes, and non-canonical evidence.
+- `CrosslinkProductionFinalityIngressProjectionBridge.qnt` and its
+  verifier-friendly safety projection now place production finality precommit
+  evidence behind accepted Tenderlink value-precommit-certificate ingress. The
+  new witnesses reject standalone precommit-evidence gossip, then carry that
+  prerequisite through fat-pointer observation and finality.
 - `CrosslinkTenderlinkAccountabilityObserver.qnt` adds the observer-side bridge
   after that transport boundary. It records abstract precommit-equivocation
   facts only after the exact canonical evidence has been accepted through

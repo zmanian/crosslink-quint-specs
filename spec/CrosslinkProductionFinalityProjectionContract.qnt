@@ -452,6 +452,11 @@ module CrosslinkProductionFinalityProjectionContractModel {
     Transport::observedProductionFatPointerWire.contains(Transport::FixtureWire) and
     Transport::observedProductionFatPointer.contains(Transport::FixtureFatPointer)
 
+  def ProductionPrecommitEvidenceGossiped: bool =
+    Transport::gossipedFixturePrecommitEnvelope.contains(
+      Transport::FixturePrecommitEnvelope
+    )
+
   action KeepProductionFinalityState = all {
     gossipedProductionBftBlockProposalEnvelope' =
       gossipedProductionBftBlockProposalEnvelope,

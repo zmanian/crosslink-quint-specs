@@ -9,6 +9,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
    bridge obligations remain covered by Apalache and TLC:
 
    ingress -> proposal transport -> candidate observation
+   Tenderlink precommit ingress -> precommit evidence
    ingress -> fat-pointer transport -> precommit evidence -> fat-pointer observe
    both observed -> finality
    */
@@ -64,7 +65,15 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
     if (productionFatPointerWireObserved) {
       productionFatPointerWireIngressAccepted and
       productionFatPointerWireTransportObserved and
+      tenderlinkPrecommitIngressAccepted and
       productionPrecommitEvidenceGossiped
+    } else {
+      true
+    }
+
+  val PrecommitEvidenceRequiresTenderlinkIngress =
+    if (productionPrecommitEvidenceGossiped) {
+      tenderlinkPrecommitIngressAccepted
     } else {
       true
     }
@@ -73,6 +82,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
     if (finalizedProductionBlock) {
       productionBftBlockProposalIngressAccepted and
       productionFatPointerWireIngressAccepted and
+      tenderlinkPrecommitIngressAccepted and
       productionBftBlockProposalTransportObserved and
       productionBftBlockObserved and
       productionPrecommitEvidenceGossiped and
@@ -110,6 +120,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
     ProposalTransportRequiresIngress and
     CandidateObservationRequiresProposalTransport and
     FatPointerTransportRequiresIngress and
+    PrecommitEvidenceRequiresTenderlinkIngress and
     FatPointerObservationRequiresTransportAndPrecommitEvidence and
     FinalityRequiresCompleteIngressProjection
 
@@ -253,6 +264,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
 
   action GossipProductionPrecommitEvidence: bool =
     all {
+      tenderlinkPrecommitIngressAccepted,
       not(productionPrecommitEvidenceGossiped),
       productionBftBlockProposalIngressAccepted' =
         productionBftBlockProposalIngressAccepted,
@@ -454,6 +466,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
   temporal EventuallyProductionIngressProjectionFinalizes =
     Next.weakFair(Set(bridgeProgress)).implies(eventually(
       productionBftBlockProposalIngressAccepted and
+      tenderlinkPrecommitIngressAccepted and
       productionFatPointerWireIngressAccepted and
       productionBftBlockProposalTransportObserved and
       productionBftBlockObserved and
@@ -561,11 +574,18 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       })
   }
 
+  run precommitEvidenceRequiresTenderlinkIngressTest = {
+    Init
+      .then(GossipProductionPrecommitEvidence)
+      .fail()
+  }
+
   run finalityRequiresCompleteProjectionTest = {
     Init
       .then(AcceptProductionBftBlockProposalIngress)
       .then(GossipProductionBftBlockProposalAfterIngress)
       .then(ObserveProductionBftBlockCandidateAfterTransport)
+      .then(AcceptTenderlinkPrecommitIngressOnly)
       .then(AcceptProductionFatPointerWireIngress)
       .then(GossipProductionFatPointerWireAfterIngress)
       .then(GossipProductionPrecommitEvidence)

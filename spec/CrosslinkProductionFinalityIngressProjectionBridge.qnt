@@ -28,6 +28,11 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       Ingress::ProductionFatPointerWireEnvelope
     )
 
+  def TenderlinkValuePrecommitCertificateIngressAccepted: bool =
+    Ingress::acceptedTenderlinkConsensus.contains(
+      Ingress::TenderlinkValuePrecommitCertificateEnvelope
+    )
+
   def IngressProjectionFixtureMetadataCoherent: bool =
     Ingress::ProductionBftBlockProposalFixtureMetadataCoherent and
     Ingress::ProductionFatPointerWireFixtureMetadataCoherent and
@@ -54,6 +59,13 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       true
     }
 
+  val ProjectionPrecommitEvidenceRequiresIngress =
+    if (Projection::ProductionPrecommitEvidenceGossiped) {
+      TenderlinkValuePrecommitCertificateIngressAccepted
+    } else {
+      true
+    }
+
   val ProjectionFatPointerWireRequiresIngress =
     if (Projection::ProductionFatPointerWireObserved) {
       ProductionFatPointerWireIngressAccepted
@@ -65,6 +77,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
     if (Projection::finalizedProductionBlock) {
       ProductionBftBlockProposalIngressAccepted and
       ProductionFatPointerWireIngressAccepted and
+      TenderlinkValuePrecommitCertificateIngressAccepted and
       Projection::productionBftBlockObserved and
       Projection::ProductionFatPointerWireObserved and
       Projection::latestFinalizedProductionBlockHash ==
@@ -76,11 +89,12 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
 
   val BridgeStateWellFormed =
     bridgeProgress >= 0 and
-    bridgeProgress <= 8 and
+    bridgeProgress <= 9 and
     Set(
       "Init",
       "AcceptProductionBftBlockProposalIngress",
       "AcceptProductionFatPointerWireIngress",
+      "AcceptTenderlinkValuePrecommitCertificateIngress",
       "GossipProductionBftBlockProposalAfterIngress",
       "ObserveProductionBftBlockCandidateAfterIngress",
       "GossipProductionPrecommitEvidence",
@@ -99,6 +113,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
     BridgeStateWellFormed and
     ProjectionProposalTransportRequiresIngress and
     ProjectionCandidateRequiresIngress and
+    ProjectionPrecommitEvidenceRequiresIngress and
     ProjectionFatPointerWireRequiresIngress and
     ProjectionFinalityRequiresIngress
 
@@ -134,6 +149,17 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       Projection::Unchanged,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "AcceptProductionFatPointerWireIngress",
+    }
+
+  action AcceptTenderlinkValuePrecommitCertificateIngress: bool =
+    all {
+      not(TenderlinkValuePrecommitCertificateIngressAccepted),
+      Ingress::AcceptTenderlinkConsensus(
+        Ingress::TenderlinkValuePrecommitCertificateEnvelope
+      ),
+      Projection::Unchanged,
+      bridgeProgress' = bridgeProgress + 1,
+      bridgeFiredAction' = "AcceptTenderlinkValuePrecommitCertificateIngress",
     }
 
   action AttemptTenderlinkPrecommitAsProductionBftBlockProposalIngress: bool =
@@ -172,6 +198,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
 
   action GossipProductionPrecommitEvidence: bool =
     all {
+      TenderlinkValuePrecommitCertificateIngressAccepted,
       Ingress::IngressStutter,
       Projection::GossipFixturePrecommitForFinality,
       bridgeProgress' = bridgeProgress + 1,
@@ -250,6 +277,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
     any {
       AcceptProductionBftBlockProposalIngress,
       AcceptProductionFatPointerWireIngress,
+      AcceptTenderlinkValuePrecommitCertificateIngress,
       GossipProductionBftBlockProposalAfterIngress,
       ObserveProductionBftBlockCandidateAfterIngress,
       GossipProductionPrecommitEvidence,
@@ -263,6 +291,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
     Next.weakFair(Set(bridgeProgress)).implies(eventually(
       ProductionBftBlockProposalIngressAccepted and
       ProductionFatPointerWireIngressAccepted and
+      TenderlinkValuePrecommitCertificateIngressAccepted and
       Projection::productionBftBlockObserved and
       Projection::ProductionFatPointerWireObserved and
       Projection::finalizedProductionBlock and
@@ -275,6 +304,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       .then(AcceptProductionBftBlockProposalIngress)
       .then(GossipProductionBftBlockProposalAfterIngress)
       .then(ObserveProductionBftBlockCandidateAfterIngress)
+      .then(AcceptTenderlinkValuePrecommitCertificateIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(AcceptProductionFatPointerWireIngress)
       .then(GossipProductionFatPointerWireAfterIngress)
@@ -292,6 +322,12 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
         assert(IngressProjectionBridgeSafety),
         Stutter,
       })
+  }
+
+  run precommitEvidenceRequiresTenderlinkIngressTest = {
+    Init
+      .then(GossipProductionPrecommitEvidence)
+      .fail()
   }
 
   run projectionProposalRequiresProductionIngressTest = {
@@ -320,6 +356,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
 
   run fatPointerWireProjectionRequiresProductionIngressTest = {
     Init
+      .then(AcceptTenderlinkValuePrecommitCertificateIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(GossipProductionFatPointerWireAfterIngress)
       .fail()
@@ -327,6 +364,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
 
   run rawObservedFatPointerWireWithoutIngressViolatesBridgeSafetyTest = {
     Init
+      .then(AcceptTenderlinkValuePrecommitCertificateIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(RawGossipProductionFatPointerWireWithoutIngress)
       .then(RawObserveProductionFatPointerWireWithoutIngress)
@@ -343,6 +381,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       .then(AcceptProductionBftBlockProposalIngress)
       .then(GossipProductionBftBlockProposalAfterIngress)
       .then(ObserveProductionBftBlockCandidateAfterIngress)
+      .then(AcceptTenderlinkValuePrecommitCertificateIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(RawGossipProductionFatPointerWireWithoutIngress)
       .then(RawObserveProductionFatPointerWireWithoutIngress)
