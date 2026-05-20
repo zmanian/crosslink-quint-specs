@@ -1,11 +1,83 @@
 # Crosslink Quint Specs
 
 Quint specifications for Crosslink and Tenderlink-style consensus over a moving
-proof-of-work stream.
+proof-of-work stream. This repository is the Crosslink counterpart of the
+upstream Tendermint Quint specs.
 
-This repository is intended to grow into a Crosslink counterpart of the upstream
-Tendermint Quint specs. It currently starts from the focused models developed in
-the Zebra Crosslink working branch:
+## Status
+
+The spec surface is substantially complete. Per
+[`docs/completeness-audit.md`](docs/completeness-audit.md): **15 covered,
+19 partial, 0 open**. The remaining "partial" items are mostly gated on
+production engineering (Zebra integration code, real Ed25519 / gossip
+transport / consensus-param serialization, full TLC temporal proofs over
+the imported composed protocol action graph) rather than on Quint-side
+modeling.
+
+Three first-class Crosslink variants are modeled:
+
+- **`BaselineCrosslink`** — baseline behavior where round state carries a
+  stale stream sample across a failed round.
+- **`NilPrecommitResamplingCrosslink`** — proposed nil-precommit
+  resampling: a `2f + 1 PRECOMMIT nil` certificate abandons that round,
+  clears same-round lock/valid state, and lets the next round resample
+  the stream.
+- **`CrosslinkDynamicSigmaModel`** — dynamic sigma layered on
+  nil-precommit resampling, with consensus-visible per-height sigma
+  schedule updated only from committed telemetry at BFT-height
+  boundaries.
+
+Gate status:
+
+- `npm test`: typechecks all 107 spec files and runs the witness suite.
+- `npm run verify`: bounded Apalache safety, mostly depth 3 (depth 5 for
+  smaller byte-layout/transport models).
+- `npm run verify:extended`: deeper bounded checks, depth 5 (depth 8 for
+  PoW fork-schedule / branch-competition / reorg-stress).
+- `npm run verify:temporal`: TLC temporal-progress contracts for
+  scheduler, delivery fairness, timeout recovery, finality progress,
+  composed nil-resampling/finality, baseline churn, mixed-wait,
+  heighted/authenticated/rotating projections, production finality,
+  validator-scale.
+
+## Companion docs
+
+- [`docs/spec-roadmap.md`](docs/spec-roadmap.md) — the planned path to
+  completeness with a per-commit progress log.
+- [`docs/completeness-audit.md`](docs/completeness-audit.md) — covered /
+  partial / open tracking against each prompt-to-artifact requirement.
+- [`docs/tendermint-crosslink-map.md`](docs/tendermint-crosslink-map.md) —
+  rule-by-rule map from upstream Tendermint to Crosslink.
+- [`docs/accountability.md`](docs/accountability.md) — nil-precommit
+  accountability notes.
+- [`docs/implementation-correspondence.md`](docs/implementation-correspondence.md)
+  — links between the spec and Zebra Crosslink/Tenderlink.
+- [`docs/dynamic-sigma-telemetry-integration.md`](docs/dynamic-sigma-telemetry-integration.md)
+  — production telemetry mapping for the dynamic-sigma controller.
+
+## Contents
+
+- [Status](#status)
+- [Companion docs](#companion-docs)
+- [Spec file reference](#spec-file-reference)
+  - [Baseline and resampling core](#baseline-and-resampling-core)
+  - [Multi-height and heighted round machine](#multi-height-and-heighted-round-machine)
+  - [Tenderlink wire format and transport](#tenderlink-wire-format-and-transport)
+  - [Malachite wire format and transport](#malachite-wire-format-and-transport)
+  - [Production gossip ingress and finality](#production-gossip-ingress-and-finality)
+  - [Validator-set rotation and authenticated evidence](#validator-set-rotation-and-authenticated-evidence)
+  - [Liveness contracts](#liveness-contracts)
+  - [PoW models](#pow-models)
+  - [Dynamic sigma](#dynamic-sigma)
+  - [Production BFT-block fixtures and evidence](#production-bft-block-fixtures-and-evidence)
+- [Crosslink variant details](#crosslink-variant-details)
+- [Running checks](#running-checks)
+- [Source](#source)
+- [License](#license)
+
+## Spec file reference
+
+### Baseline and resampling core
 
 - `spec/CrosslinkResampling.qnt` models the Tenderlink round machine fragment
   where Crosslink proposals sample a moving PoW stream.
@@ -14,6 +86,8 @@ the Zebra Crosslink working branch:
   finality.
 - `spec/CrosslinkComposed.qnt` composes the round-recovery model with the
   finality model.
+### Multi-height and heighted round machine
+
 - `spec/CrosslinkBftHeights.qnt` models consecutive BFT decisions applying to
   the Crosslink finality cursor, rejecting skipped consensus heights and fork
   decisions after a prefix is final.
@@ -40,6 +114,8 @@ the Zebra Crosslink working branch:
 - `spec/CrosslinkHeightedMessageGossipTransport.qnt` adds a Crosslink-topic
   transport-envelope boundary before heighted message authentication for
   proposals, prevotes, precommits, and fat-pointer signatures.
+### Tenderlink wire format and transport
+
 - `spec/CrosslinkTenderlinkVoteSignBytes.qnt` pins the concrete 76-byte
   Tenderlink/Malachite vote signing layout: validator pubkey, value-or-zero,
   little-endian BFT height, and little-endian round with the precommit high
@@ -117,6 +193,8 @@ the Zebra Crosslink working branch:
   direct safety slice for that Tenderlink router contract, so Apalache can
   check the channel/topic/kind invariant without flattening the imported
   transport composition.
+### Malachite wire format and transport
+
 - `spec/CrosslinkMalachiteProposalProtobufFormat.qnt` pins the Malachite
   protobuf proposal boundary for `Value`, `Proposal`,
   `SignedMessage::Proposal`, and streamed proposal parts, including exact
@@ -144,6 +222,8 @@ the Zebra Crosslink working branch:
   checking channel/topic/kind separation and wrong-channel rejection.
 - `spec/CrosslinkMalachiteGossipRouterSafety.qnt` is the verifier-friendly
   router safety slice for the same channel/topic/kind registry contract.
+### Production gossip ingress and finality
+
 - `spec/CrosslinkProductionGossipRegistry.qnt` adds a direct production-level
   registry above Tenderlink, Malachite, dynamic-sigma, and production-finality
   router families, checking that Tenderlink consensus lanes, Malachite
@@ -211,6 +291,8 @@ the Zebra Crosslink working branch:
   proposal transport, candidate observation, Tenderlink-router-gated precommit
   evidence, fat-pointer transport, fat-pointer observation, and finality cannot
   skip their required production ingress/projection prerequisites.
+### Validator-set rotation and authenticated evidence
+
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
   BFT heights, requiring each height's commit signers to be authorized by that
   height's active validator set.
@@ -224,6 +306,8 @@ the Zebra Crosslink working branch:
   Crosslink-topic transport-envelope boundary before that authenticated evidence
   pipeline, so precommits and fat-pointer signatures cannot be gossiped or
   observed without matching topic/kind/canonical-byte envelopes.
+### Liveness contracts
+
 - `spec/CrosslinkSchedulerLiveness.qnt` adds a bounded fair-scheduler
   liveness model for nil-precommit resampling: unstable rounds burn
   nil-precommit certificates, then a stable stream window can deliver the
@@ -297,6 +381,8 @@ the Zebra Crosslink working branch:
   validator-scale progress path with Crosslink finality, checking that a fair
   finality applicator eventually finalizes the stable head-sigma candidate
   without finalizing the competing fork candidate.
+### PoW models
+
 - `spec/CrosslinkPowStochasticAssumptions.qnt` turns the stochastic inputs for
   that risk layer into an executable assumption profile. It pins Zebra's
   post-Blossom 75-second PoW target spacing as the arrival-risk denominator,
@@ -320,6 +406,8 @@ the Zebra Crosslink working branch:
   witness for that risk: a long reorg and a same-branch block arrival both
   change `head - sigma` between prevote and precommit, causing nil-precommit
   resampling to burn rounds until a stable head-sigma window decides.
+### Dynamic sigma
+
 - `spec/CrosslinkDynamicSigma.qnt` models dynamic-sigma Crosslink as a third
   first-class variant: nil-precommit resampling plus a consensus-visible sigma
   schedule. Sigma is fixed for an active BFT height, then updated at height
@@ -413,6 +501,8 @@ the Zebra Crosslink working branch:
   `head - sigma` stream back into the height-indexed round machine, checking
   that fresh proposals and value precommits line up with the current
   fork-tree-derived candidate for the BFT height and round.
+### Production BFT-block fixtures and evidence
+
 - `spec/CrosslinkBftBlockShape.qnt` models the production BFT-block header
   vector shape from `FindBlockHeaders(candidate)`, separating the declared
   `head - sigma` candidate from the descendant headers carried in the proposal
@@ -497,7 +587,11 @@ the Zebra Crosslink working branch:
   fields and the transported fat-pointer wire is observed, while a scalar TLC
   projection proves the same gates eventually finalize under fair progress.
 
-The current spec surface has three first-class Crosslink variants:
+## Crosslink variant details
+
+The three first-class variants are summarized in [Status](#status) above. The
+following paragraphs document the deeper safety/transport/evidence surfaces
+for each variant.
 
 - `BaselineCrosslink`: baseline Crosslink behavior where round state carries
   a stale stream sample across a failed round.
@@ -623,25 +717,7 @@ The intended safety rule is deliberately narrow:
 mixed/no quorum          -> wait or timeout; do not unlock
 ```
 
-## Current Status
-
-This is an initial standalone spec repository, not yet a complete protocol
-specification. The current models are high-signal witnesses for the nil
-precommit idea and Crosslink fork-finality semantics. The target is to expand
-them to the same level of coverage as the upstream Tendermint Quint models:
-full state-machine coverage, message validity, quorum/accountability invariants,
-and model-checkable safety and liveness obligations.
-
-See `docs/spec-roadmap.md` for the planned path to that completeness level.
-The current Tendermint-to-Crosslink rule mapping is in
-`docs/tendermint-crosslink-map.md`, and the nil-precommit accountability notes
-are in `docs/accountability.md`. The implementation correspondence notes are in
-`docs/implementation-correspondence.md`; the dynamic-sigma telemetry production
-mapping is in `docs/dynamic-sigma-telemetry-integration.md`.
-`docs/completeness-audit.md` tracks which roadmap requirements are covered,
-partial, or still open.
-
-## Running Checks
+## Running checks
 
 The current specs typecheck and run with Quint `0.31.0`. Use Node 22, matching
 CI. The JavaScript CLI is still the stable command-line entry point; the
