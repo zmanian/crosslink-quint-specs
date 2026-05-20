@@ -149,7 +149,7 @@ the Zebra Crosslink working branch:
   router families, checking that Tenderlink consensus lanes, Malachite
   proposal/liveness/sync lanes, dynamic-sigma consensus-param and BFT-payload
   lanes, and production-finality proposal/fat-pointer lanes cannot be
-  cross-routed by protocol, topic, channel, kind, or byte label.
+  cross-routed by protocol, topic, channel, kind, or byte identity.
 - `spec/CrosslinkProductionGossipIngress.qnt` adds the node-local ingress gate
   above that registry: even a registry-valid envelope must be accepted only by
   its matching downstream Tenderlink, Malachite, dynamic-sigma, or
@@ -457,8 +457,9 @@ the Zebra Crosslink working branch:
   vector specs so checked-in fixture constants do not have to be copied by hand.
   The manifest/module also pin the serialized BFT-block prefix fields, full
   checked-in fixture sequence metadata, fixture payload, pubkey, vote signature,
-  and `pubkey || payload` sign-data hex strings; `test:fixture-manifest`
-  verifies those Ed25519 signatures with Node's built-in crypto.
+  full previous/trailing one-signature fat-pointer wire hex, and
+  `pubkey || payload` sign-data hex strings; `test:fixture-manifest` verifies
+  those Ed25519 signatures with Node's built-in crypto.
 - `spec/CrosslinkFatPointerFormat.qnt` models the production fat-pointer
   signer-vector shape: the 44-byte vote payload suffix, little-endian u16
   signature count, 96-byte pubkey/signature entries, duplicate-pubkey
@@ -469,8 +470,8 @@ the Zebra Crosslink working branch:
   byte vectors for fat pointers: count bytes 44..46, 0-4 signer wire lengths,
   contiguous 96-byte signature entries, streaming serializer/deserializer
   count-slice agreement, checked-in `test_pos_block_*.bin` previous/trailing
-  fat-pointer offsets and byte probes, and the current prototype
-  `try_from_bytes` reversed range gap.
+  fat-pointer offsets, byte probes, exact one-signature wire hex, and the
+  current prototype `try_from_bytes` reversed range gap.
 - `spec/CrosslinkFatPointerAuthenticatedEvidence.qnt` connects that
   production-shaped fat pointer to the authenticated evidence path: a fat
   pointer wire can only be observed after its envelope is exact and each active
@@ -558,9 +559,11 @@ The current spec surface has three first-class Crosslink variants:
   dynamic-sigma param lane uses the same exact production-shaped hex vectors
   pinned by the consensus-param format model for raised and recovered sigma
   updates, the dynamic-sigma payload lane pins the tagged payload metadata used
-  by the transport/decode bridge, and the finality lanes use compact byte labels
-  whose route validity directly checks the generated fixture metadata also
-  validated by `CrosslinkProductionFinalityProjectionContractModel`.
+  by the transport/decode bridge, the production-finality fat-pointer lane uses
+  the generated trailing one-signature fat-pointer wire hex, and the BFT-block
+  proposal lane still uses a compact metadata label whose route validity
+  directly checks the generated fixture metadata also validated by
+  `CrosslinkProductionFinalityProjectionContractModel`.
   `CrosslinkProductionTenderlinkIngressRouterBridgeModel` then checks that
   accepted production Tenderlink ingress records are prerequisites for routed
   Tenderlink proposal/POL, precommit-certificate, evidence, known-peer, and

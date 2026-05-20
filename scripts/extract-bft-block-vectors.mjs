@@ -129,6 +129,7 @@ function parseFatPointer(buffer, offset) {
     byteLen,
     probe: {
       offset,
+      wireHex: buffer.subarray(offset, offset + byteLen).toString('hex'),
       payloadFirstByte: buffer.readUInt8(offset),
       payloadLastByte: buffer.readUInt8(offset + layout.fatPointerVotePayloadBytes - 1),
       payloadHex: payload.toString('hex'),
@@ -346,6 +347,10 @@ function validateFatPointerProbe(prefix, probe, offset, signatureCount, byteLen)
   assert(
     probe.payloadHex.length === layout.fatPointerVotePayloadBytes * 2,
     `${prefix}payload hex length mismatch`,
+  )
+  assert(
+    typeof probe.wireHex === 'string' && probe.wireHex.length === byteLen * 2,
+    `${prefix}wire hex length mismatch`,
   )
   assert(typeof probe.blockHashHex === 'string', `${prefix}block hash hex missing`)
   assert(probe.blockHashHex.length === 64, `${prefix}block hash hex length mismatch`)
@@ -847,11 +852,13 @@ function renderGeneratedQuintModule(manifest) {
     ['CheckedInFixtureTrailingSignatureFirstByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureFirstByte],
     ['CheckedInFixtureTrailingSignatureLastByte', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureLastByte],
     ['CheckedInFixturePreviousPayloadHex', later.previousFatPointerProbe.payloadHex],
+    ['CheckedInFixturePreviousFatPointerWireHex', later.previousFatPointerProbe.wireHex],
     ['CheckedInFixturePreviousBlockHashHex', later.previousFatPointerProbe.blockHashHex],
     ['CheckedInFixturePreviousPubKeyHex', later.previousFatPointerProbe.firstSignatureEntry.pubKeyHex],
     ['CheckedInFixturePreviousVoteSignatureHex', later.previousFatPointerProbe.firstSignatureEntry.voteSignatureHex],
     ['CheckedInFixturePreviousVoteSignDataHex', later.previousFatPointerProbe.firstSignatureEntry.voteSignDataHex],
     ['CheckedInFixtureTrailingPayloadHex', later.trailingFatPointerProbe.payloadHex],
+    ['CheckedInFixtureTrailingFatPointerWireHex', later.trailingFatPointerProbe.wireHex],
     ['CheckedInFixtureTrailingBlockHashHex', later.trailingFatPointerProbe.blockHashHex],
     ['CheckedInFixtureTrailingPubKeyHex', later.trailingFatPointerProbe.firstSignatureEntry.pubKeyHex],
     ['CheckedInFixtureTrailingVoteSignatureHex', later.trailingFatPointerProbe.firstSignatureEntry.voteSignatureHex],

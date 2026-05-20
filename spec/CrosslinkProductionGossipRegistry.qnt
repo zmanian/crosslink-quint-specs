@@ -16,6 +16,7 @@ module CrosslinkProductionGossipRegistry {
 
   import CrosslinkProductionFixtureVectorsGenerated.* from
     "./CrosslinkProductionFixtureVectorsGenerated"
+  export CrosslinkProductionFixtureVectorsGenerated.*
   import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
     "./CrosslinkTenderlinkPrecommitTransportSafety"
   import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
@@ -169,7 +170,7 @@ module CrosslinkProductionGossipRegistry {
   pure val ProductionBftBlockProposalFixtureBytes =
     "bft-block-v0-h2-finality0-len4619-total4761-headers3-offset150-154-158"
   pure val ProductionFatPointerWireFixtureBytes =
-    "fat-pointer-wire-h1-r0-len142"
+    CheckedInFixtureTrailingFatPointerWireHex
 
   pure val ProductionBftBlockProposalFixtureVersion = 0
   pure val ProductionBftBlockProposalFixtureHeight = 2
@@ -880,7 +881,7 @@ module CrosslinkProductionGossipRegistryTest {
         assert(ProductionBftBlockProposalFixtureBytes ==
           "bft-block-v0-h2-finality0-len4619-total4761-headers3-offset150-154-158"),
         assert(ProductionFatPointerWireFixtureBytes ==
-          "fat-pointer-wire-h1-r0-len142"),
+          CheckedInFixtureTrailingFatPointerWireHex),
         assert(ProductionBftBlockProposalFixtureMetadataCoherent),
         assert(ProductionFatPointerWireFixtureMetadataCoherent),
         assert(

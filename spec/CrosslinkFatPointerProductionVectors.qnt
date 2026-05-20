@@ -186,7 +186,11 @@ module CrosslinkFatPointerProductionVectors {
     CheckedInFixturePreviousSignatureFirstByte == 60 and
     CheckedInFixturePreviousSignatureLastByte == 2 and
     CheckedInFixtureTrailingSignatureFirstByte == 60 and
-    CheckedInFixtureTrailingSignatureLastByte == 15
+    CheckedInFixtureTrailingSignatureLastByte == 15 and
+    CheckedInFixturePreviousFatPointerWireHex ==
+      "13d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d30100000000000000060000800100f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c33cf2630c9f454936efbabbc9b25ca5c78461dcd83707f89f7e5e3101745fb7086017f825ef38065d33e0802a20e1c0f17d9d263cd8897ae91fcb27cbde347102" and
+    CheckedInFixtureTrailingFatPointerWireHex ==
+      "fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac0200000000000000010000800100f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c33c471f514fb11e5b66c07b6c562fa3ebaffa344d0f076b222f58c52a7cb0252560e667309100597a1061740e40462c08dfea08becf30dc792adca9eeedefda0f"
 
   val Safety =
     ProductionLayoutConstantsMatchCode and
@@ -275,6 +279,10 @@ module CrosslinkFatPointerProductionVectorsTest {
         assert(CheckedInFixturePreviousSignatureLastByte == 2),
         assert(CheckedInFixtureTrailingSignatureFirstByte == 60),
         assert(CheckedInFixtureTrailingSignatureLastByte == 15),
+        assert(CheckedInFixturePreviousFatPointerWireHex ==
+          "13d37200e8170ac2f91ca4219566126c074e2bba01cee12adefe0df5352b60d30100000000000000060000800100f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c33cf2630c9f454936efbabbc9b25ca5c78461dcd83707f89f7e5e3101745fb7086017f825ef38065d33e0802a20e1c0f17d9d263cd8897ae91fcb27cbde347102"),
+        assert(CheckedInFixtureTrailingFatPointerWireHex ==
+          "fded6e4743ebea490fa80cfed99e3403d91c9a9d0143cca89e9d4ecbf96b06ac0200000000000000010000800100f0f3afe532829577b493f99c09918d33c316687060412579a72c3b1790a944c33c471f514fb11e5b66c07b6c562fa3ebaffa344d0f076b222f58c52a7cb0252560e667309100597a1061740e40462c08dfea08becf30dc792adca9eeedefda0f"),
         unchangedAll,
       })
   }
