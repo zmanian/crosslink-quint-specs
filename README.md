@@ -60,6 +60,13 @@ Gate status:
   and authenticated variants. The induction itself is not closed by
   Apalache; this doc records the structure for a future port into a tool
   with native inductive support.
+- [`docs/additive-crosslink-impact.md`](docs/additive-crosslink-impact.md)
+  — design analysis of how the
+  [Additive Opt-In Crosslink](https://gist.github.com/zmanian/4f5ceee5e430a5c3f2e67af25a69582b)
+  proposal would affect the formal description. Introduces a new
+  orthogonal *finality binding mode* axis (`Advisory` / `MinerPolicy` /
+  `ConsensusBinding`) and identifies which existing models stay valid,
+  which need re-statement, and which new models would be needed.
 
 ## Contents
 
