@@ -213,9 +213,10 @@ For Crosslink, matching that quality means adding:
 - `CrosslinkProductionFinalityIngressBridge.qnt`,
   `CrosslinkProductionFinalityIngressProjectionBridge.qnt`, and the
   verifier-friendly staged projection now place production finality precommit
-  evidence behind accepted Tenderlink value-precommit-certificate ingress. The
-  new witnesses reject standalone precommit-evidence projection/gossip, then
-  carry that prerequisite through fat-pointer observation and finality.
+  evidence behind a router-recorded Tenderlink value-precommit certificate
+  after matching Tenderlink ingress. The new witnesses reject standalone
+  precommit-evidence projection/gossip and router recording without ingress,
+  then carry that prerequisite through fat-pointer observation and finality.
 - `CrosslinkTenderlinkAccountabilityObserver.qnt` adds the observer-side bridge
   after that transport boundary. It records abstract precommit-equivocation
   facts only after the exact canonical evidence has been accepted through
@@ -390,19 +391,21 @@ For Crosslink, matching that quality means adding:
   production-finality ingress lanes to projection and finality readiness. It
   checks that the BFT-block proposal and fat-pointer wire cannot be projected
   before their matching ingress records, that precommit evidence waits for
-  Tenderlink value-precommit-certificate ingress, that finality waits for all
-  projected records, and that Tenderlink precommit traffic cannot stand in for
-  a production-finality proposal envelope.
+  both Tenderlink value-precommit-certificate ingress and the corresponding
+  router record, that finality waits for all projected records plus that router
+  record, and that Tenderlink precommit traffic cannot stand in for a
+  production-finality proposal envelope.
 - `CrosslinkProductionFinalityIngressProjectionBridge.qnt` composes the actual
   production ingress actions with the production finality projection actions.
-  It exercises the integrated imported-action graph under the Rust backend,
-  while the scalar ingress bridge remains the Apalache/TLC proof target because
-  the imported composition still hits Quint's flattening limits.
+  It exercises the integrated imported-action graph and the same
+  router-recorded precommit-evidence gate under the Rust backend, while the
+  scalar ingress bridge remains the Apalache/TLC proof target because the
+  imported composition still hits Quint's flattening limits.
 - `CrosslinkProductionFinalityIngressProjectionBridgeSafety.qnt` adds the
   verifier-friendly staged projection for that same direct bridge. It gives
   Apalache and TLC separate gates for proposal transport, candidate
-  observation, precommit evidence, fat-pointer transport, fat-pointer
-  observation, and finality.
+  observation, Tenderlink router recording, precommit evidence, fat-pointer
+  transport, fat-pointer observation, and finality.
 
 ### 2026-05-18
 
@@ -765,8 +768,9 @@ For Crosslink, matching that quality means adding:
   fixture finality under fair progress through the same gates.
 - `CrosslinkProductionFinalityIngressProjectionBridge.qnt` adds an
   imported-action composition from production ingress acceptance into that
-  projection contract. Rust tests cover both the happy path and raw projection
-  skips; Apalache/TLC coverage stays on `CrosslinkProductionFinalityIngressBridge.qnt`
+  projection contract. Rust tests cover both the happy path, the router-recorded
+  Tenderlink certificate gate for precommit evidence, and raw projection skips;
+  Apalache/TLC coverage stays on `CrosslinkProductionFinalityIngressBridge.qnt`
   until the direct imported graph is flattened cleanly.
 - `CrosslinkProductionFinalityTenderlinkEvidenceBridge.qnt` adds a smaller
   scalar bridge from the production Tenderlink router record to finality
@@ -775,7 +779,8 @@ For Crosslink, matching that quality means adding:
   projection happen in order.
 - `CrosslinkProductionFinalityIngressProjectionBridgeSafety.qnt` fills the
   immediate verifier gap for that direct bridge with a scalar graph that keeps
-  the same intermediate stages. It proves safety at depths 5 and 8 and a TLC
+  the same intermediate stages, including the router-recorded Tenderlink
+  precommit-certificate gate. It proves safety at depths 5 and 8 and a TLC
   temporal progress property over the complete finite staged graph.
 - `CrosslinkHeightedAuthenticatedGossipTransport.qnt` adds the corresponding
   non-fixture transport bridge for heighted authenticated evidence. It keeps

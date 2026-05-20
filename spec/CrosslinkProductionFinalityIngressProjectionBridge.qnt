@@ -6,8 +6,9 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
    the production-finality ingress gates for cheap safety and temporal checks.
    This module composes the node-local production ingress machine with the
    richer production-finality projection contract, so the actual projection
-   actions for the checked-in BFT-block proposal and fat-pointer wire can run
-   only after their matching production-finality ingress records are accepted.
+   actions for the checked-in BFT-block proposal, Tenderlink-derived precommit
+   evidence, and fat-pointer wire can run only after their matching ingress or
+   router prerequisites are accepted or recorded.
    */
 
   import CrosslinkProductionGossipIngress as Ingress from
@@ -17,6 +18,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
 
   var bridgeProgress: int
   var bridgeFiredAction: str
+  var tenderlinkValuePrecommitCertificateRouted: bool
 
   def ProductionBftBlockProposalIngressAccepted: bool =
     Ingress::acceptedProductionBftBlockProposal.contains(
@@ -59,9 +61,16 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       true
     }
 
-  val ProjectionPrecommitEvidenceRequiresIngress =
-    if (Projection::ProductionPrecommitEvidenceGossiped) {
+  val TenderlinkRouterRecordRequiresIngress =
+    if (tenderlinkValuePrecommitCertificateRouted) {
       TenderlinkValuePrecommitCertificateIngressAccepted
+    } else {
+      true
+    }
+
+  val ProjectionPrecommitEvidenceRequiresRouter =
+    if (Projection::ProductionPrecommitEvidenceGossiped) {
+      tenderlinkValuePrecommitCertificateRouted
     } else {
       true
     }
@@ -78,6 +87,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       ProductionBftBlockProposalIngressAccepted and
       ProductionFatPointerWireIngressAccepted and
       TenderlinkValuePrecommitCertificateIngressAccepted and
+      tenderlinkValuePrecommitCertificateRouted and
       Projection::productionBftBlockObserved and
       Projection::ProductionFatPointerWireObserved and
       Projection::latestFinalizedProductionBlockHash ==
@@ -89,12 +99,13 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
 
   val BridgeStateWellFormed =
     bridgeProgress >= 0 and
-    bridgeProgress <= 9 and
+    bridgeProgress <= 10 and
     Set(
       "Init",
       "AcceptProductionBftBlockProposalIngress",
       "AcceptProductionFatPointerWireIngress",
       "AcceptTenderlinkValuePrecommitCertificateIngress",
+      "RouteTenderlinkValuePrecommitCertificateAfterIngress",
       "GossipProductionBftBlockProposalAfterIngress",
       "ObserveProductionBftBlockCandidateAfterIngress",
       "GossipProductionPrecommitEvidence",
@@ -104,6 +115,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       "RawGossipProductionBftBlockProposalWithoutIngress",
       "RawGossipProductionFatPointerWireWithoutIngress",
       "RawObserveProductionFatPointerWireWithoutIngress",
+      "RawRouteTenderlinkValuePrecommitCertificateWithoutIngress",
     ).contains(bridgeFiredAction)
 
   val IngressProjectionBridgeSafety =
@@ -113,18 +125,22 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
     BridgeStateWellFormed and
     ProjectionProposalTransportRequiresIngress and
     ProjectionCandidateRequiresIngress and
-    ProjectionPrecommitEvidenceRequiresIngress and
+    TenderlinkRouterRecordRequiresIngress and
+    ProjectionPrecommitEvidenceRequiresRouter and
     ProjectionFatPointerWireRequiresIngress and
     ProjectionFinalityRequiresIngress
 
   action Init = all {
     Ingress::IngressInit,
     Projection::Init,
+    tenderlinkValuePrecommitCertificateRouted' = false,
     bridgeProgress' = 0,
     bridgeFiredAction' = "Init",
   }
 
   action KeepBridgeState = all {
+    tenderlinkValuePrecommitCertificateRouted' =
+      tenderlinkValuePrecommitCertificateRouted,
     bridgeProgress' = bridgeProgress,
     bridgeFiredAction' = bridgeFiredAction,
   }
@@ -136,6 +152,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
         Ingress::ProductionBftBlockProposalEnvelope
       ),
       Projection::Unchanged,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "AcceptProductionBftBlockProposalIngress",
     }
@@ -147,6 +165,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
         Ingress::ProductionFatPointerWireEnvelope
       ),
       Projection::Unchanged,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "AcceptProductionFatPointerWireIngress",
     }
@@ -158,8 +178,22 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
         Ingress::TenderlinkValuePrecommitCertificateEnvelope
       ),
       Projection::Unchanged,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "AcceptTenderlinkValuePrecommitCertificateIngress",
+    }
+
+  action RouteTenderlinkValuePrecommitCertificateAfterIngress: bool =
+    all {
+      TenderlinkValuePrecommitCertificateIngressAccepted,
+      not(tenderlinkValuePrecommitCertificateRouted),
+      Ingress::IngressStutter,
+      Projection::Unchanged,
+      tenderlinkValuePrecommitCertificateRouted' = true,
+      bridgeProgress' = bridgeProgress + 1,
+      bridgeFiredAction' =
+        "RouteTenderlinkValuePrecommitCertificateAfterIngress",
     }
 
   action AttemptTenderlinkPrecommitAsProductionBftBlockProposalIngress: bool =
@@ -168,6 +202,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
         Ingress::TenderlinkMixedPrecommitEnvelope
       ),
       Projection::Unchanged,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "AcceptProductionBftBlockProposalIngress",
     }
@@ -180,6 +216,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       Projection::GossipFixtureBftBlockProposalForFinality(
         Projection::FixtureBftBlockProposalEnvelope
       ),
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "GossipProductionBftBlockProposalAfterIngress",
     }
@@ -192,15 +230,19 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       Projection::ObserveProductionBftBlockCandidate(
         Projection::FixtureProductionBftBlockCandidate
       ),
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "ObserveProductionBftBlockCandidateAfterIngress",
     }
 
   action GossipProductionPrecommitEvidence: bool =
     all {
-      TenderlinkValuePrecommitCertificateIngressAccepted,
+      tenderlinkValuePrecommitCertificateRouted,
       Ingress::IngressStutter,
       Projection::GossipFixturePrecommitForFinality,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "GossipProductionPrecommitEvidence",
     }
@@ -210,6 +252,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       ProductionFatPointerWireIngressAccepted,
       Ingress::IngressStutter,
       Projection::GossipFixtureFatPointerWireForFinality,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "GossipProductionFatPointerWireAfterIngress",
     }
@@ -220,6 +264,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       not(Projection::ProductionFatPointerWireObserved),
       Ingress::IngressStutter,
       Projection::ObserveFixtureFatPointerWireForFinality,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "ObserveProductionFatPointerWireAfterIngress",
     }
@@ -228,11 +274,14 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
     all {
       ProductionBftBlockProposalIngressAccepted,
       ProductionFatPointerWireIngressAccepted,
+      tenderlinkValuePrecommitCertificateRouted,
       not(Projection::finalizedProductionBlock),
       Ingress::IngressStutter,
       Projection::FinalizeProductionBftBlock(
         Projection::FixtureProductionBftBlockCandidate
       ),
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "FinalizeProductionBlockAfterIngressProjection",
     }
@@ -244,6 +293,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       Projection::GossipFixtureBftBlockProposalForFinality(
         Projection::FixtureBftBlockProposalEnvelope
       ),
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "RawGossipProductionBftBlockProposalWithoutIngress",
     }
@@ -253,6 +304,8 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       not(ProductionFatPointerWireIngressAccepted),
       Ingress::IngressStutter,
       Projection::GossipFixtureFatPointerWireForFinality,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "RawGossipProductionFatPointerWireWithoutIngress",
     }
@@ -262,8 +315,21 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       not(ProductionFatPointerWireIngressAccepted),
       Ingress::IngressStutter,
       Projection::ObserveFixtureFatPointerWireForFinality,
+      tenderlinkValuePrecommitCertificateRouted' =
+        tenderlinkValuePrecommitCertificateRouted,
       bridgeProgress' = bridgeProgress + 1,
       bridgeFiredAction' = "RawObserveProductionFatPointerWireWithoutIngress",
+    }
+
+  action RawRouteTenderlinkValuePrecommitCertificateWithoutIngress: bool =
+    all {
+      not(tenderlinkValuePrecommitCertificateRouted),
+      Ingress::IngressStutter,
+      Projection::Unchanged,
+      tenderlinkValuePrecommitCertificateRouted' = true,
+      bridgeProgress' = bridgeProgress + 1,
+      bridgeFiredAction' =
+        "RawRouteTenderlinkValuePrecommitCertificateWithoutIngress",
     }
 
   action Stutter: bool =
@@ -278,6 +344,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       AcceptProductionBftBlockProposalIngress,
       AcceptProductionFatPointerWireIngress,
       AcceptTenderlinkValuePrecommitCertificateIngress,
+      RouteTenderlinkValuePrecommitCertificateAfterIngress,
       GossipProductionBftBlockProposalAfterIngress,
       ObserveProductionBftBlockCandidateAfterIngress,
       GossipProductionPrecommitEvidence,
@@ -292,6 +359,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       ProductionBftBlockProposalIngressAccepted and
       ProductionFatPointerWireIngressAccepted and
       TenderlinkValuePrecommitCertificateIngressAccepted and
+      tenderlinkValuePrecommitCertificateRouted and
       Projection::productionBftBlockObserved and
       Projection::ProductionFatPointerWireObserved and
       Projection::finalizedProductionBlock and
@@ -305,6 +373,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       .then(GossipProductionBftBlockProposalAfterIngress)
       .then(ObserveProductionBftBlockCandidateAfterIngress)
       .then(AcceptTenderlinkValuePrecommitCertificateIngress)
+      .then(RouteTenderlinkValuePrecommitCertificateAfterIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(AcceptProductionFatPointerWireIngress)
       .then(GossipProductionFatPointerWireAfterIngress)
@@ -318,15 +387,22 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
         ),
         assert(ProductionBftBlockProposalIngressAccepted),
         assert(ProductionFatPointerWireIngressAccepted),
+        assert(tenderlinkValuePrecommitCertificateRouted),
         assert(Projection::ProductionFinalitySafety),
         assert(IngressProjectionBridgeSafety),
         Stutter,
       })
   }
 
-  run precommitEvidenceRequiresTenderlinkIngressTest = {
+  run precommitEvidenceRequiresTenderlinkRouterTest = {
     Init
       .then(GossipProductionPrecommitEvidence)
+      .fail()
+  }
+
+  run tenderlinkRouterRequiresTenderlinkIngressTest = {
+    Init
+      .then(RouteTenderlinkValuePrecommitCertificateAfterIngress)
       .fail()
   }
 
@@ -357,6 +433,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
   run fatPointerWireProjectionRequiresProductionIngressTest = {
     Init
       .then(AcceptTenderlinkValuePrecommitCertificateIngress)
+      .then(RouteTenderlinkValuePrecommitCertificateAfterIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(GossipProductionFatPointerWireAfterIngress)
       .fail()
@@ -365,6 +442,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
   run rawObservedFatPointerWireWithoutIngressViolatesBridgeSafetyTest = {
     Init
       .then(AcceptTenderlinkValuePrecommitCertificateIngress)
+      .then(RouteTenderlinkValuePrecommitCertificateAfterIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(RawGossipProductionFatPointerWireWithoutIngress)
       .then(RawObserveProductionFatPointerWireWithoutIngress)
@@ -382,6 +460,7 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
       .then(GossipProductionBftBlockProposalAfterIngress)
       .then(ObserveProductionBftBlockCandidateAfterIngress)
       .then(AcceptTenderlinkValuePrecommitCertificateIngress)
+      .then(RouteTenderlinkValuePrecommitCertificateAfterIngress)
       .then(GossipProductionPrecommitEvidence)
       .then(RawGossipProductionFatPointerWireWithoutIngress)
       .then(RawObserveProductionFatPointerWireWithoutIngress)
@@ -393,6 +472,17 @@ module CrosslinkProductionFinalityIngressProjectionBridge {
     Init
       .then(AttemptTenderlinkPrecommitAsProductionBftBlockProposalIngress)
       .fail()
+  }
+
+  run rawTenderlinkRouterWithoutIngressViolatesBridgeSafetyTest = {
+    Init
+      .then(RawRouteTenderlinkValuePrecommitCertificateWithoutIngress)
+      .then(all {
+        assert(not(TenderlinkValuePrecommitCertificateIngressAccepted)),
+        assert(tenderlinkValuePrecommitCertificateRouted),
+        assert(not(IngressProjectionBridgeSafety)),
+        Stutter,
+      })
   }
 
   run ingressProjectionBridgeSafetyInitialTest = {

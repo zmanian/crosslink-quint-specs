@@ -9,7 +9,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
    bridge obligations remain covered by Apalache and TLC:
 
    ingress -> proposal transport -> candidate observation
-   Tenderlink precommit ingress -> precommit evidence
+   Tenderlink precommit ingress -> Tenderlink router record -> precommit evidence
    ingress -> fat-pointer transport -> precommit evidence -> fat-pointer observe
    both observed -> finality
    */
@@ -20,6 +20,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
   var productionBftBlockProposalIngressAccepted: bool
   var productionFatPointerWireIngressAccepted: bool
   var tenderlinkPrecommitIngressAccepted: bool
+  var tenderlinkPrecommitRouterRecorded: bool
   var productionBftBlockProposalTransportObserved: bool
   var productionBftBlockObserved: bool
   var productionPrecommitEvidenceGossiped: bool
@@ -66,14 +67,22 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted and
       productionFatPointerWireTransportObserved and
       tenderlinkPrecommitIngressAccepted and
+      tenderlinkPrecommitRouterRecorded and
       productionPrecommitEvidenceGossiped
     } else {
       true
     }
 
-  val PrecommitEvidenceRequiresTenderlinkIngress =
-    if (productionPrecommitEvidenceGossiped) {
+  val PrecommitRouterRecordRequiresTenderlinkIngress =
+    if (tenderlinkPrecommitRouterRecorded) {
       tenderlinkPrecommitIngressAccepted
+    } else {
+      true
+    }
+
+  val PrecommitEvidenceRequiresTenderlinkRouter =
+    if (productionPrecommitEvidenceGossiped) {
+      tenderlinkPrecommitRouterRecorded
     } else {
       true
     }
@@ -83,6 +92,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionBftBlockProposalIngressAccepted and
       productionFatPointerWireIngressAccepted and
       tenderlinkPrecommitIngressAccepted and
+      tenderlinkPrecommitRouterRecorded and
       productionBftBlockProposalTransportObserved and
       productionBftBlockObserved and
       productionPrecommitEvidenceGossiped and
@@ -95,12 +105,13 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
 
   val BridgeStateWellFormed =
     bridgeProgress >= 0 and
-    bridgeProgress <= 9 and
+    bridgeProgress <= 10 and
     Set(
       "Init",
       "AcceptProductionBftBlockProposalIngress",
       "AcceptProductionFatPointerWireIngress",
       "AcceptTenderlinkPrecommitIngressOnly",
+      "RecordTenderlinkPrecommitRouterAfterIngress",
       "GossipProductionBftBlockProposalAfterIngress",
       "ObserveProductionBftBlockCandidateAfterTransport",
       "GossipProductionPrecommitEvidence",
@@ -111,6 +122,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       "RawObserveProductionBftBlockCandidateWithoutTransport",
       "RawGossipProductionFatPointerWireWithoutIngress",
       "RawObserveProductionFatPointerWireWithoutTransport",
+      "RawRecordTenderlinkPrecommitRouterWithoutIngress",
       "RawFinalizeProductionBlockWithoutProjection",
     ).contains(bridgeFiredAction)
 
@@ -120,7 +132,8 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
     ProposalTransportRequiresIngress and
     CandidateObservationRequiresProposalTransport and
     FatPointerTransportRequiresIngress and
-    PrecommitEvidenceRequiresTenderlinkIngress and
+    PrecommitRouterRecordRequiresTenderlinkIngress and
+    PrecommitEvidenceRequiresTenderlinkRouter and
     FatPointerObservationRequiresTransportAndPrecommitEvidence and
     FinalityRequiresCompleteIngressProjection
 
@@ -128,6 +141,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
     productionBftBlockProposalIngressAccepted' = false,
     productionFatPointerWireIngressAccepted' = false,
     tenderlinkPrecommitIngressAccepted' = false,
+    tenderlinkPrecommitRouterRecorded' = false,
     productionBftBlockProposalTransportObserved' = false,
     productionBftBlockObserved' = false,
     productionPrecommitEvidenceGossiped' = false,
@@ -145,6 +159,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
     productionFatPointerWireIngressAccepted' =
       productionFatPointerWireIngressAccepted,
     tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+    tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
     productionBftBlockProposalTransportObserved' =
       productionBftBlockProposalTransportObserved,
     productionBftBlockObserved' = productionBftBlockObserved,
@@ -170,6 +185,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -189,6 +205,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
         productionBftBlockProposalIngressAccepted,
       productionFatPointerWireIngressAccepted' = true,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -209,6 +226,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = true,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -221,6 +239,28 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       Mark("AcceptTenderlinkPrecommitIngressOnly"),
     }
 
+  action RecordTenderlinkPrecommitRouterAfterIngress: bool =
+    all {
+      tenderlinkPrecommitIngressAccepted,
+      not(tenderlinkPrecommitRouterRecorded),
+      productionBftBlockProposalIngressAccepted' =
+        productionBftBlockProposalIngressAccepted,
+      productionFatPointerWireIngressAccepted' =
+        productionFatPointerWireIngressAccepted,
+      tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = true,
+      productionBftBlockProposalTransportObserved' =
+        productionBftBlockProposalTransportObserved,
+      productionBftBlockObserved' = productionBftBlockObserved,
+      productionPrecommitEvidenceGossiped' = productionPrecommitEvidenceGossiped,
+      productionFatPointerWireTransportObserved' =
+        productionFatPointerWireTransportObserved,
+      productionFatPointerWireObserved' = productionFatPointerWireObserved,
+      finalizedProductionBlock' = finalizedProductionBlock,
+      latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
+      Mark("RecordTenderlinkPrecommitRouterAfterIngress"),
+    }
+
   action GossipProductionBftBlockProposalAfterIngress: bool =
     all {
       productionBftBlockProposalIngressAccepted,
@@ -230,6 +270,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' = true,
       productionBftBlockObserved' = productionBftBlockObserved,
       productionPrecommitEvidenceGossiped' = productionPrecommitEvidenceGossiped,
@@ -250,6 +291,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = true,
@@ -264,13 +306,14 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
 
   action GossipProductionPrecommitEvidence: bool =
     all {
-      tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded,
       not(productionPrecommitEvidenceGossiped),
       productionBftBlockProposalIngressAccepted' =
         productionBftBlockProposalIngressAccepted,
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -292,6 +335,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -313,6 +357,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -335,6 +380,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -355,6 +401,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' = true,
       productionBftBlockObserved' = productionBftBlockObserved,
       productionPrecommitEvidenceGossiped' = productionPrecommitEvidenceGossiped,
@@ -374,6 +421,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = true,
@@ -394,6 +442,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -414,6 +463,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -426,6 +476,27 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       Mark("RawObserveProductionFatPointerWireWithoutTransport"),
     }
 
+  action RawRecordTenderlinkPrecommitRouterWithoutIngress: bool =
+    all {
+      not(tenderlinkPrecommitRouterRecorded),
+      productionBftBlockProposalIngressAccepted' =
+        productionBftBlockProposalIngressAccepted,
+      productionFatPointerWireIngressAccepted' =
+        productionFatPointerWireIngressAccepted,
+      tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = true,
+      productionBftBlockProposalTransportObserved' =
+        productionBftBlockProposalTransportObserved,
+      productionBftBlockObserved' = productionBftBlockObserved,
+      productionPrecommitEvidenceGossiped' = productionPrecommitEvidenceGossiped,
+      productionFatPointerWireTransportObserved' =
+        productionFatPointerWireTransportObserved,
+      productionFatPointerWireObserved' = productionFatPointerWireObserved,
+      finalizedProductionBlock' = finalizedProductionBlock,
+      latestFinalizedProductionBlockHash' = latestFinalizedProductionBlockHash,
+      Mark("RawRecordTenderlinkPrecommitRouterWithoutIngress"),
+    }
+
   action RawFinalizeProductionBlockWithoutProjection: bool =
     all {
       not(productionBftBlockObserved) or not(productionFatPointerWireObserved),
@@ -434,6 +505,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       productionFatPointerWireIngressAccepted' =
         productionFatPointerWireIngressAccepted,
       tenderlinkPrecommitIngressAccepted' = tenderlinkPrecommitIngressAccepted,
+      tenderlinkPrecommitRouterRecorded' = tenderlinkPrecommitRouterRecorded,
       productionBftBlockProposalTransportObserved' =
         productionBftBlockProposalTransportObserved,
       productionBftBlockObserved' = productionBftBlockObserved,
@@ -454,6 +526,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       AcceptProductionBftBlockProposalIngress,
       AcceptProductionFatPointerWireIngress,
       AcceptTenderlinkPrecommitIngressOnly,
+      RecordTenderlinkPrecommitRouterAfterIngress,
       GossipProductionBftBlockProposalAfterIngress,
       ObserveProductionBftBlockCandidateAfterTransport,
       GossipProductionPrecommitEvidence,
@@ -467,6 +540,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
     Next.weakFair(Set(bridgeProgress)).implies(eventually(
       productionBftBlockProposalIngressAccepted and
       tenderlinkPrecommitIngressAccepted and
+      tenderlinkPrecommitRouterRecorded and
       productionFatPointerWireIngressAccepted and
       productionBftBlockProposalTransportObserved and
       productionBftBlockObserved and
@@ -480,6 +554,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
   run ingressProjectionSafetyCompletesProductionFinalityTest = {
     Init
       .then(AcceptTenderlinkPrecommitIngressOnly)
+      .then(RecordTenderlinkPrecommitRouterAfterIngress)
       .then(AcceptProductionBftBlockProposalIngress)
       .then(GossipProductionBftBlockProposalAfterIngress)
       .then(ObserveProductionBftBlockCandidateAfterTransport)
@@ -490,6 +565,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       .then(FinalizeProductionBlockAfterIngressProjection)
       .then(all {
         assert(tenderlinkPrecommitIngressAccepted),
+        assert(tenderlinkPrecommitRouterRecorded),
         assert(productionBftBlockProposalIngressAccepted),
         assert(productionFatPointerWireIngressAccepted),
         assert(productionBftBlockObserved),
@@ -574,9 +650,15 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       })
   }
 
-  run precommitEvidenceRequiresTenderlinkIngressTest = {
+  run precommitEvidenceRequiresTenderlinkRouterTest = {
     Init
       .then(GossipProductionPrecommitEvidence)
+      .fail()
+  }
+
+  run tenderlinkRouterRequiresTenderlinkIngressTest = {
+    Init
+      .then(RecordTenderlinkPrecommitRouterAfterIngress)
       .fail()
   }
 
@@ -586,6 +668,7 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
       .then(GossipProductionBftBlockProposalAfterIngress)
       .then(ObserveProductionBftBlockCandidateAfterTransport)
       .then(AcceptTenderlinkPrecommitIngressOnly)
+      .then(RecordTenderlinkPrecommitRouterAfterIngress)
       .then(AcceptProductionFatPointerWireIngress)
       .then(GossipProductionFatPointerWireAfterIngress)
       .then(GossipProductionPrecommitEvidence)
@@ -612,6 +695,17 @@ module CrosslinkProductionFinalityIngressProjectionBridgeSafety {
         assert(tenderlinkPrecommitIngressAccepted),
         assert(not(productionBftBlockProposalIngressAccepted)),
         assert(Safety),
+        Stutter,
+      })
+  }
+
+  run rawTenderlinkRouterWithoutIngressViolatesSafetyTest = {
+    Init
+      .then(RawRecordTenderlinkPrecommitRouterWithoutIngress)
+      .then(all {
+        assert(not(tenderlinkPrecommitIngressAccepted)),
+        assert(tenderlinkPrecommitRouterRecorded),
+        assert(not(Safety)),
         Stutter,
       })
   }

@@ -196,19 +196,19 @@ the Zebra Crosslink working branch:
   production-finality ingress lanes to the finality projection boundary: the
   checked-in BFT-block proposal, Tenderlink-derived precommit evidence, and
   fat-pointer wire cannot become projection-ready, or finalizable, until the
-  matching production-finality and Tenderlink precommit-certificate ingress
-  records have been accepted.
+  matching production-finality ingress records have been accepted and the
+  Tenderlink precommit-certificate has been both accepted and router-recorded.
 - `spec/CrosslinkProductionFinalityIngressProjectionBridge.qnt` composes the
   node-local production ingress machine with the richer production finality
   projection contract. It is kept in the Rust test/typecheck lane because
   Apalache currently trips over this imported-action shape. The direct graph
-  also gates production precommit evidence on accepted Tenderlink
-  value-precommit-certificate ingress, so finality evidence cannot be gossiped
-  as a standalone fixture. The scalar ingress bridge carries the
-  verifier-friendly safety and TLC coverage for the same gate.
+  also gates production precommit evidence on a router-recorded Tenderlink
+  value-precommit certificate, so finality evidence cannot be gossiped as a
+  standalone fixture. The scalar ingress bridge carries the verifier-friendly
+  safety and TLC coverage for the same gate.
 - `spec/CrosslinkProductionFinalityIngressProjectionBridgeSafety.qnt` is the
   verifier-friendly staged projection for that direct bridge. It proves that
-  proposal transport, candidate observation, Tenderlink-gated precommit
+  proposal transport, candidate observation, Tenderlink-router-gated precommit
   evidence, fat-pointer transport, fat-pointer observation, and finality cannot
   skip their required production ingress/projection prerequisites.
 - `spec/CrosslinkValidatorSetChange.qnt` models validator-set rotation across
@@ -589,16 +589,18 @@ The current spec surface has three first-class Crosslink variants:
   `CrosslinkProductionDynamicSigmaPayloadIngressBridgeSafetyModel` keeps the
   same prerequisite as a direct Apalache/TLC-friendly state machine.
   `CrosslinkProductionFinalityIngressBridgeModel` then checks that those
-  accepted production-finality ingress records are the prerequisite for
-  projection-ready proposal/fat-pointer evidence and finality.
+  accepted production-finality ingress records plus the router-recorded
+  Tenderlink value-precommit certificate are the prerequisites for
+  projection-ready proposal/precommit/fat-pointer evidence and finality.
   `CrosslinkProductionFinalityIngressProjectionBridgeModel` also composes the
   actual production ingress and finality projection actions in the Rust
-  backend, so the integrated action graph is exercised while the scalar bridge
-  remains the Apalache/TLC proof target.
+  backend with the same router-recorded precommit-evidence gate, so the
+  integrated action graph is exercised while the scalar bridge remains the
+  Apalache/TLC proof target.
   `CrosslinkProductionFinalityIngressProjectionBridgeSafetyModel` adds the
   verifier-friendly fine-grained projection for that same path, so the proof
-  surface checks the intermediate proposal, candidate, precommit, fat-pointer,
-  and finality stages separately.
+  surface checks the intermediate proposal, candidate, Tenderlink router,
+  precommit, fat-pointer, and finality stages separately.
   `CrosslinkDynamicSigmaHeightedRoundModel` now checks that this schedule is
   also respected by height-indexed proposals, precommits, and nil-round
   resampling, `CrosslinkDynamicSigmaHeightedFinalityModel` checks that finality
