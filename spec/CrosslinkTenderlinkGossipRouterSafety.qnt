@@ -15,6 +15,12 @@ module CrosslinkTenderlinkGossipRouterSafety {
     "./CrosslinkTenderlinkPrecommitTransportSafety"
   import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
     "./CrosslinkTenderlinkConsensusPacketFormat"
+  import CrosslinkTenderlinkAccountabilityEvidenceFormat as AccountabilityFormat from
+    "./CrosslinkTenderlinkAccountabilityEvidenceFormat"
+  import CrosslinkTenderlinkNonceAckTransport as NonceAckTransport from
+    "./CrosslinkTenderlinkNonceAckTransport"
+  import CrosslinkTenderlinkStatusPacketFormat as StatusFormat from
+    "./CrosslinkTenderlinkStatusPacketFormat"
 
   type RouterChannel_t = str
   type RouterTopic_t = str
@@ -62,9 +68,9 @@ module CrosslinkTenderlinkGossipRouterSafety {
   pure val ValuePrecommitCertificateBytes =
     PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex
   pure val AccountabilityEvidenceBytes =
-    "tenderlink-accountability-evidence-bytes"
-  pure val KnownPeerPacketBytes = "tenderlink-known-peer-packet-bytes"
-  pure val StatusPacketBytes = "tenderlink-status-packet-bytes"
+    AccountabilityFormat::NilValuePrecommitEvidenceHex
+  pure val KnownPeerPacketBytes = NonceAckTransport::AckedPrevotePacketHex
+  pure val StatusPacketBytes = StatusFormat::ValidStatusPacketHex
   pure val WrongBytes = "wrong-tenderlink-router-bytes"
 
   def Routed(
@@ -362,6 +368,12 @@ module CrosslinkTenderlinkGossipRouterSafetyTest {
     "./CrosslinkTenderlinkPrecommitTransportSafety"
   import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
     "./CrosslinkTenderlinkConsensusPacketFormat"
+  import CrosslinkTenderlinkAccountabilityEvidenceFormat as AccountabilityFormat from
+    "./CrosslinkTenderlinkAccountabilityEvidenceFormat"
+  import CrosslinkTenderlinkNonceAckTransport as NonceAckTransport from
+    "./CrosslinkTenderlinkNonceAckTransport"
+  import CrosslinkTenderlinkStatusPacketFormat as StatusFormat from
+    "./CrosslinkTenderlinkStatusPacketFormat"
 
   action RouterNext: bool =
     any {
@@ -433,6 +445,22 @@ module CrosslinkTenderlinkGossipRouterSafetyTest {
           ConsensusPacketFormat::TestPolProposalConsensusPacketHex),
         assert(PolPrevoteBytes ==
           ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex),
+        assert(RouterSafety),
+        routerUnchangedAll,
+      })
+  }
+
+  run sideLaneRouterBytesMatchTransportVectorsTest = {
+    RouterInit
+      .then(RouteEvidence(AccountabilityEvidenceEnvelope))
+      .then(RouteKnownPeer(KnownPeerEnvelope))
+      .then(RouteStatus(StatusEnvelope))
+      .then(all {
+        assert(AccountabilityEvidenceBytes ==
+          AccountabilityFormat::NilValuePrecommitEvidenceHex),
+        assert(KnownPeerPacketBytes ==
+          NonceAckTransport::AckedPrevotePacketHex),
+        assert(StatusPacketBytes == StatusFormat::ValidStatusPacketHex),
         assert(RouterSafety),
         routerUnchangedAll,
       })

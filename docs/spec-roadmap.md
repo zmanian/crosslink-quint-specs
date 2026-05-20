@@ -269,7 +269,9 @@ For Crosslink, matching that quality means adding:
   vectors and the precommit transport safety vectors, so proposal chunks, POL
   prevotes, nil/value/mixed precommit packets, and nil/value precommit
   certificates carry the same exact compact packet hex as the decrypted
-  transport models.
+  transport models. It also imports the accountability-evidence, known-peer
+  nonce/ack, and status-packet fixture bytes for the side-channel route
+  witnesses.
 - `CrosslinkMalachiteProposalProtobufFormat.qnt` adds the first Malachite
   protobuf proposal vectors. It pins exact proto3 bytes for `Value`,
   `Proposal` with and without `pol_round`, `SignedMessage::Proposal`, and
@@ -337,10 +339,12 @@ For Crosslink, matching that quality means adding:
   finality lane, or finality proposal bytes on unrelated lanes. The
   Tenderlink proposal/POL lanes now import the exact compact packet hex from
   the consensus packet format model, the precommit lanes import the exact
-  compact packet hex from the precommit transport safety model, the Malachite
-  lanes import exact proposal/liveness/sync protobuf vectors, the dynamic-sigma
-  param lane pins the exact raised/recovered consensus-param hex vectors from
-  the production-shaped format model, the dynamic-sigma payload lane pins the
+  compact packet hex from the precommit transport safety model, the Tenderlink
+  side lanes import exact accountability-evidence, known-peer consensus-packet,
+  and status-packet bytes, the Malachite lanes import exact
+  proposal/liveness/sync protobuf vectors, the dynamic-sigma param lane pins
+  the exact raised/recovered consensus-param hex vectors from the
+  production-shaped format model, the dynamic-sigma payload lane pins the
   tagged BFT-payload fixture metadata, and the finality lanes use compact byte
   labels whose route validity directly checks the generated fixture metadata
   also validated by the production-finality projection.

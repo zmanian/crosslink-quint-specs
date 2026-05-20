@@ -63,6 +63,13 @@ module CrosslinkTenderlinkStatusPacketFormat {
 
   pure val UnmodeledStatusHeaderHex = "unmodeled-status-header"
   pure val UnmodeledStatusPacketHex = "unmodeled-status-packet"
+  pure val EmptyStatusHeaderHex = "80000000000000000000000000000000"
+  pure val AckedPrevoteStatusHeaderHex =
+    "88010200000000000201000000000000"
+  pure val ValidStatusPacketHex =
+    "8000000000000000000000000000000001000000000000000200000003000000050000000000040002000400"
+  pure val AckedPrevoteStatusPacketHex =
+    "8801020000000000020100000000000001000000000000000200000003000000050000000000040002000400"
 
   var acceptedStatusPackets: Set[StatusPacket_t]
   var statusFiredAction: str
@@ -100,12 +107,12 @@ module CrosslinkTenderlinkStatusPacketFormat {
     if (header.byteLen == 16 and header.packetType == PacketTypeEmpty and
       header.hasStatus and header.ackLatest == 0 and header.ackField == 0 and
       header.tagAndAck == 128) {
-      "80000000000000000000000000000000"
+      EmptyStatusHeaderHex
     } else if (header.byteLen == 16 and
       header.packetType == PacketTypePrevoteSignatures and header.hasStatus and
       header.ackLatest == 513 and header.ackField == 258 and
       header.tagAndAck == 131464) {
-      "88010200000000000201000000000000"
+      AckedPrevoteStatusHeaderHex
     } else {
       UnmodeledStatusHeaderHex
     }
@@ -139,7 +146,7 @@ module CrosslinkTenderlinkStatusPacketFormat {
       packet.proposalChunkRange.hi == 5 and packet.prevoteRange.lo == 0 and
       packet.prevoteRange.hi == 4 and packet.precommitRange.lo == 2 and
       packet.precommitRange.hi == 4 and packet.rosterLen == 4) {
-      "8000000000000000000000000000000001000000000000000200000003000000050000000000040002000400"
+      ValidStatusPacketHex
     } else if (StatusPacketFieldsValid(packet) and
       packet.header.packetType == PacketTypePrevoteSignatures and
       packet.height == 1 and packet.round == 2 and
@@ -147,7 +154,7 @@ module CrosslinkTenderlinkStatusPacketFormat {
       packet.proposalChunkRange.hi == 5 and packet.prevoteRange.lo == 0 and
       packet.prevoteRange.hi == 4 and packet.precommitRange.lo == 2 and
       packet.precommitRange.hi == 4 and packet.rosterLen == 4) {
-      "8801020000000000020100000000000001000000000000000200000003000000050000000000040002000400"
+      AckedPrevoteStatusPacketHex
     } else {
       UnmodeledStatusPacketHex
     }
@@ -241,7 +248,7 @@ module CrosslinkTenderlinkStatusPacketFormatTest {
   }
 
   pure val EmptyStatusHeader =
-    Header(PacketTypeEmpty, true, 0, 0, 128, "80000000000000000000000000000000")
+    Header(PacketTypeEmpty, true, 0, 0, 128, EmptyStatusHeaderHex)
   pure val AckedPrevoteStatusHeader =
     Header(
       PacketTypePrevoteSignatures,
@@ -249,7 +256,7 @@ module CrosslinkTenderlinkStatusPacketFormatTest {
       513,
       258,
       131464,
-      "88010200000000000201000000000000",
+      AckedPrevoteStatusHeaderHex,
     )
   pure val MissingStatusFlagHeader =
     Header(PacketTypeEmpty, false, 0, 0, 0, "00000000000000000000000000000000")
@@ -271,7 +278,7 @@ module CrosslinkTenderlinkStatusPacketFormatTest {
       Range16(2, 4),
       4,
       44,
-      "8000000000000000000000000000000001000000000000000200000003000000050000000000040002000400",
+      ValidStatusPacketHex,
     )
 
   pure val AckedPrevoteStatusPacket =
@@ -282,7 +289,7 @@ module CrosslinkTenderlinkStatusPacketFormatTest {
       Range16(2, 4),
       4,
       44,
-      "8801020000000000020100000000000001000000000000000200000003000000050000000000040002000400",
+      AckedPrevoteStatusPacketHex,
     )
 
   pure val MissingStatusFlagPacket =

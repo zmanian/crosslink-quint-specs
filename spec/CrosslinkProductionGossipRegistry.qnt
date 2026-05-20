@@ -20,6 +20,12 @@ module CrosslinkProductionGossipRegistry {
     "./CrosslinkTenderlinkPrecommitTransportSafety"
   import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
     "./CrosslinkTenderlinkConsensusPacketFormat"
+  import CrosslinkTenderlinkAccountabilityEvidenceFormat as AccountabilityFormat from
+    "./CrosslinkTenderlinkAccountabilityEvidenceFormat"
+  import CrosslinkTenderlinkNonceAckTransport as NonceAckTransport from
+    "./CrosslinkTenderlinkNonceAckTransport"
+  import CrosslinkTenderlinkStatusPacketFormat as StatusFormat from
+    "./CrosslinkTenderlinkStatusPacketFormat"
   import CrosslinkMalachiteProposalProtobufFormat as MalachiteProposalFormat from
     "./CrosslinkMalachiteProposalProtobufFormat"
   import CrosslinkMalachiteLivenessProtobufFormat as MalachiteLivenessFormat from
@@ -113,10 +119,10 @@ module CrosslinkProductionGossipRegistry {
   pure val TenderlinkValuePrecommitCertificateBytes =
     PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex
   pure val TenderlinkAccountabilityEvidenceBytes =
-    "tenderlink-accountability-evidence-bytes"
+    AccountabilityFormat::NilValuePrecommitEvidenceHex
   pure val TenderlinkKnownPeerPacketBytes =
-    "tenderlink-known-peer-packet-bytes"
-  pure val TenderlinkStatusPacketBytes = "tenderlink-status-packet-bytes"
+    NonceAckTransport::AckedPrevotePacketHex
+  pure val TenderlinkStatusPacketBytes = StatusFormat::ValidStatusPacketHex
 
   pure val MalachiteProposalBytes =
     MalachiteProposalFormat::ProposalWithPolHex
@@ -782,6 +788,12 @@ module CrosslinkProductionGossipRegistryTest {
     "./CrosslinkTenderlinkPrecommitTransportSafety"
   import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
     "./CrosslinkTenderlinkConsensusPacketFormat"
+  import CrosslinkTenderlinkAccountabilityEvidenceFormat as AccountabilityFormat from
+    "./CrosslinkTenderlinkAccountabilityEvidenceFormat"
+  import CrosslinkTenderlinkNonceAckTransport as NonceAckTransport from
+    "./CrosslinkTenderlinkNonceAckTransport"
+  import CrosslinkTenderlinkStatusPacketFormat as StatusFormat from
+    "./CrosslinkTenderlinkStatusPacketFormat"
   import CrosslinkMalachiteProposalProtobufFormat as MalachiteProposalFormat from
     "./CrosslinkMalachiteProposalProtobufFormat"
   import CrosslinkMalachiteLivenessProtobufFormat as MalachiteLivenessFormat from
@@ -924,6 +936,26 @@ module CrosslinkProductionGossipRegistryTest {
           ConsensusPacketFormat::TestPolProposalConsensusPacketHex),
         assert(TenderlinkPolPrevoteBytes ==
           ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex),
+        assert(RegistrySafety),
+        registryUnchangedAll,
+      })
+  }
+
+  run tenderlinkSideLaneProductionBytesMatchFormatBridgeTest = {
+    RegistryInit
+      .then(RouteProduction(TenderlinkEvidenceEnvelope))
+      .then(RouteProduction(TenderlinkKnownPeerEnvelope))
+      .then(RouteProduction(TenderlinkStatusEnvelope))
+      .then(all {
+        assert(TenderlinkAccountabilityEvidenceBytes ==
+          AccountabilityFormat::NilValuePrecommitEvidenceHex),
+        assert(TenderlinkKnownPeerPacketBytes ==
+          NonceAckTransport::AckedPrevotePacketHex),
+        assert(TenderlinkStatusPacketBytes ==
+          StatusFormat::ValidStatusPacketHex),
+        assert(TenderlinkEvidenceRouteValid(TenderlinkEvidenceEnvelope)),
+        assert(TenderlinkKnownPeerRouteValid(TenderlinkKnownPeerEnvelope)),
+        assert(TenderlinkStatusRouteValid(TenderlinkStatusEnvelope)),
         assert(RegistrySafety),
         registryUnchangedAll,
       })
