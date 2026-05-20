@@ -16,6 +16,8 @@ module CrosslinkProductionGossipRegistry {
 
   import CrosslinkProductionFixtureVectorsGenerated.* from
     "./CrosslinkProductionFixtureVectorsGenerated"
+  import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
+    "./CrosslinkTenderlinkPrecommitTransportSafety"
 
   type Protocol_t = str
   type Channel_t = str
@@ -93,15 +95,15 @@ module CrosslinkProductionGossipRegistry {
   pure val TenderlinkPolPrevoteBytes =
     "tenderlink-pol-prevote-packet-bytes"
   pure val TenderlinkNilPrecommitBytes =
-    "tenderlink-nil-precommit-packet-bytes"
+    PrecommitTransport::NilPrecommitConsensusPacketHex
   pure val TenderlinkValuePrecommitBytes =
-    "tenderlink-value-precommit-packet-bytes"
+    PrecommitTransport::ValuePrecommitConsensusPacketHex
   pure val TenderlinkMixedPrecommitBytes =
-    "tenderlink-mixed-precommit-packet-bytes"
+    PrecommitTransport::MixedPrecommitQuorumConsensusPacketHex
   pure val TenderlinkNilPrecommitCertificateBytes =
-    "tenderlink-nil-precommit-certificate-packet-bytes"
+    PrecommitTransport::NilPrecommitQuorumConsensusPacketHex
   pure val TenderlinkValuePrecommitCertificateBytes =
-    "tenderlink-value-precommit-certificate-packet-bytes"
+    PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex
   pure val TenderlinkAccountabilityEvidenceBytes =
     "tenderlink-accountability-evidence-bytes"
   pure val TenderlinkKnownPeerPacketBytes =
@@ -729,6 +731,8 @@ module CrosslinkProductionGossipRegistryTest {
   import CrosslinkProductionGossipRegistry.* from
     "./CrosslinkProductionGossipRegistry"
   export CrosslinkProductionGossipRegistry.*
+  import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
+    "./CrosslinkTenderlinkPrecommitTransportSafety"
 
   action RegistryNext: bool =
     any {
@@ -819,6 +823,26 @@ module CrosslinkProductionGossipRegistryTest {
           ProductionBftBlockProposalFixtureBlockAndFatPointerByteLen == 4761
         ),
         assert(ProductionFatPointerWireFixtureByteLen == 142),
+        assert(RegistrySafety),
+        registryUnchangedAll,
+      })
+  }
+
+  run tenderlinkPrecommitProductionBytesMatchTransportBridgeTest = {
+    RegistryInit
+      .then(RouteProduction(TenderlinkNilPrecommitCertificateEnvelope))
+      .then(RouteProduction(TenderlinkValuePrecommitCertificateEnvelope))
+      .then(RouteProduction(TenderlinkMixedPrecommitEnvelope))
+      .then(all {
+        assert(TenderlinkNilPrecommitCertificateBytes ==
+          PrecommitTransport::NilPrecommitQuorumConsensusPacketHex),
+        assert(TenderlinkValuePrecommitCertificateBytes ==
+          PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex),
+        assert(TenderlinkMixedPrecommitBytes ==
+          PrecommitTransport::MixedPrecommitQuorumConsensusPacketHex),
+        assert(TenderlinkConsensusRouteValid(
+          TenderlinkValuePrecommitCertificateEnvelope
+        )),
         assert(RegistrySafety),
         registryUnchangedAll,
       })

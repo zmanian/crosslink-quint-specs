@@ -11,6 +11,9 @@ module CrosslinkTenderlinkGossipRouterSafety {
    lane.
    */
 
+  import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
+    "./CrosslinkTenderlinkPrecommitTransportSafety"
+
   type RouterChannel_t = str
   type RouterTopic_t = str
   type RouterKind_t = str
@@ -45,13 +48,15 @@ module CrosslinkTenderlinkGossipRouterSafety {
 
   pure val ProposalChunkBytes = "tenderlink-proposal-pol-packet-bytes"
   pure val PolPrevoteBytes = "tenderlink-pol-prevote-packet-bytes"
-  pure val NilPrecommitBytes = "tenderlink-nil-precommit-packet-bytes"
-  pure val ValuePrecommitBytes = "tenderlink-value-precommit-packet-bytes"
-  pure val MixedPrecommitBytes = "tenderlink-mixed-precommit-packet-bytes"
+  pure val NilPrecommitBytes = PrecommitTransport::NilPrecommitConsensusPacketHex
+  pure val ValuePrecommitBytes =
+    PrecommitTransport::ValuePrecommitConsensusPacketHex
+  pure val MixedPrecommitBytes =
+    PrecommitTransport::MixedPrecommitQuorumConsensusPacketHex
   pure val NilPrecommitCertificateBytes =
-    "tenderlink-nil-precommit-certificate-packet-bytes"
+    PrecommitTransport::NilPrecommitQuorumConsensusPacketHex
   pure val ValuePrecommitCertificateBytes =
-    "tenderlink-value-precommit-certificate-packet-bytes"
+    PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex
   pure val AccountabilityEvidenceBytes =
     "tenderlink-accountability-evidence-bytes"
   pure val KnownPeerPacketBytes = "tenderlink-known-peer-packet-bytes"
@@ -349,6 +354,8 @@ module CrosslinkTenderlinkGossipRouterSafetyTest {
   import CrosslinkTenderlinkGossipRouterSafety.* from
     "./CrosslinkTenderlinkGossipRouterSafety"
   export CrosslinkTenderlinkGossipRouterSafety.*
+  import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
+    "./CrosslinkTenderlinkPrecommitTransportSafety"
 
   action RouterNext: bool =
     any {
@@ -392,6 +399,21 @@ module CrosslinkTenderlinkGossipRouterSafetyTest {
         assert(routedEvidenceEnvelopes.contains(AccountabilityEvidenceEnvelope)),
         assert(routedKnownPeerEnvelopes.contains(KnownPeerEnvelope)),
         assert(routedStatusEnvelopes.contains(StatusEnvelope)),
+        routerUnchangedAll,
+      })
+  }
+
+  run precommitRouterBytesMatchTransportVectorsTest = {
+    RouterInit
+      .then(RouteConsensus(ValuePrecommitCertificateEnvelope))
+      .then(all {
+        assert(ValuePrecommitCertificateBytes ==
+          PrecommitTransport::ValuePrecommitQuorumConsensusPacketHex),
+        assert(NilPrecommitCertificateBytes ==
+          PrecommitTransport::NilPrecommitQuorumConsensusPacketHex),
+        assert(MixedPrecommitBytes ==
+          PrecommitTransport::MixedPrecommitQuorumConsensusPacketHex),
+        assert(RouterSafety),
         routerUnchangedAll,
       })
   }
