@@ -77,6 +77,9 @@ Gate status:
   - [Dynamic sigma](#dynamic-sigma)
   - [Production BFT-block fixtures and evidence](#production-bft-block-fixtures-and-evidence)
 - [Crosslink variant details](#crosslink-variant-details)
+  - [Variant comparison](#variant-comparison)
+  - [Tradeoffs](#tradeoffs)
+  - [Variants under consideration but not modeled](#variants-under-consideration-but-not-modeled)
 - [Running checks](#running-checks)
 - [Source](#source)
 - [License](#license)
@@ -595,9 +598,92 @@ Gate status:
 
 ## Crosslink variant details
 
-The three first-class variants are summarized in [Status](#status) above. The
-following paragraphs document the deeper safety/transport/evidence surfaces
-for each variant.
+The three first-class variants are summarized in [Status](#status) above. This
+section first compares them on the axes that matter for protocol selection,
+then documents the deeper safety/transport/evidence surfaces for each.
+
+### Variant comparison
+
+| Axis | `BaselineCrosslink` | `NilPrecommitResamplingCrosslink` | `CrosslinkDynamicSigmaModel` |
+| --- | --- | --- | --- |
+| Round-failure recovery | Sticky: round state and stream sample carry across a failed round. The next round inherits the stale `head − σ`. | A `2f + 1 PRECOMMIT nil` certificate clears same-round lock/valid/cache state; the next round resamples `head − σ` against the current PoW head. | Inherits nil-precommit resampling, plus a consensus-visible per-height σ schedule. |
+| σ policy | Fixed at protocol-parameter time. | Fixed at protocol-parameter time. | Updated at BFT-height boundaries only, from committed telemetry: round-failure rate, validator/network coverage, Crosslink-participating PoW hash-power percentage, observed reorg depth, economic exposure. |
+| What blocks finality progress | A persistent stream change between prevote and precommit can wedge a round: locks survive, but `head − σ` no longer matches the locked value, so subsequent rounds keep prevoting nil. Recovery requires the stream to drift back, or an external restart. | Burns rounds during stream churn but recovers: each abandoned round adds a nil certificate, the next round resamples, and once the stream is stable across a prevote/precommit window the protocol decides. | Same recovery shape as nil-precommit resampling within a height; cross-height σ adjustment also raises sigma after persistent failures, deepening the sample and reducing future churn pressure. |
+| Same-height lock semantics | Locks persist across rounds within a height; only the proposer's stream sample is stale. | Locks persist across rounds *unless* a `2f + 1 PRECOMMIT nil` for the locked round provides explicit unlock evidence. Mixed-precommit sets are NOT unlock evidence. Older locks are always preserved. | Same as nil-precommit resampling. σ change does not interact with lock state at the active height. |
+| Cross-height σ changes | None — σ is a static protocol parameter. | None. | Yes, but only at the height transition. σ for height `h` is fixed; σ for `h + 1` is derived deterministically from committed telemetry for `h`. No same-height or same-lock σ changes. |
+| Crosslink-participating hash power | Not consumed; assumed implicitly. | Not consumed; assumed implicitly. | Explicit input. Below target blocks sigma relaxation; below a critical floor raises sigma directly because the sampled PoW stream becomes unrepresentative. |
+| Accountability for bad unlocks | N/A — there is no unlock action. | A correct unlock requires a nil-precommit quorum for the abandoned round. Without one, a value switch that crosses an older lock must be backed by valid-round-style POL or it is accountable evidence (the unlock-accountability boundary). | Inherits the nil-precommit unlock accountability; σ changes are additionally tied to committed telemetry envelopes signed at the previous height. |
+| Adversarial liveness story | Adversary that controls the PoW stream between prevote and precommit can grief the round indefinitely. Baseline halt is provable in `CrosslinkBaselineChurnProgressContractModel`. | Adversary burns rounds (each nil-precommit certificate is itself a quorum, so the round was alive enough to produce one); under post-GST stream stability the protocol decides within a bounded number of burned rounds. | Adversary that sustains a low-participation or high-reorg-depth attack triggers a sigma raise at the next height boundary, which deepens the sample and reduces future attack effectiveness. Sigma cannot be lowered without sustained stable evidence. |
+| Compatibility with vanilla Tendermint | Easiest port — round state is the standard Tendermint shape; only `head − σ` proposal value differs. | Adds nil-precommit as a first-class unlock action. Requires explicit accountability for cross-round value changes that lack nil-cert backing. | Adds dynamic σ to the nil-precommit base. Requires consensus-visible telemetry envelopes and a per-height σ schedule. |
+| Consensus-binding state added | None beyond standard Tendermint. | Same-round lock/valid/cache clearing on nil-cert is a new consensus rule; otherwise no new state. | Per-height `bc_confirmation_depth_sigma` schedule, signed consensus-param envelopes, and committed telemetry are new consensus-binding state. |
+| Bytewise / transport modeling | Inherits the shared Tenderlink wire formats, vote sign bytes, proposal/POL evidence, precommit transport, accountability evidence, and Malachite proposal/liveness/sync transport bridges. | Inherits all of the above plus the nil-certificate transport / unlock-accountability boundary slices. | Inherits all of the above plus the dynamic-sigma proposal-evidence format, BFT-payload transport, prototype decode gate, consensus-param format and transport, and ingress bridges. |
+| Implementation correspondence | `bc_confirmation_depth_sigma` as a fixed protocol parameter. | `bc_confirmation_depth_sigma` fixed; round state machine grows the nil-certificate unlock path. | `bc_confirmation_depth_sigma` becomes a per-height committed value installed through signed consensus-param envelopes; the controller derives the next-height value from committed telemetry. |
+
+The variants are nested by behavior:
+
+```text
+BaselineCrosslink
+  ⊂ NilPrecommitResamplingCrosslink           (adds nil-cert unlock rule)
+    ⊂ CrosslinkDynamicSigmaModel              (adds per-height σ schedule)
+```
+
+Every safety property in the outer variants implies the safety property in
+the inner variants under the same fault assumptions. The reverse does not
+hold: nil-precommit resampling adds the stream-churn recovery that baseline
+lacks, and dynamic σ adds the responsiveness to participation / reorg
+pressure that fixed σ lacks.
+
+### Tradeoffs
+
+- **`BaselineCrosslink`** is the simplest port from vanilla Tendermint. It is
+  the right comparison point for proving that nil-precommit resampling is
+  strictly better under stream churn. Use this variant if the deployment can
+  rely on an external recovery mechanism for stream-churn wedges (operator
+  restart, manual round abandon).
+- **`NilPrecommitResamplingCrosslink`** is the recommended consensus rule for
+  Crosslink. It pays one consensus-rule change (nil-cert as first-class
+  unlock evidence) and a slightly more complex accountability story for one
+  important property: the protocol recovers from stream churn without
+  external intervention. The unlock evidence is quorum-attested and
+  accountable.
+- **`CrosslinkDynamicSigmaModel`** is the recommended deployment if the
+  consensus-visible telemetry surface is acceptable. It pays the largest
+  consensus-rule and gossip-surface cost (per-height σ schedule, telemetry
+  envelopes, ingress bridges) for adaptive responsiveness to participation
+  and reorg pressure. Sigma cannot move mid-height, so its safety analysis
+  decomposes cleanly: each height is "nil-precommit resampling at fixed σ
+  for *this* height" plus a deterministic σ transition function at the
+  boundary.
+
+### Variants under consideration but not modeled
+
+Beyond the three first-class variants, the following are open design
+candidates that change the safety/liveness analysis non-trivially. They are
+not currently modeled.
+
+- **Timeout-driven resampling** — abandon a round on precommit timeout
+  rather than on a `2f + 1 PRECOMMIT nil` quorum. Simpler protocol; unlock
+  evidence becomes local rather than quorum-attested, so two correct
+  validators can disagree about whether a round was abandoned. Direct
+  contrast with `NilPrecommitResamplingCrosslink` on the same recovery axis.
+- **Anchored σ** — sample `latestFinal + σ` (forward from the last
+  finalized BFT block) rather than `head − σ` (backward from the local PoW
+  head). Different reorg attack surface; deterministic with respect to
+  finality rather than tip. Orthogonal to the round-recovery question.
+- **Per-round adaptive σ** — let σ change between rounds within the same
+  height based on intra-height telemetry. Much more responsive to attacks
+  that target specific heights; complicates the consensus-binding story
+  because σ becomes round state, not just height state.
+- **Committed-window sampling** — proposer commits a range of recent PoW
+  tips in the proposal, validators verify the range matches what they see,
+  the snapshot is the proposer's choice from that committed range. Removes
+  proposer monopoly on the "current PoW view"; heaviest in protocol
+  complexity but strongest adversarial-proposer resistance.
+
+Of these, timeout-driven resampling and anchored σ are the most tractable
+to model next, because each contrasts cleanly with a current variant on a
+single axis (round-recovery for timeout, sampling-rule for anchored σ).
+
 
 - `BaselineCrosslink`: baseline Crosslink behavior where round state carries
   a stale stream sample across a failed round.
