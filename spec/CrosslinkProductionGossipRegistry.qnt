@@ -18,6 +18,8 @@ module CrosslinkProductionGossipRegistry {
     "./CrosslinkProductionFixtureVectorsGenerated"
   import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
     "./CrosslinkTenderlinkPrecommitTransportSafety"
+  import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
+    "./CrosslinkTenderlinkConsensusPacketFormat"
 
   type Protocol_t = str
   type Channel_t = str
@@ -91,9 +93,9 @@ module CrosslinkProductionGossipRegistry {
   pure val ProductionFatPointerWireKind = "fat-pointer-wire"
 
   pure val TenderlinkProposalChunkBytes =
-    "tenderlink-proposal-pol-packet-bytes"
+    ConsensusPacketFormat::TestPolProposalConsensusPacketHex
   pure val TenderlinkPolPrevoteBytes =
-    "tenderlink-pol-prevote-packet-bytes"
+    ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex
   pure val TenderlinkNilPrecommitBytes =
     PrecommitTransport::NilPrecommitConsensusPacketHex
   pure val TenderlinkValuePrecommitBytes =
@@ -733,6 +735,8 @@ module CrosslinkProductionGossipRegistryTest {
   export CrosslinkProductionGossipRegistry.*
   import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
     "./CrosslinkTenderlinkPrecommitTransportSafety"
+  import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
+    "./CrosslinkTenderlinkConsensusPacketFormat"
 
   action RegistryNext: bool =
     any {
@@ -843,6 +847,32 @@ module CrosslinkProductionGossipRegistryTest {
         assert(TenderlinkConsensusRouteValid(
           TenderlinkValuePrecommitCertificateEnvelope
         )),
+        assert(RegistrySafety),
+        registryUnchangedAll,
+      })
+  }
+
+  run tenderlinkProposalPolProductionBytesMatchPacketFormatBridgeTest = {
+    RegistryInit
+      .then(RouteProduction(Envelope(
+        TenderlinkProtocol,
+        TenderlinkConsensusChannel,
+        CrosslinkConsensusTopic,
+        TenderlinkProposalChunkKind,
+        TenderlinkProposalChunkBytes,
+      )))
+      .then(RouteProduction(Envelope(
+        TenderlinkProtocol,
+        TenderlinkConsensusChannel,
+        CrosslinkConsensusTopic,
+        TenderlinkPolPrevoteKind,
+        TenderlinkPolPrevoteBytes,
+      )))
+      .then(all {
+        assert(TenderlinkProposalChunkBytes ==
+          ConsensusPacketFormat::TestPolProposalConsensusPacketHex),
+        assert(TenderlinkPolPrevoteBytes ==
+          ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex),
         assert(RegistrySafety),
         registryUnchangedAll,
       })

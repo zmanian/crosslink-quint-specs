@@ -265,10 +265,11 @@ For Crosslink, matching that quality means adding:
   wrong-bytes, cross-channel, and unknown-channel witnesses; the imported router
   composes the stateful proposal/POL, precommit, accountability-evidence,
   nonce/ack, and status transport slices after namespacing their helper state.
-  The verifier-friendly router now imports the precommit transport safety
-  vectors so nil/value/mixed precommit packets and nil/value precommit
+  The verifier-friendly router now imports the consensus-packet proposal/POL
+  vectors and the precommit transport safety vectors, so proposal chunks, POL
+  prevotes, nil/value/mixed precommit packets, and nil/value precommit
   certificates carry the same exact compact packet hex as the decrypted
-  transport model.
+  transport models.
 - `CrosslinkMalachiteProposalProtobufFormat.qnt` adds the first Malachite
   protobuf proposal vectors. It pins exact proto3 bytes for `Value`,
   `Proposal` with and without `pol_round`, `SignedMessage::Proposal`, and
@@ -331,13 +332,14 @@ For Crosslink, matching that quality means adding:
   precommits on the Malachite liveness channel, consensus-param bytes on a
   Tenderlink/Malachite lane, dynamic payload bytes on a Tenderlink or
   finality lane, or finality proposal bytes on unrelated lanes. The
-  Tenderlink precommit lanes now import the exact compact packet hex from the
-  precommit transport safety model, the dynamic-sigma param lane pins the exact
-  raised/recovered consensus-param hex vectors from the production-shaped
-  format model, the dynamic-sigma payload lane pins the tagged BFT-payload
-  fixture metadata, and the finality lanes use compact byte labels whose route
-  validity directly checks the generated fixture metadata also validated by the
-  production-finality projection.
+  Tenderlink proposal/POL lanes now import the exact compact packet hex from
+  the consensus packet format model, the precommit lanes import the exact
+  compact packet hex from the precommit transport safety model, the
+  dynamic-sigma param lane pins the exact raised/recovered consensus-param hex
+  vectors from the production-shaped format model, the dynamic-sigma payload
+  lane pins the tagged BFT-payload fixture metadata, and the finality lanes use
+  compact byte labels whose route validity directly checks the generated
+  fixture metadata also validated by the production-finality projection.
 - `CrosslinkProductionGossipIngress.qnt` adds the next node-local ingress gate
   above that registry. It checks that registry-valid records still enter only
   their matching downstream lane, rejecting accountability evidence handed to

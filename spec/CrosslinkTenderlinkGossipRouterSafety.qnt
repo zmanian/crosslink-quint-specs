@@ -13,6 +13,8 @@ module CrosslinkTenderlinkGossipRouterSafety {
 
   import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
     "./CrosslinkTenderlinkPrecommitTransportSafety"
+  import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
+    "./CrosslinkTenderlinkConsensusPacketFormat"
 
   type RouterChannel_t = str
   type RouterTopic_t = str
@@ -46,8 +48,10 @@ module CrosslinkTenderlinkGossipRouterSafety {
   pure val StatusPacketKind = "status-packet"
   pure val WrongKind = "headers"
 
-  pure val ProposalChunkBytes = "tenderlink-proposal-pol-packet-bytes"
-  pure val PolPrevoteBytes = "tenderlink-pol-prevote-packet-bytes"
+  pure val ProposalChunkBytes =
+    ConsensusPacketFormat::TestPolProposalConsensusPacketHex
+  pure val PolPrevoteBytes =
+    ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex
   pure val NilPrecommitBytes = PrecommitTransport::NilPrecommitConsensusPacketHex
   pure val ValuePrecommitBytes =
     PrecommitTransport::ValuePrecommitConsensusPacketHex
@@ -356,6 +360,8 @@ module CrosslinkTenderlinkGossipRouterSafetyTest {
   export CrosslinkTenderlinkGossipRouterSafety.*
   import CrosslinkTenderlinkPrecommitTransportSafety as PrecommitTransport from
     "./CrosslinkTenderlinkPrecommitTransportSafety"
+  import CrosslinkTenderlinkConsensusPacketFormat as ConsensusPacketFormat from
+    "./CrosslinkTenderlinkConsensusPacketFormat"
 
   action RouterNext: bool =
     any {
@@ -413,6 +419,20 @@ module CrosslinkTenderlinkGossipRouterSafetyTest {
           PrecommitTransport::NilPrecommitQuorumConsensusPacketHex),
         assert(MixedPrecommitBytes ==
           PrecommitTransport::MixedPrecommitQuorumConsensusPacketHex),
+        assert(RouterSafety),
+        routerUnchangedAll,
+      })
+  }
+
+  run proposalPolRouterBytesMatchConsensusPacketVectorsTest = {
+    RouterInit
+      .then(RouteConsensus(ProposalChunkEnvelope))
+      .then(RouteConsensus(PolPrevoteEnvelope))
+      .then(all {
+        assert(ProposalChunkBytes ==
+          ConsensusPacketFormat::TestPolProposalConsensusPacketHex),
+        assert(PolPrevoteBytes ==
+          ConsensusPacketFormat::TestWeightedPrevoteConsensusPacketHex),
         assert(RouterSafety),
         routerUnchangedAll,
       })
