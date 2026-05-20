@@ -188,9 +188,10 @@ the Zebra Crosslink working branch:
   scalar projection for Apalache.
 - `spec/CrosslinkProductionFinalityIngressBridge.qnt` connects the
   production-finality ingress lanes to the finality projection boundary: the
-  checked-in BFT-block proposal and fat-pointer wire cannot become
-  projection-ready, or finalizable, until the matching production-finality
-  ingress records have been accepted.
+  checked-in BFT-block proposal, Tenderlink-derived precommit evidence, and
+  fat-pointer wire cannot become projection-ready, or finalizable, until the
+  matching production-finality and Tenderlink precommit-certificate ingress
+  records have been accepted.
 - `spec/CrosslinkProductionFinalityIngressProjectionBridge.qnt` composes the
   node-local production ingress machine with the richer production finality
   projection contract. It is kept in the Rust test/typecheck lane because
