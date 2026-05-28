@@ -4,6 +4,38 @@ Quint specifications for Crosslink and Tenderlink-style consensus over a moving
 proof-of-work stream. This repository is the Crosslink counterpart of the
 upstream Tendermint Quint specs.
 
+## Scale and comparison to the upstream Tendermint (malachite) Quint specs
+
+For reference, "upstream Tendermint Quint" here means the canonical consensus
+model in [informalsystems/malachite](https://github.com/informalsystems/malachite)
+(`specs/.../quint`), authored by Informal Systems.
+
+| Metric | Crosslink (`./spec`) | malachite (all quint) | Ratio |
+|---|---|---|---|
+| `.qnt` files | **107** | 49 | 2.2x |
+| Total lines | **57,328** | 8,052 | 7.1x |
+| Code lines (no blank/comment) | **51,923** | 5,589 | 9.3x |
+| On disk | **1.94 MB** | 312 KB | 6.2x |
+
+malachite's quint is essentially one consensus state machine (driver +
+votekeeper + consensus + statemachine = **2,557 lines, 8 files**). Crosslink is
+~107 small focused models stitched together by `import`.
+
+**The directly comparable core extract is `spec/CrosslinkResampling.qnt`** — the
+Tenderlink consensus engine. It models the same machine as malachite's consensus
+core (Corr/Faulty processes, voting power and quorum, rounds and steps, proposer
+schedule, propose/vote messages, and Tendermint locked/valid value+round), plus
+Crosslink-specific PoW snapshots, fat pointers, and nil-precommit resampling. At
+**2,553 lines** it is essentially the same size as malachite's entire 2,557-line
+consensus core — a ~1:1 match.
+
+Stripping all wire-format / protobuf / transport / gossip / router / bridge /
+evidence / production-fixture plumbing, Crosslink's remaining "core protocol
+logic" is still **19,646 lines across 39 files** (~2.4x malachite's entire quint
+corpus). The other ~37k lines cover layers malachite does not model in quint:
+wire/protobuf byte-pinning, gossip/router/transport, and production
+ingress/bridge fixtures.
+
 ## Status
 
 The spec surface is substantially complete. Per
@@ -70,6 +102,7 @@ Gate status:
 
 ## Contents
 
+- [Scale and comparison to upstream Tendermint Quint](#scale-and-comparison-to-the-upstream-tendermint-malachite-quint-specs)
 - [Status](#status)
 - [Companion docs](#companion-docs)
 - [Spec file reference](#spec-file-reference)
